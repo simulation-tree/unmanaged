@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Unmanaged.Collections
+namespace Unmanaged
 {
     /// <summary>
     /// Represents an allocated region of memory that isn't managed by the garbage collector.
