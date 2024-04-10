@@ -28,7 +28,8 @@ Span<int> listSpan = list.AsSpan();
 ### Runtime Type
 A value type that can be used inside value types designed.
 Their determinism is tied to the name of the type, so if name is fixed then hash is also fixed.
-Their only limitation is that they can't be created for class types as those are managed.
+A limitation is that they can't be created for class types, and can't be created from a `Type` object
+either, only through the generic `Get<T>()` method.
 ```cs
 RuntimeType type = RuntimeType.Get<int>();
 string fullName = type.Type.FullName;

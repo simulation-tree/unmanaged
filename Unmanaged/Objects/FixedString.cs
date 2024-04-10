@@ -14,8 +14,6 @@ namespace Unmanaged
     [StructLayout(LayoutKind.Sequential, Size = Size)]
     public struct FixedString : IEquatable<FixedString>, IEnumerable<char>
     {
-        public static readonly FixedString Empty = default;
-
         public const int Size = 256;
         public const int MaxCharValue = 128;
 
@@ -97,10 +95,14 @@ namespace Unmanaged
             }
         }
 
-        public unsafe FixedString(string value)
+        public FixedString(string value)
         {
-            length = 0;
-            Append(value.AsSpan());
+            Read(value.AsSpan());
+        }
+
+        public FixedString(ReadOnlySpan<char> path)
+        {
+            Read(path);
         }
 
         public unsafe FixedString(sbyte* value)
@@ -108,32 +110,27 @@ namespace Unmanaged
             this = FromUTF8Bytes(new ReadOnlySpan<byte>(value, Size));
         }
 
-        public unsafe FixedString(ReadOnlySpan<char> path)
-        {
-            length = 0;
-            Append(path);
-        }
-
         /// <summary>
         /// Creates a fixed string from UTF8 encoded bytes.
         /// </summary>
-        public FixedString(ReadOnlySpan<byte> bytes)
+        public unsafe FixedString(ReadOnlySpan<byte> bytes)
         {
             if (bytes.Length > MaxLength)
             {
-                throw new ArgumentException($"Path length exceeds maximum length of {MaxLength}.", nameof(bytes));
+                throw new InvalidOperationException($"Path length exceeds maximum length of {MaxLength}.");
             }
 
             Span<char> buffer = stackalloc char[bytes.Length];
             length = (ushort)Encoding.UTF8.GetChars(bytes, buffer);
-            Append(buffer[..length]);
+            Read(buffer[..length]);
         }
 
-        public unsafe void Append(ReadOnlySpan<char> text)
+        private unsafe void Read(ReadOnlySpan<char> text)
         {
-            if (text.Length + length > MaxLength)
+            length = (ushort)text.Length;
+            if (length > MaxLength)
             {
-                throw new ArgumentException($"Path length exceeds maximum length of {MaxLength}.", nameof(text));
+                throw new InvalidOperationException($"Path length exceeds maximum length of {MaxLength}.");
             }
 
             int outputIndex = 0;
@@ -155,11 +152,36 @@ namespace Unmanaged
             {
                 data[outputIndex] = (byte)(temp & 0xFF);
             }
-
-            length += (ushort)text.Length;
         }
 
-        public readonly unsafe int IndexOf(char character)
+        public unsafe void Append(ReadOnlySpan<char> text)
+        {
+            ushort newLength = (ushort)(text.Length + length);
+            if (newLength > MaxLength)
+            {
+                throw new InvalidOperationException($"Path length exceeds maximum length of {MaxLength}.");
+            }
+
+            Span<char> buffer = stackalloc char[newLength];
+            CopyTo(buffer);
+            text.CopyTo(buffer[length..]);
+            Read(buffer);
+        }
+
+        public unsafe void Append(char value)
+        {
+            if (length + 1 > MaxLength)
+            {
+                throw new InvalidOperationException($"Path length exceeds maximum length of {MaxLength}.");
+            }
+
+            Span<char> buffer = stackalloc char[length + 1];
+            CopyTo(buffer);
+            buffer[length] = value;
+            Read(buffer);
+        }
+
+        public readonly unsafe int IndexOf(char value)
         {
             Span<char> buffer = stackalloc char[length];
             int outputIndex = 0;
@@ -174,7 +196,7 @@ namespace Unmanaged
                 while (bitsCollected >= 7)
                 {
                     char c = (char)(temp & 0x7F);
-                    if (c == character)
+                    if (c == value)
                     {
                         return outputIndex;
                     }
@@ -193,16 +215,23 @@ namespace Unmanaged
             return -1;
         }
 
-        public readonly unsafe int LastIndexOf(char character)
+        public readonly unsafe int IndexOf(ReadOnlySpan<char> value, StringComparison comparison = StringComparison.Ordinal)
         {
             Span<char> buffer = stackalloc char[length];
             CopyTo(buffer);
-            return buffer.LastIndexOf(character);
+            return buffer.IndexOf(value);
         }
 
-        public readonly bool Contains(char character)
+        public readonly unsafe int LastIndexOf(char value)
         {
-            return IndexOf(character) != -1;
+            Span<char> buffer = stackalloc char[length];
+            CopyTo(buffer);
+            return buffer.LastIndexOf(value);
+        }
+
+        public readonly bool Contains(char value)
+        {
+            return IndexOf(value) != -1;
         }
 
         public readonly bool Contains(ReadOnlySpan<char> text, StringComparison comparison = StringComparison.Ordinal)

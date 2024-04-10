@@ -149,7 +149,7 @@ namespace Unmanaged
                 }
             }
 
-            throw new InvalidOperationException($"Pointer {pointer} has not been registered.");
+            throw new NullReferenceException($"Pointer {pointer} has never been registered.");
         }
     }
 }

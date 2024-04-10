@@ -34,6 +34,13 @@ namespace Tests
         }
 
         [Test]
+        public unsafe void AccessIllegalBuffer()
+        {
+            UnmanagedBuffer buffer = default;
+            Assert.Throws<NullReferenceException>(() => { buffer.Dispose(); });
+        }
+
+        [Test]
         public void ModifyingThroughDifferentInterfaces()
         {
             using UnmanagedBuffer buffer = new(4, sizeof(int));
