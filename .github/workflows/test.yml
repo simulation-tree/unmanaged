@@ -22,7 +22,7 @@ jobs:
         run: dotnet build
 
       - name: Test
-        run: dotnet test --logger trx --results-directory "TestResults/"
+        run: dotnet test --logger trx --results-directory "TestResults/" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
 
       - name: Analyze
         uses: bibipkins/dotnet-test-reporter@v1.4.0
