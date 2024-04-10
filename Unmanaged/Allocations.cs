@@ -94,7 +94,7 @@ namespace Unmanaged
 
             if (!found)
             {
-                throw new InvalidOperationException($"Pointer {pointer} has not been registered.");
+                throw new NullReferenceException($"Pointer {pointer} has not been registered.");
             }
 
             StackTrace stackTrace = new(1, true);
@@ -111,8 +111,8 @@ namespace Unmanaged
                     }
                     else
                     {
-                        //impossible exception
-                        throw new InvalidOperationException($"Pointer {pointer} has not been allocated.");
+                        //impossible exception?
+                        throw new Exception($"Pointer {pointer} has not been allocated.");
                     }
                 }
                 else
@@ -137,7 +137,7 @@ namespace Unmanaged
             {
                 if (disposedInstance.Equals(pointer))
                 {
-                    throw new InvalidOperationException($"Pointer {pointer} has been disposed at\n{stackTrace}.");
+                    throw new ObjectDisposedException($"Pointer {pointer} has been disposed at\n{stackTrace}.");
                 }
             }
 

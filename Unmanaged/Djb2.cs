@@ -7,6 +7,18 @@ namespace Unmanaged
     public static class Djb2
     {
         //djb2 implementation from CommunityToolkit.HighPerformance/SpanHelper.Hash.cs
+        public static int GetDjb2HashCode(string? str)
+        {
+            if (str is null)
+            {
+                return 5381;
+            }
+            else
+            {
+                return GetDjb2HashCode(str.AsSpan());
+            }
+        }
+
         public static int GetDjb2HashCode<T>(ReadOnlySpan<T> span) where T : notnull
         {
             ref T first = ref MemoryMarshal.GetReference(span);
