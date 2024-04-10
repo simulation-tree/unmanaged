@@ -23,16 +23,6 @@ jobs:
 
       - name: Test
         run: dotnet test --logger trx --results-directory "TestResults/" --collect:"XPlat Code Coverage"
-
-      - name: Analyze
-        uses: bibipkins/dotnet-test-reporter@v1.4.0
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          comment-title: 'Test Results'
-          results-path: ./TestResults/*.trx
-          coverage-path: ./TestResults/*/*.xml
-          coverage-threshold: 60
-          coverage-type: cobertura
         
       - name: Report
         uses: actions/upload-artifact@v4
