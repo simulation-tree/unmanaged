@@ -26,7 +26,13 @@ jobs:
         run: dotnet build
 
       - name: Test
-        run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+        uses: zyborg/dotnet-tests-report@v1
+        with:
+          project_path: Tests
+          report_name: Tests
+          report_title: Tests
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        #run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
         
       - name: Report
         uses: actions/upload-artifact@v4
