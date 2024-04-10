@@ -3,9 +3,9 @@
 Library containing unmanaged objects and definitions implemented using unsafe code.
 
 ### Safety
-Handling of `null` references is already done by the provided types when compiling with
-the `#DEBUG` compiler flag. If compiling with release mode, these checks are dropped so its
-good to check for red flags ahead of time, in case there is code that can leak state or drift it.
+Handling of `null` references is already done by the types in this library when compiling with
+the `#DEBUG` compiler flag. If compiling with release settings, these checks are dropped,
+good to check for red flags ahead of time in case there is code that can leak state or drift it.
 
 The `Allocations` class is used to track pointers, and also for throwing when something bad happens:
 ```cs
@@ -18,7 +18,7 @@ public readonly void Dispose()
 ```
 
 ### Collections
-Arrays and lists are available as `UnmanagedList<T>` and `UnmanagedArray<T>`:
+Only basic arrays and lists are available, as `UnmanagedList<T>` and `UnmanagedArray<T>`:
 ```cs
 using UnmanagedList<int> list = new();
 list.Add(5);
@@ -26,7 +26,7 @@ Span<int> listSpan = list.AsSpan();
 ```
 
 ### Runtime Type
-A value type that can be used inside value types designed.
+A value type that can be used inside other value types, intended to be unmanaged as well.
 Their determinism is tied to the name of the type, so if name is fixed then hash is also fixed.
 A limitation is that they can't be created for class types, and can't be created from a `Type` object
 either, only through the generic `Get<T>()` method.

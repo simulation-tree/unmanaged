@@ -22,7 +22,7 @@ jobs:
         run: dotnet build
 
       - name: Test
-        run: dotnet test --logger trx --results-directory "TestResults/" --collect:"XPlat Code Coverage"
+        run: dotnet test Tests/Tests.csproj --logger trx --results-directory "TestResults/" --collect:"XPlat Code Coverage"
         
       - name: Report
         uses: actions/upload-artifact@v4
