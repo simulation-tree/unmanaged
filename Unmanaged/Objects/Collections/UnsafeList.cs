@@ -97,6 +97,16 @@ namespace Unmanaged.Collections
             return list->items.Get<T>(index);
         }
 
+        public static Span<byte> Get(UnsafeList* list, uint index)
+        {
+            if (index >= list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            return list->items.Get(index);
+        }
+
         public static void Set<T>(UnsafeList* list, uint index, T value) where T : unmanaged
         {
             ThrowIfSizeMismatch<T>(list);
@@ -211,6 +221,17 @@ namespace Unmanaged.Collections
         {
             ThrowIfSizeMismatch<T>(list);
             return list->items.AsSpan<T>(list->count);
+        }
+
+        public static Span<T> AsSpan<T>(UnsafeList* list, uint start, uint length) where T : unmanaged
+        {
+            ThrowIfSizeMismatch<T>(list);
+            if (start + length > list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            return list->items.AsSpan<T>(start, length);
         }
 
         public static UnmanagedList<T> AsList<T>(UnsafeList* list) where T : unmanaged

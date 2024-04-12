@@ -39,7 +39,7 @@ namespace Unmanaged
                 {
                     StringBuilder leaks = new();
                     leaks.Append(instances.Count);
-                    leaks.Append(" unmanaged instance(s) were not disposed: ");
+                    leaks.Append(" unmanaged instance(s) have not been disposed: ");
                     leaks.AppendLine();
                     foreach (nint pointer in instances)
                     {
@@ -51,7 +51,7 @@ namespace Unmanaged
                         leaks.AppendLine();
                     }
 
-                    throw new InvalidOperationException(leaks.ToString());
+                    throw new SystemException(leaks.ToString());
                 }
             };
         }
@@ -94,7 +94,15 @@ namespace Unmanaged
 
             if (!found)
             {
-                throw new NullReferenceException($"Pointer {pointer} has not been registered.");
+                foreach ((nint disposedInstance, StackTrace disposedStackTrace) in disposals)
+                {
+                    if (disposedInstance.Equals(pointer))
+                    {
+                        throw new ObjectDisposedException($"Pointer {pointer} was disposed at\n{disposedStackTrace}.");
+                    }
+                }
+
+                throw new NullReferenceException($"Pointer {pointer} has never been registered.");
             }
 
             StackTrace stackTrace = new(1, true);
@@ -121,6 +129,39 @@ namespace Unmanaged
                 }
             }
         }
+
+#if DEBUG
+        public static bool IsNull(nint pointer)
+        {
+            foreach (nint existingInstance in instances)
+            {
+                if (existingInstance.Equals(pointer))
+                {
+                    return false;
+                }
+            }
+
+            foreach ((nint disposedInstance, StackTrace stackTrace) in disposals)
+            {
+                if (disposedInstance.Equals(pointer))
+                {
+                    return true;
+                }
+            }
+
+            foreach ((nint allocatedInstance, _) in allocations)
+            {
+                if (allocatedInstance.Equals(pointer))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+#else
+        public static bool IsNull(nint pointer) => false;
+#endif
 
         [Conditional("DEBUG")]
         public static void ThrowIfNull(nint pointer)

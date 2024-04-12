@@ -59,9 +59,17 @@ namespace Unmanaged.Collections
             UnsafeList.Dispose(list);
         }
 
+        /// <summary>
+        /// Returns the list contents as a span.
+        /// </summary>
         public readonly Span<T> AsSpan()
         {
             return UnsafeList.AsSpan<T>(list);
+        }
+
+        public readonly Span<T> AsSpan(uint start, uint length)
+        {
+            return UnsafeList.AsSpan<T>(list, start, length);
         }
 
         public readonly void Add(T item)
