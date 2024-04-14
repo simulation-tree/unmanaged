@@ -24,21 +24,7 @@ namespace Unmanaged
 
         private readonly nint pointer;
 
-        public readonly bool IsDisposed
-        {
-            get
-            {
-                try
-                {
-                    Allocations.ThrowIfNull(pointer);
-                    return false;
-                }
-                catch
-                {
-                    return true;
-                }
-            }
-        }
+        public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
         public UnmanagedBuffer(uint size, uint length, bool clear = true)
         {

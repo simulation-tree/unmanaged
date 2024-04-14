@@ -91,7 +91,7 @@ namespace Unmanaged.Collections
             ThrowIfSizeMismatch<T>(list);
             if (index >= list->count)
             {
-                throw new IndexOutOfRangeException();
+                throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
             }
 
             return list->items.Get<T>(index);

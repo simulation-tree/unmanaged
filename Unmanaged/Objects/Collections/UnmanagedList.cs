@@ -82,6 +82,14 @@ namespace Unmanaged.Collections
             UnsafeList.AddRange(list, items);
         }
 
+        public readonly void AddRange(IEnumerable<T> items)
+        {
+            foreach (T item in items)
+            {
+                Add(item);
+            }
+        }
+
         public readonly uint IndexOf<V>(V item) where V : unmanaged, IEquatable<V>
         {
             return UnsafeList.IndexOf(list, item);
