@@ -36,7 +36,7 @@ namespace Unmanaged.Collections
             }
         }
 
-        public static UnsafeList* Create<T>(uint initialCapacity = 0) where T : unmanaged
+        public static UnsafeList* Allocate<T>(uint initialCapacity = 0) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             nint listPointer = Marshal.AllocHGlobal(sizeof(UnsafeList));
@@ -47,7 +47,7 @@ namespace Unmanaged.Collections
             return list;
         }
 
-        public static UnsafeList* Create(RuntimeType type, uint initialCapacity = 0)
+        public static UnsafeList* Allocate(RuntimeType type, uint initialCapacity = 0)
         {
             nint listPointer = Marshal.AllocHGlobal(sizeof(UnsafeList));
             UnsafeList* list = (UnsafeList*)listPointer;
@@ -57,18 +57,18 @@ namespace Unmanaged.Collections
             return list;
         }
 
-        public static UnsafeList* Create<T>(ReadOnlySpan<T> span) where T : unmanaged
+        public static UnsafeList* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            UnsafeList* list = Create<T>((uint)span.Length);
+            UnsafeList* list = Allocate<T>((uint)span.Length);
             Span<T> items = AsSpan<T>(list);
             span.CopyTo(items);
             list->count = (uint)span.Length;
             return list;
         }
 
-        public static UnsafeList* Create<T>(Span<T> span) where T : unmanaged
+        public static UnsafeList* Allocate<T>(Span<T> span) where T : unmanaged
         {
-            UnsafeList* list = Create<T>((uint)span.Length);
+            UnsafeList* list = Allocate<T>((uint)span.Length);
             Span<T> items = AsSpan<T>(list);
             span.CopyTo(items);
             list->count = (uint)span.Length;
@@ -132,6 +132,29 @@ namespace Unmanaged.Collections
 
             list->items.Set(list->count, item);
             list->count++;
+        }
+
+        public static bool AddIfUnique<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
+        {
+            ThrowIfSizeMismatch<T>(list);
+            Span<T> span = list->items.AsSpan<T>(list->count);
+            if (span.Contains(item))
+            {
+                return false;
+            }
+
+            if (list->count == list->items.length)
+            {
+                uint newCapacity = list->items.length == 0 ? 1 : list->items.length * 2;
+                UnmanagedBuffer newItems = new(list->type.size, newCapacity);
+                list->items.CopyTo(newItems);
+                list->items.Dispose();
+                list->items = newItems;
+            }
+
+            list->items.Set(list->count, item);
+            list->count++;
+            return true;
         }
 
         public static void AddDefault(UnsafeList* list)
@@ -210,6 +233,30 @@ namespace Unmanaged.Collections
             }
 
             list->count--;
+        }
+
+        public static int GetHashCode(UnsafeList* list)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + list->type.GetHashCode();
+                hash = hash * 23 + list->count.GetHashCode();
+                hash = hash * 23 + list->items.GetHashCode();
+                return hash;
+            }
+        }
+
+        public static int GetContentHashCode(UnsafeList* list)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + list->type.GetHashCode();
+                hash = hash * 23 + list->count.GetHashCode();
+                hash = hash * 23 + list->items.GetContentHashCode();
+                return hash;
+            }
         }
 
         public static void Clear(UnsafeList* list)

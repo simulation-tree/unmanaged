@@ -26,7 +26,13 @@ namespace Unmanaged.Collections
 
         public UnmanagedArray(uint length)
         {
-            array = UnsafeArray.Create<T>(length);
+            array = UnsafeArray.Allocate<T>(length);
+        }
+
+        public UnmanagedArray(ReadOnlySpan<T> span)
+        {
+            array = UnsafeArray.Allocate<T>((uint)span.Length);
+            span.CopyTo(AsSpan());
         }
 
         public readonly void Dispose()
@@ -85,6 +91,11 @@ namespace Unmanaged.Collections
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new Enumerator(array);
+        }
+
+        public static implicit operator ReadOnlySpan<T>(UnmanagedArray<T> array)
+        {
+            return array.AsSpan();
         }
 
         public struct Enumerator : IEnumerator<T>

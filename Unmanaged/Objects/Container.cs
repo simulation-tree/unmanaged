@@ -33,6 +33,11 @@ namespace Unmanaged
             }
         }
 
+        public Container()
+        {
+            throw new NotImplementedException();
+        }
+
         private Container(nint pointer, RuntimeType type)
         {
             this.pointer = pointer;
@@ -89,7 +94,7 @@ namespace Unmanaged
             return HashCode.Combine(pointer);
         }
 
-        public unsafe static Container Create<T>(T value) where T : unmanaged
+        public unsafe static Container Allocate<T>(T value) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             Container container = new(Marshal.AllocHGlobal(type.size), type);

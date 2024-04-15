@@ -22,27 +22,27 @@ namespace Unmanaged.Collections
 
         public UnmanagedList()
         {
-            list = UnsafeList.Create<T>();
+            list = UnsafeList.Allocate<T>();
         }
 
         public UnmanagedList(uint initialCapacity)
         {
-            list = UnsafeList.Create<T>(initialCapacity);
+            list = UnsafeList.Allocate<T>(initialCapacity);
         }
 
         public UnmanagedList(Span<T> span)
         {
-            list = UnsafeList.Create(span);
+            list = UnsafeList.Allocate(span);
         }
 
         public UnmanagedList(ReadOnlySpan<T> span)
         {
-            list = UnsafeList.Create(span);
+            list = UnsafeList.Allocate(span);
         }
 
         public UnmanagedList(IEnumerable<T> list)
         {
-            this.list = UnsafeList.Create<T>();
+            this.list = UnsafeList.Allocate<T>();
             foreach (T item in list)
             {
                 Add(item);
@@ -75,6 +75,11 @@ namespace Unmanaged.Collections
         public readonly void Add(T item)
         {
             UnsafeList.Add(list, item);
+        }
+
+        public readonly bool AddIfUnique<V>(V item) where V : unmanaged, IEquatable<V>
+        {
+            return UnsafeList.AddIfUnique(list, item);
         }
 
         public readonly void AddRange(ReadOnlySpan<T> items)
@@ -115,6 +120,16 @@ namespace Unmanaged.Collections
             UnsafeList.Clear(list);
         }
 
+        public readonly override int GetHashCode()
+        {
+            return UnsafeList.GetHashCode(list);
+        }
+
+        public readonly int GetContentHashCode()
+        {
+            return UnsafeList.GetContentHashCode(list);
+        }
+
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             return new Enumerator(list);
@@ -123,6 +138,11 @@ namespace Unmanaged.Collections
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new Enumerator(list);
+        }
+
+        public static implicit operator ReadOnlySpan<T>(UnmanagedList<T> list)
+        {
+            return list.AsSpan();
         }
 
         public struct Enumerator : IEnumerator<T>

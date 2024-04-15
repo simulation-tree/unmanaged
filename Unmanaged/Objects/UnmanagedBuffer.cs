@@ -144,6 +144,12 @@ namespace Unmanaged
             items[index] = value;
         }
 
+        /// <summary>
+        /// Returns all bytes for the element at the given index.
+        /// <para>
+        /// May throw <see cref="IndexOutOfRangeException"/>.
+        /// </para>
+        /// </summary>
         public readonly Span<byte> Get(uint index)
         {
             Allocations.ThrowIfNull(pointer);
@@ -208,6 +214,31 @@ namespace Unmanaged
 
             Span<T> span = AsSpan<T>();
             return span.Contains(value);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return HashCode.Combine(size, length, pointer);
+            }
+        }
+
+        public readonly int GetContentHashCode()
+        {
+            Allocations.ThrowIfNull(pointer);
+            unchecked
+            {
+                int hash = 17;
+                for (uint i = 0; i < length; i++)
+                {
+                    Span<byte> span = Get(i);
+                    int djb2hash = Djb2.GetDjb2HashCode(span);
+                    hash = hash * 23 + djb2hash;
+                }
+
+                return hash;
+            }
         }
     }
 }

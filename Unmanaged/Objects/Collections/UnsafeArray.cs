@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -42,7 +43,7 @@ namespace Unmanaged.Collections
             }
         }
 
-        public static UnsafeArray* Create<T>(uint length) where T : unmanaged
+        public static UnsafeArray* Allocate<T>(uint length) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
@@ -52,12 +53,39 @@ namespace Unmanaged.Collections
             return array;
         }
 
-        public static UnsafeArray* Create(RuntimeType type, uint length)
+        public static UnsafeArray* Allocate(RuntimeType type, uint length)
         {
             nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;
             array->items = new(type.size, length);
+            return array;
+        }
+
+        public static UnsafeArray* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
+        {
+            RuntimeType type = RuntimeType.Get<T>();
+            nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
+            UnsafeArray* array = (UnsafeArray*)arrayPointer;
+            array->type = type;
+            array->items = new(type.size, (uint)span.Length, false);
+            span.CopyTo(array->items.AsSpan<T>());
+            return array;
+        }
+
+        public static UnsafeArray* Allocate<T>(IReadOnlyCollection<T> values) where T : unmanaged
+        {
+            RuntimeType type = RuntimeType.Get<T>();
+            nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
+            UnsafeArray* array = (UnsafeArray*)arrayPointer;
+            array->type = type;
+            array->items = new(type.size, (uint)values.Count);
+            uint index = 0;
+            foreach (T value in values)
+            {
+                array->items.Set(index++, value);
+            }
+
             return array;
         }
 
