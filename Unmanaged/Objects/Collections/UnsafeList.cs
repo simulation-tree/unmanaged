@@ -60,7 +60,7 @@ namespace Unmanaged.Collections
         public static UnsafeList* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             UnsafeList* list = Allocate<T>((uint)span.Length);
-            Span<T> items = AsSpan<T>(list);
+            Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);
             list->count = (uint)span.Length;
             return list;
@@ -210,10 +210,12 @@ namespace Unmanaged.Collections
             return span.Contains(item);
         }
 
-        public static void Remove<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
+        public static uint Remove<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
         {
             ThrowIfSizeMismatch<T>(list);
-            RemoveAt(list, IndexOf(list, item));
+            uint index = IndexOf(list, item);
+            RemoveAt(list, index);
+            return index;
         }
 
         public static void RemoveAt(UnsafeList* list, uint index)
@@ -268,6 +270,17 @@ namespace Unmanaged.Collections
         {
             ThrowIfSizeMismatch<T>(list);
             return list->items.AsSpan<T>(list->count);
+        }
+
+        public static Span<T> AsSpan<T>(UnsafeList* list, uint start) where T : unmanaged
+        {
+            ThrowIfSizeMismatch<T>(list);
+            if (start >= list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            return list->items.AsSpan<T>(start, list->count - start);
         }
 
         public static Span<T> AsSpan<T>(UnsafeList* list, uint start, uint length) where T : unmanaged

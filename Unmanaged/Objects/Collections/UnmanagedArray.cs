@@ -29,6 +29,16 @@ namespace Unmanaged.Collections
             array = UnsafeArray.Allocate<T>(length);
         }
 
+        public UnmanagedArray(int length)
+        {
+            if (length < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
+            array = UnsafeArray.Allocate<T>((uint)length);
+        }
+
         public UnmanagedArray(ReadOnlySpan<T> span)
         {
             array = UnsafeArray.Allocate<T>((uint)span.Length);
@@ -91,11 +101,6 @@ namespace Unmanaged.Collections
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new Enumerator(array);
-        }
-
-        public static implicit operator ReadOnlySpan<T>(UnmanagedArray<T> array)
-        {
-            return array.AsSpan();
         }
 
         public struct Enumerator : IEnumerator<T>

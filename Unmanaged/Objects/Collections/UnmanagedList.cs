@@ -67,6 +67,11 @@ namespace Unmanaged.Collections
             return UnsafeList.AsSpan<T>(list);
         }
 
+        public readonly Span<T> AsSpan(uint start)
+        {
+            return UnsafeList.AsSpan<T>(list, start);
+        }
+
         public readonly Span<T> AsSpan(uint start, uint length)
         {
             return UnsafeList.AsSpan<T>(list, start, length);
@@ -105,9 +110,9 @@ namespace Unmanaged.Collections
             return UnsafeList.Contains(list, item);
         }
 
-        public readonly void Remove<V>(V item) where V : unmanaged, IEquatable<V>
+        public readonly uint Remove<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            UnsafeList.Remove(list, item);
+            return UnsafeList.Remove(list, item);
         }
 
         public readonly void RemoveAt(uint index)
@@ -118,6 +123,11 @@ namespace Unmanaged.Collections
         public readonly void Clear()
         {
             UnsafeList.Clear(list);
+        }
+
+        public readonly ref T GetRef(uint index)
+        {
+            return ref UnsafeList.GetRef<T>(list, index);
         }
 
         public readonly override int GetHashCode()
@@ -138,11 +148,6 @@ namespace Unmanaged.Collections
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new Enumerator(list);
-        }
-
-        public static implicit operator ReadOnlySpan<T>(UnmanagedList<T> list)
-        {
-            return list.AsSpan();
         }
 
         public struct Enumerator : IEnumerator<T>

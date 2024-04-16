@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -40,6 +41,15 @@ namespace Unmanaged
             }
         }
 
+        [Conditional("DEBUG")]
+        private void ThrowIfSizeMismatch(uint size)
+        {
+            if (this.size != size)
+            {
+                throw new ArgumentException("Size mismatch.");
+            }
+        }
+
         public readonly void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
@@ -64,9 +74,13 @@ namespace Unmanaged
             return new Span<byte>(bytes, (int)(size * length));
         }
 
+        /// <summary>
+        /// Returns a span into the entire memory allocated by this buffer.
+        /// </summary>
         public readonly unsafe Span<T> AsSpan<T>() where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             T* items = (T*)pointer;
             return new Span<T>(items, (int)length);
@@ -75,6 +89,7 @@ namespace Unmanaged
         public readonly unsafe Span<T> AsSpan<T>(uint length) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             if (length > this.length)
             {
@@ -88,6 +103,7 @@ namespace Unmanaged
         public readonly unsafe Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             if (start + length > this.length)
             {
@@ -108,6 +124,7 @@ namespace Unmanaged
         public readonly ref T GetRef<T>(uint index) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             if (index >= length)
             {
@@ -121,6 +138,7 @@ namespace Unmanaged
         public readonly T Get<T>(uint index) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             if (index >= length)
             {
@@ -134,6 +152,7 @@ namespace Unmanaged
         public readonly void Set<T>(uint index, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             if (index >= length)
             {
@@ -195,6 +214,7 @@ namespace Unmanaged
         public readonly uint IndexOf<T>(T value) where T : unmanaged, IEquatable<T>
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             Span<T> span = AsSpan<T>();
             int result = span.IndexOf(value);
@@ -211,6 +231,7 @@ namespace Unmanaged
         public readonly bool Contains<T>(T value) where T : unmanaged, IEquatable<T>
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
 
             Span<T> span = AsSpan<T>();
             return span.Contains(value);
