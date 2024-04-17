@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -11,14 +10,20 @@ namespace Unmanaged
     /// </summary>
     public static class Allocations
     {
-        private static readonly ConcurrentQueue<nint> instances = [];
-        private static readonly ConcurrentDictionary<nint, StackTrace> allocations = [];
-        private static readonly ConcurrentDictionary<nint, StackTrace> disposals = [];
+        private static readonly Dictionary<nint, StackTrace> allocations = [];
+        private static readonly HashSet<nint> instances = [];
+        private static readonly Dictionary<nint, StackTrace> disposals = [];
 
         /// <summary>
         /// <c>true</c> if there are any instances allocated at the moment.
         /// </summary>
-        public static bool Any => !instances.IsEmpty;
+        public static bool Any
+        {
+            get
+            {
+                return instances.Count > 0;
+            }
+        }
 
         public static IEnumerable<(object, StackTrace)> All
         {
@@ -26,7 +31,10 @@ namespace Unmanaged
             {
                 foreach (nint pointer in instances)
                 {
-                    yield return (pointer, allocations[pointer]);
+                    if (allocations.TryGetValue(pointer, out StackTrace? stackTrace))
+                    {
+                        yield return (pointer, stackTrace);
+                    }
                 }
             }
         }
@@ -35,11 +43,11 @@ namespace Unmanaged
         {
             AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
             {
-                if (!instances.IsEmpty)
+                if (instances.Count > 0)
                 {
                     StringBuilder leaks = new();
                     leaks.Append(instances.Count);
-                    leaks.Append(" unmanaged instance(s) have not been disposed: ");
+                    leaks.Append(" unmanaged instance(s) were left undisposed: ");
                     leaks.AppendLine();
                     foreach (nint pointer in instances)
                     {
@@ -65,18 +73,14 @@ namespace Unmanaged
                 {
                     if (allocations.TryGetValue(pointer, out StackTrace? previousStackTrace))
                     {
-                        throw new InvalidOperationException($"Pointer {pointer} has already been registered at:\n{previousStackTrace}.");
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Pointer {pointer} has already been registered.");
+                        throw new InvalidOperationException($"Pointer {pointer} has already been allocated from:\n{previousStackTrace}.");
                     }
                 }
             }
 
             StackTrace stackTrace = new(1, true);
-            instances.Enqueue(pointer);
-            allocations.TryAdd(pointer, stackTrace);
+            instances.Add(pointer);
+            allocations[pointer] = stackTrace;
         }
 
         [Conditional("DEBUG")]
@@ -105,29 +109,9 @@ namespace Unmanaged
                 throw new NullReferenceException($"Pointer {pointer} has never been registered.");
             }
 
+            instances.Remove(pointer);
             StackTrace stackTrace = new(1, true);
-            HashSet<nint> tempInstances = new(instances);
-            instances.Clear();
-            foreach (nint existingInstance in tempInstances)
-            {
-                if (existingInstance.Equals(pointer))
-                {
-                    disposals.TryAdd(pointer, stackTrace);
-                    if (allocations.TryRemove(pointer, out StackTrace? removedStackTrace))
-                    {
-                        GC.SuppressFinalize(removedStackTrace);
-                    }
-                    else
-                    {
-                        //impossible exception?
-                        throw new Exception($"Pointer {pointer} has not been allocated.");
-                    }
-                }
-                else
-                {
-                    instances.Enqueue(existingInstance);
-                }
-            }
+            disposals[pointer] = stackTrace;
         }
 
 #if DEBUG
@@ -166,12 +150,9 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         public static void ThrowIfNull(nint pointer)
         {
-            foreach (nint existingInstance in instances)
+            if (instances.Contains(pointer))
             {
-                if (existingInstance.Equals(pointer))
-                {
-                    return;
-                }
+                return;
             }
 
             foreach ((nint disposedInstance, StackTrace stackTrace) in disposals)
