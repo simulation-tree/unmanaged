@@ -8,6 +8,7 @@ namespace Unmanaged.Collections
     {
         private readonly UnsafeList* list;
 
+        public readonly bool IsDisposed => UnsafeList.IsDisposed(list);
         public readonly uint Count => UnsafeList.GetCount(list);
         public readonly uint Capacity => UnsafeList.GetCapacity(list);
 
@@ -23,6 +24,11 @@ namespace Unmanaged.Collections
         public UnmanagedList()
         {
             list = UnsafeList.Allocate<T>();
+        }
+
+        internal UnmanagedList(UnsafeList* list)
+        {
+            this.list = list;
         }
 
         public UnmanagedList(uint initialCapacity)
@@ -47,11 +53,6 @@ namespace Unmanaged.Collections
             {
                 Add(item);
             }
-        }
-
-        internal UnmanagedList(UnsafeList* list)
-        {
-            this.list = list;
         }
 
         public readonly void Dispose()
@@ -87,6 +88,11 @@ namespace Unmanaged.Collections
             return UnsafeList.AddIfUnique(list, item);
         }
 
+        public readonly void AddDefault(uint count = 1)
+        {
+            UnsafeList.AddDefault(list, count);
+        }
+
         public readonly void AddRange(ReadOnlySpan<T> items)
         {
             UnsafeList.AddRange(list, items);
@@ -105,6 +111,11 @@ namespace Unmanaged.Collections
             return UnsafeList.IndexOf(list, item);
         }
 
+        public readonly bool TryIndexOf<V>(V item, out uint index) where V : unmanaged, IEquatable<V>
+        {
+            return UnsafeList.TryIndexOf(list, item, out index);
+        }
+
         public readonly bool Contains<V>(V item) where V : unmanaged, IEquatable<V>
         {
             return UnsafeList.Contains(list, item);
@@ -120,9 +131,25 @@ namespace Unmanaged.Collections
             UnsafeList.RemoveAt(list, index);
         }
 
+        /// <summary>
+        /// Clears the list of all elements, making count 0.
+        /// </summary>
         public readonly void Clear()
         {
             UnsafeList.Clear(list);
+        }
+
+        /// <summary>
+        /// Clears the list all elements and ensures the capacity is at least the minimum capacity.
+        /// </summary>
+        public readonly void Clear(uint minimumCapacity)
+        {
+            UnsafeList.Clear(list);
+            uint capacity = UnsafeList.GetCapacity(list);
+            if (capacity < minimumCapacity)
+            {
+                UnsafeList.AddDefault(list, minimumCapacity - capacity);
+            }
         }
 
         public readonly ref T GetRef(uint index)
@@ -150,16 +177,10 @@ namespace Unmanaged.Collections
             return new Enumerator(list);
         }
 
-        public struct Enumerator : IEnumerator<T>
+        public struct Enumerator(UnsafeList* list) : IEnumerator<T>
         {
-            private UnsafeList* list;
-            private int index;
-
-            public Enumerator(UnsafeList* list)
-            {
-                this.list = list;
-                index = -1;
-            }
+            private UnsafeList* list = list;
+            private int index = -1;
 
             public T Current => UnsafeList.Get<T>(list, (uint)index);
 
@@ -168,7 +189,7 @@ namespace Unmanaged.Collections
             public bool MoveNext()
             {
                 index++;
-                return index < list->Count;
+                return index < UnsafeList.GetCount(list);
             }
 
             public void Reset()

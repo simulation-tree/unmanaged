@@ -10,9 +10,6 @@ namespace Unmanaged.Collections
         private uint count;
         private UnmanagedBuffer items;
 
-        public readonly uint Count => count;
-        public readonly uint Capacity => items.length;
-
         public UnsafeList()
         {
             throw new InvalidOperationException("Use UnsafeList.Create() to create an UnsafeList.");
@@ -157,20 +154,20 @@ namespace Unmanaged.Collections
             return true;
         }
 
-        public static void AddDefault(UnsafeList* list)
+        public static void AddDefault(UnsafeList* list, uint count = 1)
         {
-            if (list->count == list->items.length)
+            uint newCount = list->count + count;
+            if (newCount >= list->items.length)
             {
-                uint newCapacity = list->items.length == 0 ? 1 : list->items.length * 2;
-                UnmanagedBuffer newItems = new(list->type.size, newCapacity);
+                UnmanagedBuffer newItems = new(list->type.size, newCount);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
             }
 
-            Span<byte> bytes = list->items.Get(list->count);
+            Span<byte> bytes = list->items.AsSpan(list->count, count);
             bytes.Clear();
-            list->count++;
+            list->count = newCount;
         }
 
         public static void AddRange<T>(UnsafeList* list, ReadOnlySpan<T> items) where T : unmanaged
@@ -201,6 +198,23 @@ namespace Unmanaged.Collections
                 throw new ArgumentException("Item not found", nameof(item));
             }
             else return (uint)result;
+        }
+
+        public static bool TryIndexOf<T>(UnsafeList* list, T item, out uint index) where T : unmanaged, IEquatable<T>
+        {
+            ThrowIfSizeMismatch<T>(list);
+            Span<T> span = AsSpan<T>(list);
+            int result = span.IndexOf(item);
+            if (result == -1)
+            {
+                index = 0;
+                return false;
+            }
+            else
+            {
+                index = (uint)result;
+                return true;
+            }
         }
 
         public static bool Contains<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
@@ -300,14 +314,19 @@ namespace Unmanaged.Collections
             return new UnmanagedList<T>(list);
         }
 
+        public static bool IsDisposed(UnsafeList* list)
+        {
+            return list->items.IsDisposed;
+        }
+
         public static uint GetCount(UnsafeList* list)
         {
-            return list->Count;
+            return list->count;
         }
 
         public static uint GetCapacity(UnsafeList* list)
         {
-            return list->Capacity;
+            return list->items.length;
         }
 
         public static void CopyTo(UnsafeList* source, uint sourceIndex, UnsafeList* destination, uint destinationIndex)
@@ -325,6 +344,22 @@ namespace Unmanaged.Collections
             Span<byte> sourceElement = source->items.Get(sourceIndex);
             Span<byte> destinationElement = destination->items.Get(destinationIndex);
             sourceElement.CopyTo(destinationElement);
+        }
+
+        public static void CopyTo<T>(UnsafeList* source, uint sourceIndex, Span<T> destination, uint destinationIndex) where T : unmanaged
+        {
+            if (sourceIndex >= source->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            if (destinationIndex + source->count - sourceIndex > destination.Length)
+            {
+                throw new ArgumentException("Destination span is too small to fit destination index.");
+            }
+
+            Span<T> sourceSpan = AsSpan<T>(source, sourceIndex);
+            sourceSpan.CopyTo(destination[(int)destinationIndex..]);
         }
     }
 }

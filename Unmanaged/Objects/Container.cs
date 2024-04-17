@@ -74,6 +74,11 @@ namespace Unmanaged
             return ref Unsafe.AsRef<T>((void*)pointer);
         }
 
+        public readonly bool Is<T>() where T : unmanaged
+        {
+            return type == RuntimeType.Get<T>();
+        }
+
         public readonly override bool Equals(object? obj)
         {
             return obj is Container container && Equals(container);
@@ -94,6 +99,9 @@ namespace Unmanaged
             return HashCode.Combine(pointer);
         }
 
+        /// <summary>
+        /// Allocates unmanaged memory to contain the given value.
+        /// </summary>
         public unsafe static Container Allocate<T>(T value) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();

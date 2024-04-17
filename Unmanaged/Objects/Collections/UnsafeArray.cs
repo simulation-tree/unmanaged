@@ -138,6 +138,13 @@ namespace Unmanaged.Collections
             return array->items.IndexOf(value);
         }
 
+        public static bool TryIndexOf<T>(UnsafeArray* array, T value, out uint index) where T : unmanaged, IEquatable<T>
+        {
+            ThrowIfNull(array);
+
+            return array->items.TryIndexOf(value, out index);
+        }
+
         public static bool Contains<T>(UnsafeArray* array, T value) where T : unmanaged, IEquatable<T>
         {
             ThrowIfNull(array);

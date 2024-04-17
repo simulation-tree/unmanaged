@@ -66,12 +66,31 @@ namespace Unmanaged
             span.Clear();
         }
 
-        public readonly unsafe Span<byte> AsSpan()
+        /// <summary>
+        /// Returns a span for all the bytes allocated in this object.
+        /// </summary>
+        public readonly Span<byte> AsSpan()
         {
             Allocations.ThrowIfNull(pointer);
 
             byte* bytes = (byte*)pointer;
             return new Span<byte>(bytes, (int)(size * length));
+        }
+
+        /// <summary>
+        /// Returns a span of the bytes of the elements inside the given range.
+        /// </summary>
+        public readonly Span<byte> AsSpan(uint start, uint length)
+        {
+            Allocations.ThrowIfNull(pointer);
+
+            if (start + length > this.length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
+            byte* bytes = (byte*)pointer;
+            return new Span<byte>(bytes + (start * size), (int)(size * length));
         }
 
         /// <summary>
@@ -225,6 +244,25 @@ namespace Unmanaged
             else
             {
                 return (uint)result;
+            }
+        }
+
+        public readonly bool TryIndexOf<T>(T value, out uint index) where T : unmanaged, IEquatable<T>
+        {
+            Allocations.ThrowIfNull(pointer);
+            ThrowIfSizeMismatch((uint)sizeof(T));
+
+            Span<T> span = AsSpan<T>();
+            int result = span.IndexOf(value);
+            if (result == -1)
+            {
+                index = 0;
+                return false;
+            }
+            else
+            {
+                index = (uint)result;
+                return true;
             }
         }
 

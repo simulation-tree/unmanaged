@@ -10,6 +10,7 @@ namespace Unmanaged.Collections
 
         public readonly bool IsDisposed => UnsafeArray.IsDisposed(array);
         public readonly uint Length => array->Length;
+
         public readonly T this[uint index]
         {
             get => UnsafeArray.Get<T>(array, index);
@@ -21,7 +22,12 @@ namespace Unmanaged.Collections
 
         public UnmanagedArray()
         {
-            throw new InvalidOperationException("UnmanagedArray must be initialized with a length.");
+            throw new InvalidOperationException("UnmanagedArray cannot be created without a length.");
+        }
+
+        internal UnmanagedArray(UnsafeArray* array)
+        {
+            this.array = array;
         }
 
         public UnmanagedArray(uint length)
@@ -29,14 +35,10 @@ namespace Unmanaged.Collections
             array = UnsafeArray.Allocate<T>(length);
         }
 
-        public UnmanagedArray(int length)
+        public UnmanagedArray(Span<T> span)
         {
-            if (length < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(length));
-            }
-
-            array = UnsafeArray.Allocate<T>((uint)length);
+            array = UnsafeArray.Allocate<T>((uint)span.Length);
+            span.CopyTo(AsSpan());
         }
 
         public UnmanagedArray(ReadOnlySpan<T> span)
@@ -71,6 +73,11 @@ namespace Unmanaged.Collections
         public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             return UnsafeArray.IndexOf(array, value);
+        }
+
+        public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
+        {
+            return UnsafeArray.TryIndexOf(array, value, out index);
         }
 
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
