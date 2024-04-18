@@ -88,6 +88,9 @@ namespace Unmanaged.Collections
             return UnsafeList.AddIfUnique(list, item);
         }
 
+        /// <summary>
+        /// Adds a range of default values to the list.
+        /// </summary>
         public readonly void AddDefault(uint count = 1)
         {
             UnsafeList.AddDefault(list, count);
@@ -116,6 +119,9 @@ namespace Unmanaged.Collections
             return UnsafeList.TryIndexOf(list, item, out index);
         }
 
+        /// <summary>
+        /// Checks whether the list contains the given item.
+        /// </summary>
         public readonly bool Contains<V>(V item) where V : unmanaged, IEquatable<V>
         {
             return UnsafeList.Contains(list, item);
