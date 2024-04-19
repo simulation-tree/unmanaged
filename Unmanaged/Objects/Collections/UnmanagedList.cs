@@ -6,49 +6,49 @@ namespace Unmanaged.Collections
 {
     public readonly unsafe struct UnmanagedList<T> : IDisposable, IReadOnlyList<T> where T : unmanaged
     {
-        private readonly UnsafeList* list;
+        private readonly UnsafeList* value;
 
-        public readonly bool IsDisposed => UnsafeList.IsDisposed(list);
-        public readonly uint Count => UnsafeList.GetCount(list);
-        public readonly uint Capacity => UnsafeList.GetCapacity(list);
+        public readonly bool IsDisposed => UnsafeList.IsDisposed(value);
+        public readonly uint Count => UnsafeList.GetCount(value);
+        public readonly uint Capacity => UnsafeList.GetCapacity(value);
 
         public readonly T this[uint index]
         {
-            get => UnsafeList.Get<T>(list, index);
-            set => UnsafeList.Set<T>(list, index, value);
+            get => UnsafeList.Get<T>(value, index);
+            set => UnsafeList.Set<T>(this.value, index, value);
         }
 
-        T IReadOnlyList<T>.this[int index] => UnsafeList.Get<T>(list, (uint)index);
+        T IReadOnlyList<T>.this[int index] => UnsafeList.Get<T>(value, (uint)index);
         int IReadOnlyCollection<T>.Count => (int)Count;
 
         public UnmanagedList()
         {
-            list = UnsafeList.Allocate<T>();
+            value = UnsafeList.Allocate<T>();
         }
 
         internal UnmanagedList(UnsafeList* list)
         {
-            this.list = list;
+            this.value = list;
         }
 
         public UnmanagedList(uint initialCapacity)
         {
-            list = UnsafeList.Allocate<T>(initialCapacity);
+            value = UnsafeList.Allocate<T>(initialCapacity);
         }
 
         public UnmanagedList(Span<T> span)
         {
-            list = UnsafeList.Allocate(span);
+            value = UnsafeList.Allocate(span);
         }
 
         public UnmanagedList(ReadOnlySpan<T> span)
         {
-            list = UnsafeList.Allocate(span);
+            value = UnsafeList.Allocate(span);
         }
 
         public UnmanagedList(IEnumerable<T> list)
         {
-            this.list = UnsafeList.Allocate<T>();
+            this.value = UnsafeList.Allocate<T>();
             foreach (T item in list)
             {
                 Add(item);
@@ -57,7 +57,7 @@ namespace Unmanaged.Collections
 
         public readonly void Dispose()
         {
-            UnsafeList.Dispose(list);
+            UnsafeList.Free(value);
         }
 
         /// <summary>
@@ -65,27 +65,27 @@ namespace Unmanaged.Collections
         /// </summary>
         public readonly Span<T> AsSpan()
         {
-            return UnsafeList.AsSpan<T>(list);
+            return UnsafeList.AsSpan<T>(value);
         }
 
         public readonly Span<T> AsSpan(uint start)
         {
-            return UnsafeList.AsSpan<T>(list, start);
+            return UnsafeList.AsSpan<T>(value, start);
         }
 
         public readonly Span<T> AsSpan(uint start, uint length)
         {
-            return UnsafeList.AsSpan<T>(list, start, length);
+            return UnsafeList.AsSpan<T>(value, start, length);
         }
 
         public readonly void Add(T item)
         {
-            UnsafeList.Add(list, item);
+            UnsafeList.Add(value, item);
         }
 
         public readonly bool AddIfUnique<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeList.AddIfUnique(list, item);
+            return UnsafeList.AddIfUnique(value, item);
         }
 
         /// <summary>
@@ -93,30 +93,22 @@ namespace Unmanaged.Collections
         /// </summary>
         public readonly void AddDefault(uint count = 1)
         {
-            UnsafeList.AddDefault(list, count);
+            UnsafeList.AddDefault(value, count);
         }
 
         public readonly void AddRange(ReadOnlySpan<T> items)
         {
-            UnsafeList.AddRange(list, items);
-        }
-
-        public readonly void AddRange(IEnumerable<T> items)
-        {
-            foreach (T item in items)
-            {
-                Add(item);
-            }
+            UnsafeList.AddRange(value, items);
         }
 
         public readonly uint IndexOf<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeList.IndexOf(list, item);
+            return UnsafeList.IndexOf(value, item);
         }
 
         public readonly bool TryIndexOf<V>(V item, out uint index) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeList.TryIndexOf(list, item, out index);
+            return UnsafeList.TryIndexOf(value, item, out index);
         }
 
         /// <summary>
@@ -124,17 +116,17 @@ namespace Unmanaged.Collections
         /// </summary>
         public readonly bool Contains<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeList.Contains(list, item);
+            return UnsafeList.Contains(value, item);
         }
 
         public readonly uint Remove<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeList.Remove(list, item);
+            return UnsafeList.Remove(value, item);
         }
 
         public readonly void RemoveAt(uint index)
         {
-            UnsafeList.RemoveAt(list, index);
+            UnsafeList.RemoveAt(value, index);
         }
 
         /// <summary>
@@ -142,7 +134,7 @@ namespace Unmanaged.Collections
         /// </summary>
         public readonly void Clear()
         {
-            UnsafeList.Clear(list);
+            UnsafeList.Clear(value);
         }
 
         /// <summary>
@@ -150,37 +142,37 @@ namespace Unmanaged.Collections
         /// </summary>
         public readonly void Clear(uint minimumCapacity)
         {
-            UnsafeList.Clear(list);
-            uint capacity = UnsafeList.GetCapacity(list);
+            UnsafeList.Clear(value);
+            uint capacity = UnsafeList.GetCapacity(value);
             if (capacity < minimumCapacity)
             {
-                UnsafeList.AddDefault(list, minimumCapacity - capacity);
+                UnsafeList.AddDefault(value, minimumCapacity - capacity);
             }
         }
 
         public readonly ref T GetRef(uint index)
         {
-            return ref UnsafeList.GetRef<T>(list, index);
+            return ref UnsafeList.GetRef<T>(value, index);
         }
 
         public readonly override int GetHashCode()
         {
-            return UnsafeList.GetHashCode(list);
+            return UnsafeList.GetHashCode(value);
         }
 
         public readonly int GetContentHashCode()
         {
-            return UnsafeList.GetContentHashCode(list);
+            return UnsafeList.GetContentHashCode(value);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return new Enumerator(list);
+            return new Enumerator(value);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return new Enumerator(list);
+            return new Enumerator(value);
         }
 
         public struct Enumerator(UnsafeList* list) : IEnumerator<T>

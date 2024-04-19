@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
-
     /// <summary>
     /// Represents a <see cref="System.Type"/> object that can be stored inside unmanaged values.
     /// <para>

@@ -12,10 +12,10 @@ namespace Unmanaged.Collections
 
         public UnsafeList()
         {
-            throw new InvalidOperationException("Use UnsafeList.Create() to create an UnsafeList.");
+            throw new InvalidOperationException("Use UnsafeList.Allocate() to create an UnsafeList.");
         }
 
-        public static void Dispose(UnsafeList* list)
+        public static void Free(UnsafeList* list)
         {
             list->items.Dispose();
             Marshal.FreeHGlobal((nint)list);
