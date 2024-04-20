@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Unmanaged.Collections
 {
@@ -8,6 +9,8 @@ namespace Unmanaged.Collections
 
         public readonly uint Count => UnsafeDictionary.GetCount(value);
         public readonly bool IsDisposed => UnsafeDictionary.IsDisposed(value);
+
+        public readonly ref V this[K key] => ref GetRef(key);
 
         public UnmanagedDictionary()
         {
@@ -46,6 +49,31 @@ namespace Unmanaged.Collections
                 value = default;
                 return false;
             }
+        }
+
+        public readonly ref V TryGetValueRef(K key, out bool found)
+        {
+            if (ContainsKey(key))
+            {
+                found = true;
+                return ref GetRef(key);
+            }
+            else
+            {
+                found = false;
+                return ref Unsafe.AsRef<V>(null);
+            }
+        }
+
+        public readonly void Add(K key, V value)
+        {
+            UnsafeDictionary.Add<K, V>(this.value, key, value);
+        }
+
+        public readonly ref V AddRef(K key, V value)
+        {
+            UnsafeDictionary.Add<K, V>(this.value, key, value);
+            return ref GetRef(key);
         }
 
         public readonly void Remove(K key)

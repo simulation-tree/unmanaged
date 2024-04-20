@@ -27,6 +27,9 @@ namespace Unmanaged
 
         public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
+        /// <summary>
+        /// Creates a new buffer initialized with zeros by default.
+        /// </summary>
         public UnmanagedBuffer(uint size, uint length, bool clear = true)
         {
             this.size = size;

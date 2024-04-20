@@ -61,7 +61,7 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Returns the list contents as a span.
+        /// Returns a span for the contents of the list.
         /// </summary>
         public readonly Span<T> AsSpan()
         {

@@ -25,11 +25,20 @@ namespace Unmanaged.Collections
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfSizeMismatch<T>(UnsafeList* list) where T : unmanaged
+        public static void ThrowIfSizeMismatch<T>(UnsafeList* list) where T : unmanaged
         {
             if (list->type.size != sizeof(T))
             {
                 throw new InvalidOperationException("Size mismatch.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        public static void ThrowIfDisposed(UnsafeList* list)
+        {
+            if (list->items.IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(UnsafeList));
             }
         }
 
@@ -195,7 +204,7 @@ namespace Unmanaged.Collections
             int result = span.IndexOf(item);
             if (result == -1)
             {
-                throw new ArgumentException("Item not found", nameof(item));
+                throw new NullReferenceException($"Item {item} not found in list.");
             }
             else return (uint)result;
         }
@@ -282,6 +291,7 @@ namespace Unmanaged.Collections
 
         public static Span<T> AsSpan<T>(UnsafeList* list) where T : unmanaged
         {
+            ThrowIfDisposed(list);
             ThrowIfSizeMismatch<T>(list);
             return list->items.AsSpan<T>(list->count);
         }

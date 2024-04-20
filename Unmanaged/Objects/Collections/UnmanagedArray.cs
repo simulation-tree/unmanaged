@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Unmanaged.Collections
 {
-    public readonly unsafe struct UnmanagedArray<T> : IDisposable, IReadOnlyList<T> where T : unmanaged
+    public readonly unsafe struct UnmanagedArray<T> : IDisposable, IReadOnlyList<T>, IEquatable<UnmanagedArray<T>> where T : unmanaged
     {
         private readonly UnsafeArray* array;
 
@@ -30,6 +30,9 @@ namespace Unmanaged.Collections
             this.array = array;
         }
 
+        /// <summary>
+        /// Creates a new blank array with the specified length.
+        /// </summary>
         public UnmanagedArray(uint length)
         {
             array = UnsafeArray.Allocate<T>(length);
@@ -110,6 +113,27 @@ namespace Unmanaged.Collections
             return new Enumerator(array);
         }
 
+        public override bool Equals(object? obj)
+        {
+            return obj is UnmanagedArray<T> array && Equals(array);
+        }
+
+        public bool Equals(UnmanagedArray<T> other)
+        {
+            if (IsDisposed && other.IsDisposed)
+            {
+                return true;
+            }
+
+            return array == other.array;
+        }
+
+        public override int GetHashCode()
+        {
+            nint ptr = (nint)array;
+            return HashCode.Combine(ptr, 7);
+        }
+
         public struct Enumerator : IEnumerator<T>
         {
             private UnsafeArray* array;
@@ -139,6 +163,16 @@ namespace Unmanaged.Collections
             public void Dispose()
             {
             }
+        }
+
+        public static bool operator ==(UnmanagedArray<T> left, UnmanagedArray<T> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(UnmanagedArray<T> left, UnmanagedArray<T> right)
+        {
+            return !(left == right);
         }
     }
 }
