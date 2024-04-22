@@ -124,6 +124,30 @@ namespace Unmanaged.Collections
             list->items.Set(index, value);
         }
 
+        public static void Insert<T>(UnsafeList* list, uint index, T item) where T : unmanaged
+        {
+            ThrowIfSizeMismatch<T>(list);
+            if (index > list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            if (list->count == list->items.length)
+            {
+                uint newCapacity = list->items.length == 0 ? 1 : list->items.length * 2;
+                UnmanagedBuffer newItems = new(list->type.size, newCapacity);
+                list->items.CopyTo(newItems);
+                list->items.Dispose();
+                list->items = newItems;
+            }
+
+            Span<byte> destination = list->items.AsSpan(index + 1, list->count - index);
+            Span<byte> source = list->items.AsSpan(index, list->count - index);
+            source.CopyTo(destination);
+            list->items.Set(index, item);
+            list->count++;
+        }
+
         public static void Add<T>(UnsafeList* list, T item) where T : unmanaged
         {
             ThrowIfSizeMismatch<T>(list);

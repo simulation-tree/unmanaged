@@ -2,12 +2,12 @@
 
 namespace Tests
 {
-    public class BufferTests
+    public class AllocationTests
     {
         [Test]
         public void CreateDestroyBuffer()
         {
-            UnmanagedBuffer buffer = new(4, sizeof(int), false);
+            UnmanagedBuffer buffer = new(sizeof(int), 1);
             Assert.That(buffer.IsDisposed, Is.False);
             buffer.Dispose();
             Assert.That(buffer.IsDisposed, Is.True);
@@ -16,7 +16,7 @@ namespace Tests
         [Test]
         public void ThrowOnDisposeTwice()
         {
-            UnmanagedBuffer buffer = new(4, sizeof(int));
+            UnmanagedBuffer buffer = new(sizeof(int), 1);
             buffer.Dispose();
             Assert.Throws<ObjectDisposedException>(() => buffer.Dispose());
         }
@@ -24,9 +24,11 @@ namespace Tests
         [Test]
         public void CreateClearBuffer()
         {
-            using UnmanagedBuffer buffer = new(4, sizeof(int));
+            using UnmanagedBuffer buffer = new(sizeof(int), 4);
+            buffer.Clear();
+
             Span<int> bufferSpan = buffer.AsSpan<int>();
-            Assert.That(bufferSpan.Length, Is.EqualTo(buffer.length));
+            Assert.That(bufferSpan.Length, Is.EqualTo(4));
             Assert.That(bufferSpan[0], Is.EqualTo(0));
             Assert.That(bufferSpan[1], Is.EqualTo(0));
             Assert.That(bufferSpan[2], Is.EqualTo(0));
@@ -43,12 +45,13 @@ namespace Tests
         [Test]
         public void ModifyingThroughDifferentInterfaces()
         {
-            using UnmanagedBuffer buffer = new(4, sizeof(int));
+            using UnmanagedBuffer buffer = new(sizeof(int), 1);
             Span<int> bufferSpan = buffer.AsSpan<int>();
-            buffer.Set(0, 5);
+            ref int x = ref buffer.AsSpan<int>()[0];
+            x = 5;
             Assert.That(bufferSpan[0], Is.EqualTo(5));
             bufferSpan[0] *= 2;
-            Assert.That(buffer.Get<int>(0), Is.EqualTo(10));
+            Assert.That(buffer.AsSpan<int>()[0], Is.EqualTo(10));
         }
     }
 }

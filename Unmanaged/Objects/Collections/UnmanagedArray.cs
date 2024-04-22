@@ -55,6 +55,11 @@ namespace Unmanaged.Collections
             UnsafeArray.Dispose(array);
         }
 
+        public readonly void Clear()
+        {
+            AsSpan().Clear();
+        }
+
         /// <summary>
         /// Returns the span for the array.
         /// </summary>
