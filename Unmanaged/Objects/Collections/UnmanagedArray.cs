@@ -103,6 +103,11 @@ namespace Unmanaged.Collections
             UnsafeArray.Set<T>(array, index, value);
         }
 
+        public readonly void CopyTo(Span<T> span)
+        {
+            AsSpan().CopyTo(span);
+        }
+
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             return new Enumerator(array);
