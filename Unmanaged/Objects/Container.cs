@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// A general container of unmanaged data types that must be disposed.
+    /// Unmanaged container of generic data.
     /// </summary>
     public readonly struct Container : IDisposable, IEquatable<Container>
     {
@@ -15,23 +15,9 @@ namespace Unmanaged
         /// </summary>
         public readonly RuntimeType type;
 
-        public readonly nint pointer;
+        private readonly nint pointer;
 
-        public readonly bool IsDisposed
-        {
-            get
-            {
-                try
-                {
-                    Allocations.ThrowIfNull(pointer);
-                    return false;
-                }
-                catch
-                {
-                    return true;
-                }
-            }
-        }
+        public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
         public Container()
         {
@@ -47,7 +33,6 @@ namespace Unmanaged
         public readonly void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
-
             Marshal.FreeHGlobal(pointer);
             Allocations.Unregister(pointer);
         }
