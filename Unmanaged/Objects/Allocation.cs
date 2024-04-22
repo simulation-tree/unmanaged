@@ -72,5 +72,22 @@ namespace Unmanaged
             Span<byte> span = AsSpan<byte>();
             span.Clear();
         }
+
+        /// <summary>
+        /// Copies contents of this allocation into the destination.
+        /// </summary>
+        public readonly void CopyTo(Allocation destination)
+        {
+            Allocations.ThrowIfNull(pointer);
+            Allocations.ThrowIfNull(destination.pointer);
+            if (destination.length < length)
+            {
+                throw new ArgumentException("Destination is too small.", nameof(destination));
+            }
+
+            Span<byte> sourceSpan = AsSpan<byte>();
+            Span<byte> destinationSpan = destination.AsSpan<byte>();
+            sourceSpan.CopyTo(destinationSpan);
+        }
     }
 }
