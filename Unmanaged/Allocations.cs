@@ -12,6 +12,7 @@ namespace Unmanaged
     {
         private static readonly Dictionary<nint, StackTrace> allocations = [];
         private static readonly HashSet<nint> instances = [];
+        private static readonly HashSet<nint> everDisposed = [];
         private static readonly Dictionary<nint, StackTrace> disposals = [];
 
         /// <summary>
@@ -67,36 +68,35 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         public static void Register(nint pointer)
         {
-            foreach (nint existingInstance in instances)
+            if (instances.Add(pointer))
             {
-                if (existingInstance.Equals(pointer))
+                StackTrace stackTrace = new(1, true);
+                instances.Add(pointer);
+                allocations[pointer] = stackTrace;
+            }
+            else
+            {
+                if (allocations.TryGetValue(pointer, out StackTrace? previousStackTrace))
                 {
-                    if (allocations.TryGetValue(pointer, out StackTrace? previousStackTrace))
-                    {
-                        throw new InvalidOperationException($"Pointer {pointer} has already been allocated from:\n{previousStackTrace}.");
-                    }
+                    throw new InvalidOperationException($"Pointer {pointer} has already been allocated from:\n{previousStackTrace}.");
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Pointer {pointer} has already been allocated.");
                 }
             }
-
-            StackTrace stackTrace = new(1, true);
-            instances.Add(pointer);
-            allocations[pointer] = stackTrace;
         }
 
         [Conditional("DEBUG")]
         public static void Unregister(nint pointer)
         {
-            bool found = false;
-            foreach (nint existingInstance in instances)
+            if (instances.Remove(pointer))
             {
-                if (existingInstance.Equals(pointer))
-                {
-                    found = true;
-                    break;
-                }
+                everDisposed.Add(pointer);
+                StackTrace stackTrace = new(1, true);
+                disposals[pointer] = stackTrace;
             }
-
-            if (!found)
+            else
             {
                 foreach ((nint disposedInstance, StackTrace disposedStackTrace) in disposals)
                 {
@@ -108,37 +108,19 @@ namespace Unmanaged
 
                 throw new NullReferenceException($"Pointer {pointer} has never been registered.");
             }
-
-            instances.Remove(pointer);
-            StackTrace stackTrace = new(1, true);
-            disposals[pointer] = stackTrace;
         }
 
 #if DEBUG
         public static bool IsNull(nint pointer)
         {
-            foreach (nint existingInstance in instances)
+            if (instances.Contains(pointer))
             {
-                if (existingInstance.Equals(pointer))
-                {
-                    return false;
-                }
+                return false;
             }
 
-            foreach ((nint disposedInstance, StackTrace stackTrace) in disposals)
+            if (everDisposed.Contains(pointer))
             {
-                if (disposedInstance.Equals(pointer))
-                {
-                    return true;
-                }
-            }
-
-            foreach ((nint allocatedInstance, _) in allocations)
-            {
-                if (allocatedInstance.Equals(pointer))
-                {
-                    return false;
-                }
+                return true;
             }
 
             return true;

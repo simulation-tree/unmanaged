@@ -125,5 +125,36 @@ namespace Tests
             Assert.That(list.Contains(3), Is.True);
             Assert.That(list.Contains(5), Is.False);
         }
+
+        [Test]
+        public void ClearListThenAdd()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            list.Clear();
+            Assert.That(list.Count, Is.EqualTo(0));
+            list.Add(5);
+            Assert.That(list[0], Is.EqualTo(5));
+            Assert.That(list.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void BuildListThenCopyToSpan()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            Span<int> span = stackalloc int[4];
+            list.CopyTo(span);
+            Assert.That(span[0], Is.EqualTo(1));
+            Assert.That(span[1], Is.EqualTo(2));
+            Assert.That(span[2], Is.EqualTo(3));
+            Assert.That(span[3], Is.EqualTo(4));
+        }
     }
 }

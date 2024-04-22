@@ -9,7 +9,7 @@ namespace Unmanaged.Collections
         private readonly UnsafeArray* array;
 
         public readonly bool IsDisposed => UnsafeArray.IsDisposed(array);
-        public readonly uint Length => array->Length;
+        public readonly uint Length => UnsafeArray.GetLength(array);
 
         public readonly T this[uint index]
         {
@@ -17,7 +17,7 @@ namespace Unmanaged.Collections
             set => UnsafeArray.Set<T>(array, index, value);
         }
 
-        int IReadOnlyCollection<T>.Count => (int)array->Length;
+        int IReadOnlyCollection<T>.Count => (int)Length;
         T IReadOnlyList<T>.this[int index] => UnsafeArray.GetRef<T>(array, (uint)index);
 
         public UnmanagedArray()
@@ -52,7 +52,7 @@ namespace Unmanaged.Collections
 
         public readonly void Dispose()
         {
-            UnsafeArray.Dispose(array);
+            UnsafeArray.Free(array);
         }
 
         public readonly void Clear()
@@ -66,16 +66,6 @@ namespace Unmanaged.Collections
         public readonly Span<T> AsSpan()
         {
             return UnsafeArray.AsSpan<T>(array);
-        }
-
-        /// <summary>
-        /// Returns the array as a span of a different type, length may
-        /// be different.
-        /// </summary>
-        public readonly Span<V> AsSpan<V>() where V : unmanaged
-        {
-            uint length = (uint)(array->Length * sizeof(T) / sizeof(V));
-            return UnsafeArray.AsSpan<V>(array, length);
         }
 
         public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
@@ -162,7 +152,7 @@ namespace Unmanaged.Collections
             public bool MoveNext()
             {
                 index++;
-                return index < array->Length;
+                return index < UnsafeArray.GetLength(array);
             }
 
             public void Reset()

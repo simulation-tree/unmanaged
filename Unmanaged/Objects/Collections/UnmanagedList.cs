@@ -170,6 +170,11 @@ namespace Unmanaged.Collections
             return UnsafeList.GetContentHashCode(value);
         }
 
+        public readonly void CopyTo(Span<T> destination)
+        {
+            AsSpan().CopyTo(destination);
+        }
+
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             return new Enumerator(value);

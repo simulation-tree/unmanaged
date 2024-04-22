@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
@@ -8,39 +7,27 @@ namespace Unmanaged.Collections
     public unsafe struct UnsafeArray
     {
         private RuntimeType type;
-        private UnmanagedBuffer items;
-
-        public readonly uint Length => items.length;
+        private Allocation items;
 
         public UnsafeArray()
         {
             throw new InvalidOperationException("Use UnsafeArray.Create() instead.");
         }
 
-        public static void Dispose(UnsafeArray* array)
+        public static void Free(UnsafeArray* array)
         {
-            ThrowIfNull(array);
-
             array->items.Dispose();
             Marshal.FreeHGlobal((nint)array);
-            array->type = default;
-            array->items = default;
         }
 
         public static bool IsDisposed(UnsafeArray* array)
         {
-            ThrowIfNull(array);
-
             return array->items.IsDisposed;
         }
 
-        [Conditional("DEBUG")]
-        private static void ThrowIfNull(UnsafeArray* array)
+        public static uint GetLength(UnsafeArray* array)
         {
-            if (array is null)
-            {
-                throw new InvalidOperationException("UnsafeArray is null.");
-            }
+            return array->items.length / array->type.size;
         }
 
         public static UnsafeArray* Allocate<T>(uint length) where T : unmanaged
@@ -49,7 +36,8 @@ namespace Unmanaged.Collections
             nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;
-            array->items = new(type.size, length);
+            array->items = new(type.size * length);
+            array->items.Clear();
             return array;
         }
 
@@ -58,7 +46,8 @@ namespace Unmanaged.Collections
             nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;
-            array->items = new(type.size, length);
+            array->items = new(type.size * length);
+            array->items.Clear();
             return array;
         }
 
@@ -68,7 +57,7 @@ namespace Unmanaged.Collections
             nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;
-            array->items = new(type.size, (uint)span.Length, false);
+            array->items = new(type.size * (uint)span.Length);
             span.CopyTo(array->items.AsSpan<T>());
             return array;
         }
@@ -79,11 +68,12 @@ namespace Unmanaged.Collections
             nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;
-            array->items = new(type.size, (uint)values.Count);
-            uint index = 0;
+            array->items = new(type.size * (uint)values.Count);
+            Span<T> span = array->items.AsSpan<T>();
+            int i = 0;
             foreach (T value in values)
             {
-                array->items.Set(index++, value);
+                span[i++] = value;
             }
 
             return array;
@@ -91,73 +81,72 @@ namespace Unmanaged.Collections
 
         public static ref T GetRef<T>(UnsafeArray* array, uint index) where T : unmanaged
         {
-            ThrowIfNull(array);
-
-            return ref array->items.GetRef<T>(index);
+            Span<T> span = array->items.AsSpan<T>();
+            return ref span[(int)index];
         }
 
         public static T Get<T>(UnsafeArray* array, uint index) where T : unmanaged
         {
-            ThrowIfNull(array);
-
-            return array->items.Get<T>(index);
+            Span<T> span = array->items.AsSpan<T>();
+            return span[(int)index];
         }
 
         public static void Set<T>(UnsafeArray* array, uint index, T value) where T : unmanaged
         {
-            ThrowIfNull(array);
-
-            array->items.Set(index, value);
+            Span<T> span = array->items.AsSpan<T>();
+            span[(int)index] = value;
         }
 
         public static Span<T> AsSpan<T>(UnsafeArray* array) where T : unmanaged
         {
-            ThrowIfNull(array);
-
             return array->items.AsSpan<T>();
-        }
-
-        public static Span<T> AsSpan<T>(UnsafeArray* array, uint length) where T : unmanaged
-        {
-            ThrowIfNull(array);
-
-            return array->items.AsSpan<T>(length);
         }
 
         public static Span<T> AsSpan<T>(UnsafeArray* array, uint start, uint length) where T : unmanaged
         {
-            ThrowIfNull(array);
-
             return array->items.AsSpan<T>(start, length);
         }
 
         public static uint IndexOf<T>(UnsafeArray* array, T value) where T : unmanaged, IEquatable<T>
         {
-            ThrowIfNull(array);
+            Span<T> span = array->items.AsSpan<T>();
+            int i = span.IndexOf(value);
+            if (i == -1)
+            {
+                throw new NullReferenceException("Item not found.");
+            }
 
-            return array->items.IndexOf(value);
+            return (uint)i;
         }
 
         public static bool TryIndexOf<T>(UnsafeArray* array, T value, out uint index) where T : unmanaged, IEquatable<T>
         {
-            ThrowIfNull(array);
-
-            return array->items.TryIndexOf(value, out index);
+            Span<T> span = array->items.AsSpan<T>();
+            int i = span.IndexOf(value);
+            if (i == -1)
+            {
+                index = 0;
+                return false;
+            }
+            else
+            {
+                index = (uint)i;
+                return true;
+            }
         }
 
         public static bool Contains<T>(UnsafeArray* array, T value) where T : unmanaged, IEquatable<T>
         {
-            ThrowIfNull(array);
-
-            return array->items.Contains(value);
+            Span<T> span = array->items.AsSpan<T>();
+            return span.Contains(value);
         }
 
         public static void CopyTo(UnsafeArray* source, uint sourceIndex, UnsafeArray* destination, uint destinationIndex)
         {
-            ThrowIfNull(source);
-            ThrowIfNull(destination);
-
-            source->items.CopyTo(sourceIndex, destination->items, destinationIndex);
+            uint elementSize = source->type.size;
+            Span<byte> sourceSpan = source->items.AsSpan<byte>(sourceIndex * elementSize, elementSize);
+            Span<byte> destinationSpan = destination->items.AsSpan<byte>(destinationIndex * elementSize, elementSize);
+            sourceSpan.CopyTo(destinationSpan);
         }
     }
 }
