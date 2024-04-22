@@ -22,7 +22,7 @@ namespace Unmanaged.Collections
 
         public UnmanagedArray()
         {
-            throw new InvalidOperationException("UnmanagedArray cannot be created without a length.");
+            array = UnsafeArray.Allocate<T>(0);
         }
 
         internal UnmanagedArray(UnsafeArray* array)
