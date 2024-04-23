@@ -49,7 +49,7 @@ namespace Tests
         }
 
         [Test]
-        public void AccessDefaultAllocation()
+        public void AccessBadInstance()
         {
             Allocation obj = default;
             Assert.Throws<NullReferenceException>(() => { obj.Dispose(); });

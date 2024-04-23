@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
@@ -61,6 +62,17 @@ namespace Unmanaged
 
             T* items = (T*)pointer;
             return new Span<T>(items + start, (int)length);
+        }
+
+        public readonly ref T AsRef<T>() where T : unmanaged
+        {
+            Allocations.ThrowIfNull(pointer);
+            if (length < sizeof(T))
+            {
+                throw new ArgumentException("Expected size is larger than the actual size.", nameof(T));
+            }
+
+            return ref Unsafe.AsRef<T>((void*)pointer);
         }
 
         /// <summary>

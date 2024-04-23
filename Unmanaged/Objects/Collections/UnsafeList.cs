@@ -275,6 +275,18 @@ namespace Unmanaged.Collections
             list->count--;
         }
 
+        public static void RemoveAt<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
+        {
+            if (index >= list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            Span<T> span = list->items.AsSpan<T>();
+            removed = span[(int)index];
+            RemoveAt(list, index);
+        }
+
         public static int GetHashCode(UnsafeList* list)
         {
             unchecked
