@@ -229,6 +229,23 @@ namespace Unmanaged
             return buffer.LastIndexOf(value);
         }
 
+        public readonly unsafe FixedString Substring(int start)
+        {
+            return Substring(start, length - start);
+        }
+
+        public readonly unsafe FixedString Substring(int start, int length)
+        {
+            if (start + length > this.length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(start));
+            }
+
+            Span<char> buffer = stackalloc char[length];
+            CopyTo(buffer, start, length);
+            return new FixedString(buffer);
+        }
+
         public readonly bool Contains(char value)
         {
             return IndexOf(value) != -1;
