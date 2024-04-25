@@ -148,5 +148,13 @@ namespace Unmanaged.Collections
             Span<byte> destinationSpan = destination->items.AsSpan<byte>(destinationIndex * elementSize, elementSize);
             sourceSpan.CopyTo(destinationSpan);
         }
+
+        public static void Resize(UnsafeArray* array, uint length)
+        {
+            Allocation oldItems = array->items;
+            array->items = new(array->type.size * length);
+            oldItems.CopyTo(0, Math.Min(oldItems.length, array->items.length), array->items, 0, array->items.length);
+            oldItems.Dispose();
+        }
     }
 }

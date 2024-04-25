@@ -341,11 +341,6 @@ namespace Unmanaged.Collections
             return list->items.AsSpan<T>(start, length);
         }
 
-        public static UnmanagedList<T> AsList<T>(UnsafeList* list) where T : unmanaged
-        {
-            return new UnmanagedList<T>(list);
-        }
-
         public static bool IsDisposed(UnsafeList* list)
         {
             return list->items.IsDisposed;

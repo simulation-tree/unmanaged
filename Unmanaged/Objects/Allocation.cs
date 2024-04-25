@@ -9,6 +9,9 @@ namespace Unmanaged
     /// </summary>
     public readonly unsafe struct Allocation : IDisposable
     {
+        /// <summary>
+        /// Size of the allocation in bytes.
+        /// </summary>
         public readonly uint length;
 
         private readonly nint pointer;
@@ -88,18 +91,34 @@ namespace Unmanaged
         /// <summary>
         /// Copies contents of this allocation into the destination.
         /// </summary>
-        public readonly void CopyTo(Allocation destination)
+        public readonly void CopyTo(uint sourceIndex, uint sourceLength, Allocation destination, uint destinationIndex, uint destinationLength)
         {
             Allocations.ThrowIfNull(pointer);
             Allocations.ThrowIfNull(destination.pointer);
-            if (destination.length < length)
+            if (sourceIndex + sourceLength > length)
             {
-                throw new ArgumentException("Destination is too small.", nameof(destination));
+                throw new ArgumentOutOfRangeException(nameof(sourceLength));
             }
 
-            Span<byte> sourceSpan = AsSpan<byte>();
-            Span<byte> destinationSpan = destination.AsSpan<byte>();
+            if (destinationIndex + destinationLength > destination.length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(destinationLength));
+            }
+
+            Span<byte> sourceSpan = AsSpan<byte>(sourceIndex, sourceLength);
+            Span<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, destinationLength);
             sourceSpan.CopyTo(destinationSpan);
+        }
+
+        /// <summary>
+        /// Copies bytes from this allocation into the destination.
+        /// <para>
+        /// Copy length is size of the destination.
+        /// </para>
+        /// </summary>
+        public readonly void CopyTo(Allocation destination)
+        {
+            CopyTo(0, Math.Min(length, destination.length), destination, 0, destination.length);
         }
     }
 }

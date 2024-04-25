@@ -28,6 +28,19 @@ namespace Tests
         }
 
         [Test]
+        public void ResizeArray()
+        {
+            using UnmanagedArray<int> array = new(4);
+            array.Resize(8);
+            Assert.That(array.Length, Is.EqualTo(8));
+
+            array[array.Length - 1] = 1;
+
+            array.Resize(4);
+            Assert.That(array.Length, Is.EqualTo(4));
+        }
+
+        [Test]
         public void ListOfStrings()
         {
             using UnmanagedList<FixedString> list = new();
@@ -155,6 +168,29 @@ namespace Tests
             Assert.That(span[1], Is.EqualTo(2));
             Assert.That(span[2], Is.EqualTo(3));
             Assert.That(span[3], Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ListInsideArray()
+        {
+            UnmanagedArray<UnmanagedList<byte>> nestedData = new(8);
+            for (uint i = 0; i < 8; i++)
+            {
+                ref UnmanagedList<byte> list = ref nestedData.GetRef(i);
+                list = new();
+                list.Add((byte)i);
+            }
+
+            for (uint i = 0; i < 8; i++)
+            {
+                UnmanagedList<byte> list = nestedData[i];
+                Assert.That(list[0], Is.EqualTo((byte)i));
+
+                list.Dispose();
+            }
+
+            nestedData.Dispose();
+            Assert.That(Allocations.Any, Is.False);
         }
     }
 }

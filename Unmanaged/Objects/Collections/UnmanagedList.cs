@@ -26,7 +26,7 @@ namespace Unmanaged.Collections
             value = UnsafeList.Allocate<T>();
         }
 
-        internal UnmanagedList(UnsafeList* list)
+        public UnmanagedList(UnsafeList* list)
         {
             this.value = list;
         }
@@ -135,7 +135,7 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Clears the list of all elements, making count 0.
+        /// Clears the list so that it's count becomes 0.
         /// </summary>
         public readonly void Clear()
         {

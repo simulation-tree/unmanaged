@@ -16,7 +16,7 @@ namespace Tests
         [Test]
         public void CheckDefault()
         {
-            Allocation obj = new(sizeof(long));
+            using Allocation obj = new(sizeof(long));
             Assert.That(obj.IsDisposed, Is.False);
 
             Span<byte> data = obj.AsSpan<byte>();

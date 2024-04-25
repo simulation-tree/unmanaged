@@ -55,6 +55,9 @@ namespace Unmanaged.Collections
             UnsafeArray.Free(array);
         }
 
+        /// <summary>
+        /// Resets all elements in the array to 0.
+        /// </summary>
         public readonly void Clear()
         {
             AsSpan().Clear();
@@ -81,6 +84,11 @@ namespace Unmanaged.Collections
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
         {
             return UnsafeArray.Contains(array, value);
+        }
+
+        public readonly void Resize(uint length)
+        {
+            UnsafeArray.Resize(array, length);
         }
 
         public readonly ref T GetRef(uint index)
