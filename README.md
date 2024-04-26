@@ -1,24 +1,29 @@
 
 # Unmanaged
-Library containing unmanaged objects and definitions implemented using unsafe code.
+Library containing some commonly used definitions, implemented using unsafe code.
 
-### Safety
-Handling of `null` references is already done by the types in this library when compiling with
-the `#DEBUG` compiler flag. If compiling with release settings, these checks are dropped,
-good to check for red flags ahead of time in case there is code that can leak state or drift it.
-
-The `Allocations` class is used to track pointers, and also for throwing when something bad happens:
+### Safety and Allocations
+The `Allocation` type acts as the root component that other types use, it implements handling of `null`
+and disposed references, but only when compiling with the `#DEBUG` compiler flag. They differ from regular
+class objects in that they need to be disposed manually and aren't watched by the garbage collector:
 ```cs
-public readonly void Dispose()
-{
-    Allocations.ThrowIfNull(pointer);
-    Marshal.FreeHGlobal(pointer);
-    Allocations.Unregister(pointer);
-}
+using Allocation allocation = new(sizeof(uint));
+Span<uint> span = allocation.AsSpan<uint>();
+span[0] = 5;
+ref uint value = ref allocation.AsRef<uint>();
+Span<byte> allocationBytes = allocation.AsSpan<byte>();
 ```
 
+If allocations are still present when the current domain exits (app closes), an exception will be thrown
+to notify of all the allocations that weren't disposed, and from where they were created.
+
 ### Collections
-Only basic arrays and lists are available, as `UnmanagedList<T>` and `UnmanagedArray<T>`:
+A few collection types are available:
+- Lists
+- Arrays
+- Dictionaries (wip)
+- Hash sets (wip)
+- Linked lists (wip)
 ```cs
 using UnmanagedList<int> list = new();
 list.Add(5);
@@ -26,17 +31,16 @@ Span<int> listSpan = list.AsSpan();
 ```
 
 ### Runtime Type
-A value type that can be used inside other value types, intended to be unmanaged as well.
-Their determinism is tied to the name of the type, so if name is fixed then hash is also fixed.
-A limitation is that they can't be created for class types, and can't be created from a `Type` object
-either, only through the generic `Get<T>()` method.
+This is an unmanaged compatible type that replaces `System.Type`, but it requires that the type it's
+representing is also an unmanaged type:
 ```cs
 RuntimeType type = RuntimeType.Get<int>();
 string fullName = type.Type.FullName;
 ```
 
 ### Containers
-For storing an arbitrary object with the type known:
+Similar to the `Allocation` type, but with a type associated with it in order to safely contain
+a value of that type:
 ```cs
 using Container myFloat = Container.Create(5f);
 RuntimeType type = myFloat.type;
@@ -44,13 +48,16 @@ float floatValue = myFloat.As<float>();
 ```
 
 ### Fixed String
-A value type that represents a string of fixed length. It can contain up to 290 characters,
-each 7-bit, all inside 256 bytes of memory:
+A common scenario in C# with unsafe code is the inability to store a `string` inside structure.
+This type mimics a string of fixed length, but it only can contain up to 290 characters each 7-bit (ASCII):
 ```cs
 FixedString str = new("Hello World");
 Span<char> strSpan = stackalloc char[str.Length];
 str.CopyTo(strSpan);
 ```
+
+These can't be marshalled or treated as UTF8 strings, so they must be copied into span buffers when
+the more common `string` type is needed.
 
 ### Random Generator
 An object that can generate random data using the XORshift technique:
@@ -59,13 +66,9 @@ using RandomGenerator random = new();
 int value = random.NextInt();
 ```
 
-### Unmanaged Buffer
-This is used by the list and array types in order to represent a region of memory that
-behaves like a sequence, where it can be indexed and has a fixed size:
-```cs
-string str = "Hello World";
-using UnsafeBuffer buffer = new(sizeof(char), str.Length);
-Span<char> bufferSpan = buffer.AsSpan<char>();
-str.CopyTo(bufferSpan);
-Span<byte> bufferBytes = buffer.AsSpan<byte>();
-```
+### Contributing and Direction
+This library is developed as a module to provide the fundamental pieces that `System` would
+for other projects, but with unsafe code. Commonly putting the user in a position where they
+need to excerise more absolute control over their data, at the benefit of efficiency.
+
+Contributions to this are welcome.
