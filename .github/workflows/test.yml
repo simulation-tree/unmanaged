@@ -16,13 +16,13 @@ jobs:
           dotnet-version: '9.0.x'
           
       - name: Restore
-        run: dotnet restore Unmanaged/Unmanaged.csproj
+        run: dotnet restore "Unmanaged/Unmanaged.csproj"
 
       - name: Build
-        run: dotnet build Unmanaged/Unmanaged.csproj
+        run: dotnet build "Unmanaged/Unmanaged.csproj"
 
       - name: Test
-        run: dotnet test Tests/Tests.csproj --logger trx --results-directory "TestResults/" --collect:"XPlat Code Coverage"
+        run: dotnet test "Unmanaged Tests/Tests.csproj" --logger trx --results-directory "Unmanaged Tests/TestResults/" --collect:"XPlat Code Coverage"
         
       - name: Report
         uses: actions/upload-artifact@v4
