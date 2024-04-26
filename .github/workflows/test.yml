@@ -22,7 +22,7 @@ jobs:
         run: dotnet build "Unmanaged/Unmanaged.csproj"
 
       - name: Test
-        run: dotnet test "Unmanaged Tests/Tests.csproj" --logger trx --results-directory "Unmanaged Tests/TestResults/" --collect:"XPlat Code Coverage"
+        run: dotnet test "Unmanaged Tests/Unmanaged Tests.csproj" --logger trx --results-directory "Unmanaged Tests/TestResults/" --collect:"XPlat Code Coverage"
         
       - name: Report
         uses: actions/upload-artifact@v4
