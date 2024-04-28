@@ -92,6 +92,14 @@ namespace Tests
         }
 
         [Test]
+        public void Substring()
+        {
+            FixedString a = "Hello World!";
+            FixedString b = a.Substring(6);
+            Assert.That(b.ToString(), Is.EqualTo("World!"));
+        }
+
+        [Test]
         public void HittingTheLimit()
         {
             FixedString a = default;

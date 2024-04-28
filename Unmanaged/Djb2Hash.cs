@@ -14,6 +14,7 @@ namespace Unmanaged
         public static int GetDjb2HashCode<T>(ReadOnlySpan<T> span) where T : notnull
         {
             //djb2 implementation from CommunityToolkit.HighPerformance/SpanHelper.Hash.cs
+            //todo: this could be xor hash instead, and shorter
             ref T first = ref MemoryMarshal.GetReference(span);
             nint length = (nint)(uint)span.Length;
             int hash = 5381;

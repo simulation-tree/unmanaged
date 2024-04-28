@@ -22,11 +22,12 @@ namespace Tests
         }
 
         [Test]
-        public void TypeAsUInt()
+        public void TypeAsNumValue()
         {
             RuntimeType a = RuntimeType.Get<bool>();
             uint aRaw = a.AsRawValue();
             RuntimeType b = new(aRaw);
+            Assert.That(a.Is<bool>(), Is.True);
             Assert.That(a, Is.EqualTo(b));
         }
 

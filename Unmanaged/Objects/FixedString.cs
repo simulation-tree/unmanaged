@@ -12,17 +12,19 @@ namespace Unmanaged
     /// Able to contain up to 290 characters within 256 bytes (7 bits per character).
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = Size)]
-    public struct FixedString : IEquatable<FixedString>, IEnumerable<char>
+    public unsafe struct FixedString : IEquatable<FixedString>, IEnumerable<char>
     {
         public const int Size = 256;
         public const int MaxCharValue = 128;
+
+        private static readonly char[] chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
         /// <summary>
         /// Maximum amount of <see cref="char"/> that can fit inside.
         /// </summary>
         public const int MaxLength = (int)((Size - 2f) / 7 * 8);
 
-        private unsafe fixed byte data[Size - 2];
+        private fixed byte data[Size - 2];
         private ushort length;
 
         /// <summary>
@@ -45,7 +47,7 @@ namespace Unmanaged
         /// <summary>
         /// Access the character at the index.
         /// </summary>
-        public unsafe char this[int index]
+        public char this[int index]
         {
             readonly get
             {
@@ -105,7 +107,7 @@ namespace Unmanaged
             Read(path);
         }
 
-        public unsafe FixedString(sbyte* value)
+        public FixedString(sbyte* value)
         {
             this = FromUTF8Bytes(new ReadOnlySpan<byte>(value, Size));
         }
@@ -113,7 +115,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a fixed string from UTF8 encoded bytes.
         /// </summary>
-        public unsafe FixedString(ReadOnlySpan<byte> bytes)
+        public FixedString(ReadOnlySpan<byte> bytes)
         {
             if (bytes.Length > MaxLength)
             {
@@ -125,7 +127,7 @@ namespace Unmanaged
             Read(buffer[..length]);
         }
 
-        private unsafe void Read(ReadOnlySpan<char> text)
+        private void Read(ReadOnlySpan<char> text)
         {
             length = (ushort)text.Length;
             if (length > MaxLength)
@@ -154,7 +156,7 @@ namespace Unmanaged
             }
         }
 
-        public unsafe void Append(ReadOnlySpan<char> text)
+        public void Append(ReadOnlySpan<char> text)
         {
             ushort newLength = (ushort)(text.Length + length);
             if (newLength > MaxLength)
@@ -168,7 +170,7 @@ namespace Unmanaged
             Read(buffer);
         }
 
-        public unsafe void Append(char value)
+        public void Append(char value)
         {
             if (length + 1 > MaxLength)
             {
@@ -285,31 +287,17 @@ namespace Unmanaged
             return Djb2Hash.GetDjb2HashCode(temp);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Copies the contents into the destination buffer.
+        /// </summary>
         public readonly unsafe void CopyTo(Span<char> buffer)
         {
-            CopyTo(buffer, 0, length);
-        }
-
-        /// <inheritdoc/>
-        public readonly unsafe void CopyTo(Span<char> buffer, int start, int length)
-        {
-            if (buffer.Length < length)
-            {
-                throw new ArgumentException("Buffer is too small.", nameof(buffer));
-            }
-
-            if (start < 0 || start + length > this.length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(start));
-            }
-
             int outputIndex = 0;
             ulong temp = 0;
             int bitsCollected = 0;
             for (int i = 0; i < length; i++)
             {
-                byte b = data[i + start];
+                byte b = data[i];
                 temp |= (ulong)b << bitsCollected;
                 bitsCollected += 8;
 
@@ -325,6 +313,24 @@ namespace Unmanaged
                     }
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public readonly unsafe void CopyTo(Span<char> buffer, int start, int length)
+        {
+            if (buffer.Length < length)
+            {
+                throw new ArgumentException("Buffer is too small.", nameof(buffer));
+            }
+
+            if (start < 0 || start + length > this.length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(start));
+            }
+
+            Span<char> temp = stackalloc char[this.length];
+            CopyTo(temp);
+            temp.Slice(start, length).CopyTo(buffer);
         }
 
         /// <inheritdoc/>
