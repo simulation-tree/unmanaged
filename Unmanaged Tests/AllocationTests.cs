@@ -14,6 +14,23 @@ namespace Tests
         }
 
         [Test]
+        public void AllocateAndFree()
+        {
+            nint pointer = 1337;
+            Allocations.Register(pointer);
+            Allocations.Unregister(pointer);
+            Assert.Throws<ObjectDisposedException>(() => { Allocations.Unregister(pointer); });
+            Assert.That(Allocations.IsNull(pointer), Is.True);
+        }
+
+        [Test]
+        public void ThrowNeverAllocatedPointer()
+        {
+            nint pointer = Guid.NewGuid().GetHashCode();
+            Assert.Throws<NullReferenceException>(() => { Allocations.Unregister(pointer); });
+        }
+
+        [Test]
         public void CreateAndDestroy()
         {
             Allocation obj = new(sizeof(int));
