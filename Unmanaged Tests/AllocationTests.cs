@@ -5,6 +5,15 @@ namespace Tests
     public class AllocationTests
     {
         [Test]
+        public void DefaultSizelessAllocation()
+        {
+            Allocation allocation = new();
+            Assert.That(allocation.IsDisposed, Is.False);
+            Assert.That(allocation.length, Is.EqualTo(0));
+            allocation.Dispose();
+        }
+
+        [Test]
         public void CreateAndDestroy()
         {
             Allocation obj = new(sizeof(int));
@@ -49,10 +58,46 @@ namespace Tests
         }
 
         [Test]
-        public void AccessBadInstance()
+        public void AccessDefaultInstanceError()
         {
             Allocation obj = default;
             Assert.Throws<NullReferenceException>(() => { obj.Dispose(); });
+        }
+
+        [Test]
+        public void AccessSpanOutOfBoundsError()
+        {
+            using Allocation obj = new(sizeof(int));
+            Assert.Throws<IndexOutOfRangeException>(() => { obj.AsSpan<int>()[1] = 5; });
+            Assert.Throws<IndexOutOfRangeException>(() => { obj.AsSpan<int>()[-1] = 5; });
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+            {
+                Span<byte> bufferSpan = obj.AsSpan<byte>(0, 5);
+            });
+        }
+
+        [Test]
+        public void CheckAllocationsForDebugging()
+        {
+            Allocation a = new(sizeof(int));
+            Allocation b = new(sizeof(int));
+            Allocation c = new(sizeof(int));
+
+            Assert.That(Allocations.Any, Is.True);
+            Assert.That(Allocations.All.Count(), Is.EqualTo(3));
+
+            a.Dispose();
+            b.Dispose();
+            c.Dispose();
+
+            Assert.That(Allocations.Any, Is.False);
+        }
+
+        [Test]
+        public void ReadWithTypeOfDifferentSizeError()
+        {
+            using Allocation obj = new(sizeof(int));
+            Assert.Throws<InvalidCastException>(() => { obj.AsRef<long>(); });
         }
 
         [Test]

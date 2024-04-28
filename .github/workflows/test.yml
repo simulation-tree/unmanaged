@@ -10,23 +10,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4.1.2
       
-      - name: Setup
-        uses: actions/setup-dotnet@v3
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
           
-      - name: Restore
-        run: dotnet restore "Unmanaged/Unmanaged.csproj"
+      - name: Install tools
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
 
-      - name: Build
-        run: dotnet build "Unmanaged/Unmanaged.csproj"
+      - name: Test project
+        run: dotnet test "Unmanaged Tests" --collect:"XPlat Code Coverage" --results-directory:"TestResults"
 
-      - name: Test
-        run: dotnet test "Unmanaged Tests/Unmanaged Tests.csproj" --logger trx --results-directory "Unmanaged Tests/TestResults/" --collect:"XPlat Code Coverage"
+      - name: Generate HTML report from test results
+        if: always()
+        run: reportgenerator -reports:"*/TestResults/*/*.xml" -reporttypes:html -targetdir:"TestResults/html"
         
-      - name: Report
+      - name: Upload HTML report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: dotnet-results-${{ matrix.dotnet-version }}
-          path: TestResults-${{ matrix.dotnet-version }}
+          name: Test Results
+          path: "TestResults/html"

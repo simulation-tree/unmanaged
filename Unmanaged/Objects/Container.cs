@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// Unmanaged container of generic data.
+    /// Unmanaged container of data.
     /// </summary>
     public readonly struct Container : IDisposable, IEquatable<Container>
     {
@@ -46,10 +46,10 @@ namespace Unmanaged
             }
         }
 
-        public unsafe readonly ReadOnlySpan<byte> AsSpan()
+        public unsafe readonly Span<byte> AsSpan()
         {
             Allocations.ThrowIfNull(pointer);
-            return new ReadOnlySpan<byte>((void*)pointer, type.size);
+            return new Span<byte>((void*)pointer, type.size);
         }
 
         public unsafe readonly ref T AsRef<T>() where T : unmanaged
@@ -76,7 +76,7 @@ namespace Unmanaged
                 return true;
             }
 
-            return pointer.Equals(other.pointer);
+            return AsSpan().SequenceEqual(other.AsSpan());
         }
 
         public readonly override int GetHashCode()

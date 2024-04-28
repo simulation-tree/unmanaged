@@ -32,13 +32,7 @@ namespace Unmanaged.Collections
 
         public static UnsafeArray* Allocate<T>(uint length) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
-            nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
-            UnsafeArray* array = (UnsafeArray*)arrayPointer;
-            array->type = type;
-            array->items = new(type.size * length);
-            array->items.Clear();
-            return array;
+            return Allocate(RuntimeType.Get<T>(), length);
         }
 
         public static UnsafeArray* Allocate(RuntimeType type, uint length)
@@ -53,23 +47,15 @@ namespace Unmanaged.Collections
 
         public static UnsafeArray* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
-            nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
-            UnsafeArray* array = (UnsafeArray*)arrayPointer;
-            array->type = type;
-            array->items = new(type.size * (uint)span.Length);
+            UnsafeArray* array = Allocate<T>((uint)span.Length);
             span.CopyTo(array->items.AsSpan<T>());
             return array;
         }
 
         public static UnsafeArray* Allocate<T>(IReadOnlyCollection<T> values) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
-            nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
-            UnsafeArray* array = (UnsafeArray*)arrayPointer;
-            array->type = type;
-            array->items = new(type.size * (uint)values.Count);
-            Span<T> span = array->items.AsSpan<T>();
+            UnsafeArray* array = Allocate<T>((uint)values.Count);
+            Span<T> span = AsSpan<T>(array);
             int i = 0;
             foreach (T value in values)
             {
@@ -81,19 +67,19 @@ namespace Unmanaged.Collections
 
         public static ref T GetRef<T>(UnsafeArray* array, uint index) where T : unmanaged
         {
-            Span<T> span = array->items.AsSpan<T>();
+            Span<T> span = AsSpan<T>(array);
             return ref span[(int)index];
         }
 
         public static T Get<T>(UnsafeArray* array, uint index) where T : unmanaged
         {
-            Span<T> span = array->items.AsSpan<T>();
+            Span<T> span = AsSpan<T>(array);
             return span[(int)index];
         }
 
         public static void Set<T>(UnsafeArray* array, uint index, T value) where T : unmanaged
         {
-            Span<T> span = array->items.AsSpan<T>();
+            Span<T> span = AsSpan<T>(array);
             span[(int)index] = value;
         }
 
@@ -109,7 +95,7 @@ namespace Unmanaged.Collections
 
         public static uint IndexOf<T>(UnsafeArray* array, T value) where T : unmanaged, IEquatable<T>
         {
-            Span<T> span = array->items.AsSpan<T>();
+            Span<T> span = AsSpan<T>(array);
             int i = span.IndexOf(value);
             if (i == -1)
             {
@@ -121,7 +107,7 @@ namespace Unmanaged.Collections
 
         public static bool TryIndexOf<T>(UnsafeArray* array, T value, out uint index) where T : unmanaged, IEquatable<T>
         {
-            Span<T> span = array->items.AsSpan<T>();
+            Span<T> span = AsSpan<T>(array);
             int i = span.IndexOf(value);
             if (i == -1)
             {
@@ -137,7 +123,7 @@ namespace Unmanaged.Collections
 
         public static bool Contains<T>(UnsafeArray* array, T value) where T : unmanaged, IEquatable<T>
         {
-            Span<T> span = array->items.AsSpan<T>();
+            Span<T> span = AsSpan<T>(array);
             return span.Contains(value);
         }
 

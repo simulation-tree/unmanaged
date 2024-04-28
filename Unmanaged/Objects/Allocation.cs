@@ -72,7 +72,7 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             if (length < sizeof(T))
             {
-                throw new ArgumentException("Expected size is larger than the actual size.", nameof(T));
+                throw new InvalidCastException("Expected type isn't large enough to contain the bytes in the allocation");
             }
 
             return ref Unsafe.AsRef<T>((void*)pointer);
@@ -95,16 +95,6 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             Allocations.ThrowIfNull(destination.pointer);
-            if (sourceIndex + sourceLength > length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(sourceLength));
-            }
-
-            if (destinationIndex + destinationLength > destination.length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(destinationLength));
-            }
-
             Span<byte> sourceSpan = AsSpan<byte>(sourceIndex, sourceLength);
             Span<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, destinationLength);
             sourceSpan.CopyTo(destinationSpan);

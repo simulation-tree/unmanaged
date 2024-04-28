@@ -306,7 +306,7 @@ namespace Unmanaged.Collections
                 int hash = 17;
                 hash = hash * 23 + list->type.GetHashCode();
                 hash = hash * 23 + list->count.GetHashCode();
-                hash = hash * 23 + Djb2.GetDjb2HashCode(list->items.AsSpan<byte>());
+                hash = hash * 23 + Djb2Hash.GetDjb2HashCode(list->items.AsSpan<byte>());
                 return hash;
             }
         }

@@ -4,23 +4,16 @@ using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
-    public static class Djb2
+    public static class Djb2Hash
     {
-        //djb2 implementation from CommunityToolkit.HighPerformance/SpanHelper.Hash.cs
         public static int GetDjb2HashCode(string? str)
         {
-            if (str is null)
-            {
-                return 5381;
-            }
-            else
-            {
-                return GetDjb2HashCode(str.AsSpan());
-            }
+            return GetDjb2HashCode((str ?? string.Empty).AsSpan());
         }
 
         public static int GetDjb2HashCode<T>(ReadOnlySpan<T> span) where T : notnull
         {
+            //djb2 implementation from CommunityToolkit.HighPerformance/SpanHelper.Hash.cs
             ref T first = ref MemoryMarshal.GetReference(span);
             nint length = (nint)(uint)span.Length;
             int hash = 5381;

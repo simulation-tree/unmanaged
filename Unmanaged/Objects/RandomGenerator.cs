@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Unmanaged
 {
-    public readonly struct RandomGenerator : IDisposable
+    public readonly unsafe struct RandomGenerator : IDisposable
     {
         private readonly nint pointer;
 
@@ -14,7 +14,7 @@ namespace Unmanaged
         /// Initialized state is based on current state of the environment.
         /// </para>
         /// </summary>
-        public unsafe RandomGenerator()
+        public RandomGenerator()
         {
             unchecked
             {
@@ -33,6 +33,7 @@ namespace Unmanaged
 
                 pointer = Marshal.AllocHGlobal(sizeof(ulong));
                 Allocations.Register(pointer);
+                seed += (ulong)pointer.GetHashCode();
 
                 ulong* t = (ulong*)pointer;
                 *t = seed;
@@ -42,70 +43,38 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new disposable randomness generator.
         /// </summary>
-        public unsafe RandomGenerator(ulong seed)
+        public RandomGenerator(ulong seed)
         {
             pointer = Marshal.AllocHGlobal(sizeof(ulong));
             Allocations.Register(pointer);
-
             ulong* t = (ulong*)pointer;
-            *t = seed;
+            *t = seed + (ulong)pointer.GetHashCode();
         }
 
         /// <summary>
         /// Creates a new disposable randomness generator using the given byte
         /// sequence as the initialization seed.
         /// </summary>
-        public unsafe RandomGenerator(ReadOnlySpan<byte> seed)
+        public RandomGenerator(ReadOnlySpan<byte> seed) : this((ulong)Djb2Hash.GetDjb2HashCode(seed))
         {
-            pointer = Marshal.AllocHGlobal(sizeof(ulong));
-            Allocations.Register(pointer);
-
-            unchecked
-            {
-                ulong seedValue = 0;
-                for (int i = 0; i < seed.Length; i++)
-                {
-                    seedValue = (seedValue * 73567352) + seed[i];
-                }
-
-                ulong* t = (ulong*)pointer;
-                *t = seedValue;
-            }
         }
 
         /// <summary>
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
-        public unsafe RandomGenerator(ReadOnlySpan<char> seed)
+        public RandomGenerator(ReadOnlySpan<char> seed) : this((ulong)Djb2Hash.GetDjb2HashCode(seed))
         {
-            pointer = Marshal.AllocHGlobal(sizeof(ulong));
-            Allocations.Register(pointer);
-
-            unchecked
-            {
-                Span<byte> bytesBuffer = stackalloc byte[Encoding.UTF8.GetMaxByteCount(seed.Length)];
-                int bytesWritten = Encoding.UTF8.GetBytes(seed, bytesBuffer);
-                ulong seedValue = 0;
-                for (int i = 0; i < bytesWritten; i++)
-                {
-                    seedValue = (seedValue * 73567352) + bytesBuffer[i];
-                }
-
-                ulong* t = (ulong*)pointer;
-                *t = seedValue;
-            }
         }
 
         public readonly void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
-
             Allocations.Unregister(pointer);
             Marshal.FreeHGlobal(pointer);
         }
 
-        public unsafe readonly ulong NextULong()
+        public readonly ulong NextULong()
         {
             ulong* t = (ulong*)pointer;
             *t ^= *t >> 13;
@@ -114,13 +83,18 @@ namespace Unmanaged
             return *t;
         }
 
-        public unsafe readonly uint NextUInt()
+        public readonly uint NextUInt()
         {
             ulong* t = (ulong*)pointer;
             *t ^= *t << 13;
             *t ^= *t >> 17;
             *t ^= *t << 5;
             return (uint)*t;
+        }
+
+        public readonly bool NextBool()
+        {
+            return NextUInt() == 1;
         }
 
         public readonly ulong NextULong(ulong max)
@@ -183,8 +157,8 @@ namespace Unmanaged
 
         public readonly float NextFloat()
         {
-            const float max = 1 << 24;
-            return NextUInt(0, (uint)max) / max;
+            uint value = NextUInt();
+            return value / (float)uint.MaxValue;
         }
 
         public readonly float NextFloat(float max)
@@ -201,8 +175,8 @@ namespace Unmanaged
 
         public readonly double NextDouble()
         {
-            const double max = 1L << 53;
-            return NextULong(0, (ulong)max) / max;
+            ulong value = NextULong();
+            return value / (double)ulong.MaxValue;
         }
 
         public readonly double NextDouble(double max)
@@ -217,17 +191,19 @@ namespace Unmanaged
             return value + min;
         }
 
-        public readonly bool NextBool()
-        {
-            return NextUInt() % 2 == 0;
-        }
-
         public readonly void NextBytes(Span<byte> bytes)
         {
+            ulong* t = (ulong*)pointer;
+            ulong value = *t;
             for (int i = 0; i < bytes.Length; i++)
             {
-                bytes[i] = (byte)NextUInt(byte.MinValue, byte.MaxValue);
+                value ^= value >> 13;
+                value ^= value << 7;
+                value ^= value >> 17;
+                bytes[i] = (byte)value;
             }
+
+            *t = value;
         }
     }
 }

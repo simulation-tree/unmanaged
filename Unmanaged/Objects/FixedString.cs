@@ -282,7 +282,7 @@ namespace Unmanaged
         {
             Span<char> temp = stackalloc char[length];
             CopyTo(temp);
-            return Djb2.GetDjb2HashCode(temp);
+            return Djb2Hash.GetDjb2HashCode(temp);
         }
 
         /// <inheritdoc/>
