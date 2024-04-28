@@ -47,6 +47,9 @@ RuntimeType type = myFloat.type;
 float floatValue = myFloat.As<float>();
 ```
 
+The equality operation between two containers, compare the bytes of the two values rather than the
+address of the pointer like with `Allocation` types.
+
 ### Fixed String
 A common scenario in C# with unsafe code is the inability to store a `string` inside structure.
 This type mimics a string of fixed length, but it only can contain up to 290 characters each 7-bit (ASCII):
