@@ -21,6 +21,9 @@ jobs:
       - name: Navigate to test folder
         run: cd "Unmanaged Tests"
 
+      - name: List directory
+        run: ls
+
       - name: Test project
         run: dotnet test --collect:"XPlat Code Coverage" --results-directory:"TestResults"
 
