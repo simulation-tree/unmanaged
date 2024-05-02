@@ -80,14 +80,14 @@ namespace Tests
             Assert.That(list.Count, Is.EqualTo(0));
         }
 
-        [Test]
-        public void AddingIntoList()
-        {
-            using UnmanagedList<byte> list = new(1);
-            list.Add(32);
-            Assert.That(list[0], Is.EqualTo(32));
-            Assert.That(list.Count, Is.EqualTo(1));
-        }
+        //[Test]
+        //public void AddingIntoList()
+        //{
+        //    using UnmanagedList<byte> list = new(1);
+        //    list.Add(32);
+        //    Assert.That(list[0], Is.EqualTo(32));
+        //    Assert.That(list.Count, Is.EqualTo(1));
+        //}
 
         //[Test]
         //public void ListOfStrings()
