@@ -45,6 +45,11 @@ jobs:
         with:
           name: Crash Dumps
           if-no-files-found: ignore
-          path: |
-            "*/TestResults/*/*.dmp"
-            "*/TestResults/*/Sequence_*.xml"
+          path: "*/TestResults/*/*.dmp"
+    
+      - name: Upload test sequence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Test Sequence
+          path: "*/TestResults/*/Sequence_*.xml"
