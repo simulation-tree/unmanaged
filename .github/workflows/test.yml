@@ -26,7 +26,7 @@ jobs:
         run: ls
 
       - name: Test project
-        run: dotnet test --collect:"XPlat Code Coverage" --results-directory:"TestResults" --blame --blame-crash --blame-crash-dump-type full
+        run: dotnet test --collect:"XPlat Code Coverage" --results-directory:"TestResults" --blame --blame-crash --blame-crash-dump-type full --diag
 
       - name: Generate HTML report from test results
         if: always()
@@ -44,4 +44,6 @@ jobs:
         if: always()
         with:
           name: Crash Dumps
-          path: "*/TestResults/*/*.dmp"
+          path: |
+            "*/TestResults/*/*.dmp"
+            "*/TestResults/*/Sequence_*.xml"
