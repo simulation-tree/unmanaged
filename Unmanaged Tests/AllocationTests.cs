@@ -17,6 +17,23 @@ namespace Tests
         }
 
         [Test]
+        public void WriteMultipleValues()
+        {
+            using Allocation allocation = new(sizeof(uint) * 4);
+            allocation.Write(0, 5);
+            allocation.Write(1, 15);
+            allocation.Write(2, 25);
+            allocation.Write(3, 50);
+
+            Span<uint> bufferSpan = allocation.AsSpan<uint>();
+            Assert.That(bufferSpan.Length, Is.EqualTo(4));
+            Assert.That(bufferSpan[0], Is.EqualTo(5));
+            Assert.That(bufferSpan[1], Is.EqualTo(15));
+            Assert.That(bufferSpan[2], Is.EqualTo(25));
+            Assert.That(bufferSpan[3], Is.EqualTo(50));
+        }
+
+        [Test]
         public void AllocateAndFree()
         {
             nint pointer = 1337;
@@ -94,6 +111,8 @@ namespace Tests
             {
                 Span<byte> bufferSpan = obj.AsSpan<byte>(0, 5);
             });
+
+            Span<byte> okBuffer = obj.AsSpan<byte>(0, 4);
         }
 
         [Test]

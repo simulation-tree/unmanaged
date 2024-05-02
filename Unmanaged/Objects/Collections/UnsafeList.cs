@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
@@ -144,8 +145,7 @@ namespace Unmanaged.Collections
             Span<byte> destination = list->items.AsSpan<byte>((index + 1) * elementSize, (list->count - index) * elementSize);
             Span<byte> source = list->items.AsSpan<byte>(index * elementSize, (list->count - index) * elementSize);
             source.CopyTo(destination);
-            Span<byte> itemBytes = list->items.AsSpan<byte>(index * elementSize, elementSize);
-            MemoryMarshal.Write(itemBytes, item);
+            list->items.Write(index * elementSize, item);
             list->count++;
         }
 
@@ -162,8 +162,7 @@ namespace Unmanaged.Collections
                 list->items = newItems;
             }
 
-            Span<byte> itemBytes = list->items.AsSpan<byte>(list->count * elementSize, elementSize);
-            MemoryMarshal.Write(itemBytes, item);
+            list->items.Write(list->count * elementSize, item);
             list->count++;
         }
 
@@ -186,8 +185,7 @@ namespace Unmanaged.Collections
                 list->items = newItems;
             }
 
-            Span<byte> itemBytes = list->items.AsSpan<byte>(list->count * elementSize, elementSize);
-            MemoryMarshal.Write(itemBytes, item);
+            list->items.Write(list->count * elementSize, item);
             list->count++;
             return true;
         }

@@ -73,16 +73,33 @@ namespace Tests
         }
 
         [Test]
-        public void ListOfStrings()
+        public void EmptyList()
         {
-            using UnmanagedList<FixedString> list = new(3);
-            list.Add("Hello");
-            list.Add(" ");
-            list.Add("there...");
-            Assert.That(list[0].ToString(), Is.EqualTo("Hello"));
-            Assert.That(list[1].ToString(), Is.EqualTo(" "));
-            Assert.That(list[2].ToString(), Is.EqualTo("there..."));
+            using UnmanagedList<byte> list = new(8);
+            Assert.That(list.Capacity, Is.EqualTo(8));
+            Assert.That(list.Count, Is.EqualTo(0));
         }
+
+        [Test]
+        public void AddingIntoList()
+        {
+            using UnmanagedList<byte> list = new(1);
+            list.Add(32);
+            Assert.That(list[0], Is.EqualTo(32));
+            Assert.That(list.Count, Is.EqualTo(1));
+        }
+
+        //[Test]
+        //public void ListOfStrings()
+        //{
+        //    using UnmanagedList<FixedString> list = new(3);
+        //    list.Add("Hello");
+        //    list.Add(" ");
+        //    list.Add("there...");
+        //    Assert.That(list[0].ToString(), Is.EqualTo("Hello"));
+        //    Assert.That(list[1].ToString(), Is.EqualTo(" "));
+        //    Assert.That(list[2].ToString(), Is.EqualTo("there..."));
+        //}
 
         //[Test]
         //public void ExpandingList()

@@ -39,11 +39,20 @@ namespace Unmanaged
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfLengthIsZero(uint value)
+        private void ThrowIfLengthIsZero(uint value)
         {
             if (value == 0)
             {
                 throw new InvalidOperationException("Allocation length cannot be zero.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private void ThrowIfOutOfRange(uint index)
+        {
+            if (index > length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
         }
 
@@ -57,6 +66,15 @@ namespace Unmanaged
             Allocations.Unregister(pointer);
         }
 
+        public readonly void Write<T>(uint start, T value) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(pointer);
+            uint elementSize = (uint)sizeof(T);
+            uint byteStart = start * elementSize;
+            ThrowIfOutOfRange(byteStart + elementSize);
+            Unsafe.Write((void*)(pointer + byteStart), value);
+        }
+
         public readonly Span<T> AsSpan<T>() where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
@@ -67,11 +85,8 @@ namespace Unmanaged
         public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            if ((start + length) * sizeof(T) > this.length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(length));
-            }
-
+            uint endIndex = (uint)((start + length) * sizeof(T));
+            ThrowIfOutOfRange(endIndex);
             T* items = (T*)pointer;
             return new Span<T>(items + start, (int)length);
         }
@@ -79,10 +94,12 @@ namespace Unmanaged
         public readonly ref T AsRef<T>() where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+#if DEBUG
             if (length < sizeof(T))
             {
                 throw new InvalidCastException("Expected type isn't large enough to contain the bytes in the allocation");
             }
+#endif
 
             return ref Unsafe.AsRef<T>((void*)pointer);
         }
