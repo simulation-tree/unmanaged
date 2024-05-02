@@ -28,7 +28,6 @@ namespace Unmanaged.Collections
         {
             list->items.Dispose();
             NativeMemory.Free(list);
-            list->count = 0;
         }
 
         public static UnsafeList* Allocate<T>(uint initialCapacity = 1) where T : unmanaged
@@ -48,8 +47,7 @@ namespace Unmanaged.Collections
 
         public static UnsafeList* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
-            UnsafeList* list = Allocate(type, (uint)span.Length);
+            UnsafeList* list = Allocate<T>((uint)span.Length);
             list->count = (uint)span.Length;
             Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);

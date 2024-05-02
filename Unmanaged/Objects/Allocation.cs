@@ -8,7 +8,7 @@ namespace Unmanaged
     /// <summary>
     /// Unmanaged allocation.
     /// </summary>
-    public readonly unsafe struct Allocation : IDisposable
+    public readonly unsafe struct Allocation : IDisposable, IEquatable<Allocation>
     {
         /// <summary>
         /// Size of the allocation in bytes.
@@ -24,7 +24,9 @@ namespace Unmanaged
 
         public Allocation()
         {
-            throw new InvalidOperationException("Sizeless allocation is not allowed.");
+            this.length = 0;
+            pointer = (nint)NativeMemory.Alloc(0);
+            Allocations.Register(pointer);
         }
 
         /// <summary>
@@ -32,19 +34,9 @@ namespace Unmanaged
         /// </summary>
         public Allocation(uint length)
         {
-            ThrowIfLengthIsZero(length);
             this.length = length;
             pointer = (nint)NativeMemory.Alloc(length);
             Allocations.Register(pointer);
-        }
-
-        [Conditional("DEBUG")]
-        private void ThrowIfLengthIsZero(uint value)
-        {
-            if (value == 0)
-            {
-                //throw new InvalidOperationException("Allocation length cannot be zero.");
-            }
         }
 
         [Conditional("DEBUG")]
@@ -110,8 +102,7 @@ namespace Unmanaged
         public readonly void Clear()
         {
             Allocations.ThrowIfNull(pointer);
-            Span<byte> span = AsSpan<byte>();
-            span.Clear();
+            NativeMemory.Clear((void*)pointer, length);
         }
 
         /// <summary>
@@ -135,6 +126,36 @@ namespace Unmanaged
         public readonly void CopyTo(Allocation destination)
         {
             CopyTo(0, Math.Min(length, destination.length), destination, 0, destination.length);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Allocation allocation && Equals(allocation);
+        }
+
+        public bool Equals(Allocation other)
+        {
+            if (IsDisposed && other.IsDisposed)
+            {
+                return true;
+            }
+
+            return pointer.Equals(other.pointer);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(pointer);
+        }
+
+        public static bool operator ==(Allocation left, Allocation right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Allocation left, Allocation right)
+        {
+            return !(left == right);
         }
     }
 }
