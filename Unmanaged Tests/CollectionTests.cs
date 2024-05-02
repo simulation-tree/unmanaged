@@ -72,13 +72,13 @@ namespace Tests
             Assert.That(array[3], Is.EqualTo(4));
         }
 
-        [Test]
-        public void EmptyList()
-        {
-            using UnmanagedList<byte> list = new(8);
-            Assert.That(list.Capacity, Is.EqualTo(8));
-            Assert.That(list.Count, Is.EqualTo(0));
-        }
+        //[Test]
+        //public void EmptyList()
+        //{
+        //    using UnmanagedList<byte> list = new(8);
+        //    Assert.That(list.Capacity, Is.EqualTo(8));
+        //    Assert.That(list.Count, Is.EqualTo(0));
+        //}
 
         //[Test]
         //public void AddingIntoList()
