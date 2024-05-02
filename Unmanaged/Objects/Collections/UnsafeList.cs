@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
@@ -36,7 +35,10 @@ namespace Unmanaged.Collections
         {
             ThrowIfLengthIsZero(initialCapacity);
             RuntimeType type = RuntimeType.Get<T>();
+            Console.WriteLine(type.size);
+            Console.WriteLine(type);
             UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
+            Console.WriteLine((nint)list);
             list->type = type;
             list->count = 0;
             list->items = new(type.size * initialCapacity);

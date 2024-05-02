@@ -45,5 +45,5 @@ jobs:
         with:
           name: Crash Dumps
           path: |
-            "*/TestResults/*/*.dmp"
+            "*/*.dmp"
             "*/TestResults/*/Sequence_*.xml"
