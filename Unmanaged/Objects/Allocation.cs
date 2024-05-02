@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -16,16 +17,14 @@ namespace Unmanaged
 
         private readonly nint pointer;
 
+        /// <summary>
+        /// Has this allocation been disposed? Also counts for instances that weren't allocated.
+        /// </summary>
         public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
-        /// <summary>
-        /// Creates a new uninitialized allocation.
-        /// </summary>
         public Allocation()
         {
-            length = 0;
-            pointer = Marshal.AllocHGlobal(0);
-            Allocations.Register(pointer);
+            throw new InvalidOperationException("Sizeless allocation is not allowed.");
         }
 
         /// <summary>
@@ -33,9 +32,19 @@ namespace Unmanaged
         /// </summary>
         public Allocation(uint length)
         {
+            ThrowIfLengthIsZero(length);
             this.length = length;
             pointer = Marshal.AllocHGlobal((int)length);
             Allocations.Register(pointer);
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfLengthIsZero(uint value)
+        {
+            if (value == 0)
+            {
+                throw new InvalidOperationException("Allocation length cannot be zero.");
+            }
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
@@ -12,6 +13,15 @@ namespace Unmanaged.Collections
         public UnsafeArray()
         {
             throw new InvalidOperationException("Use UnsafeArray.Create() instead.");
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfLengthIsZero(uint value)
+        {
+            if (value == 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value));
+            }
         }
 
         public static void Free(UnsafeArray* array)
@@ -37,6 +47,7 @@ namespace Unmanaged.Collections
 
         public static UnsafeArray* Allocate(RuntimeType type, uint length)
         {
+            ThrowIfLengthIsZero(length);
             nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;

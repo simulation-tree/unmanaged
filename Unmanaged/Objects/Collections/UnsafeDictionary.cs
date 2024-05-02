@@ -53,7 +53,7 @@ namespace Unmanaged.Collections
             return dictionary->count;
         }
 
-        public static UnsafeDictionary* Allocate<K, V>(uint initialCapacity = 0) where K : unmanaged, IEquatable<K> where V : unmanaged
+        public static UnsafeDictionary* Allocate<K, V>(uint initialCapacity = 1) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
             RuntimeType type = RuntimeType.Get<K>();
             nint dictionaryPointer = Marshal.AllocHGlobal(sizeof(UnsafeDictionary));
@@ -66,7 +66,7 @@ namespace Unmanaged.Collections
             return dictionary;
         }
 
-        public static UnsafeDictionary* Allocate(RuntimeType keyType, RuntimeType valueType, uint initialCapacity = 0)
+        public static UnsafeDictionary* Allocate(RuntimeType keyType, RuntimeType valueType, uint initialCapacity = 1)
         {
             nint dictionaryPointer = Marshal.AllocHGlobal(sizeof(UnsafeDictionary));
             UnsafeDictionary* dictionary = (UnsafeDictionary*)dictionaryPointer;

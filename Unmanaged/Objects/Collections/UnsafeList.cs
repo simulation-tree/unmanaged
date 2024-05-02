@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
@@ -14,6 +15,15 @@ namespace Unmanaged.Collections
             throw new InvalidOperationException("Use UnsafeList.Allocate() to create an UnsafeList.");
         }
 
+        [Conditional("DEBUG")]
+        private static void ThrowIfLengthIsZero(uint value)
+        {
+            if (value == 0)
+            {
+                throw new InvalidOperationException("Allocation capacity cannot be zero.");
+            }
+        }
+
         public static void Free(UnsafeList* list)
         {
             list->items.Dispose();
@@ -21,8 +31,9 @@ namespace Unmanaged.Collections
             list->count = 0;
         }
 
-        public static UnsafeList* Allocate<T>(uint initialCapacity = 0) where T : unmanaged
+        public static UnsafeList* Allocate<T>(uint initialCapacity = 1) where T : unmanaged
         {
+            ThrowIfLengthIsZero(initialCapacity);
             RuntimeType type = RuntimeType.Get<T>();
             UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
             list->type = type;
@@ -31,8 +42,9 @@ namespace Unmanaged.Collections
             return list;
         }
 
-        public static UnsafeList* Allocate(RuntimeType type, uint initialCapacity = 0)
+        public static UnsafeList* Allocate(RuntimeType type, uint initialCapacity = 1)
         {
+            ThrowIfLengthIsZero(initialCapacity);
             UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
             list->type = type;
             list->count = 0;

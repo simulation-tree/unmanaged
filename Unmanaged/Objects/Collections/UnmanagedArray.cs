@@ -22,7 +22,7 @@ namespace Unmanaged.Collections
 
         public UnmanagedArray()
         {
-            array = UnsafeArray.Allocate<T>(0);
+            throw new InvalidOperationException("Sizeless allocation is not allowed.");
         }
 
         internal UnmanagedArray(UnsafeArray* array)

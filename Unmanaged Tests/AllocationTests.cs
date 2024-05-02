@@ -7,10 +7,13 @@ namespace Tests
         [Test]
         public void DefaultSizelessAllocation()
         {
-            Allocation allocation = new();
-            Assert.That(allocation.IsDisposed, Is.False);
-            Assert.That(allocation.length, Is.EqualTo(0));
-            allocation.Dispose();
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                Allocation allocation = new();
+                Assert.That(allocation.IsDisposed, Is.False);
+                Assert.That(allocation.length, Is.EqualTo(0));
+                allocation.Dispose();
+            });
         }
 
         [Test]
