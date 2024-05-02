@@ -43,7 +43,7 @@ namespace Unmanaged
         {
             if (value == 0)
             {
-                throw new InvalidOperationException("Allocation length cannot be zero.");
+                //throw new InvalidOperationException("Allocation length cannot be zero.");
             }
         }
 

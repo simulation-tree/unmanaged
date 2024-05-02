@@ -138,7 +138,7 @@ namespace Unmanaged.Collections
             Span<byte> destination = list->items.AsSpan<byte>((index + 1) * elementSize, (list->count - index) * elementSize);
             Span<byte> source = list->items.AsSpan<byte>(index * elementSize, (list->count - index) * elementSize);
             source.CopyTo(destination);
-            list->items.Write(index * elementSize, item);
+            list->items.Write(index, item);
             list->count++;
         }
 
@@ -155,7 +155,7 @@ namespace Unmanaged.Collections
                 list->items = newItems;
             }
 
-            list->items.Write(list->count * elementSize, item);
+            list->items.Write(list->count, item);
             list->count++;
         }
 
@@ -178,7 +178,7 @@ namespace Unmanaged.Collections
                 list->items = newItems;
             }
 
-            list->items.Write(list->count * elementSize, item);
+            list->items.Write(list->count, item);
             list->count++;
             return true;
         }

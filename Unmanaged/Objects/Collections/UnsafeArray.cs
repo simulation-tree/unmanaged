@@ -20,7 +20,7 @@ namespace Unmanaged.Collections
         {
             if (value == 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(value));
+                //throw new ArgumentOutOfRangeException(nameof(value));
             }
         }
 
