@@ -35,10 +35,10 @@ namespace Unmanaged.Collections
         {
             ThrowIfLengthIsZero(initialCapacity);
             RuntimeType type = RuntimeType.Get<T>();
-            Console.WriteLine(type.size);
-            Console.WriteLine(type);
+            Debug.WriteLine(type.size);
+            Debug.WriteLine(type);
             UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
-            Console.WriteLine((nint)list);
+            Debug.WriteLine((nint)list);
             list->type = type;
             list->count = 0;
             list->items = new(type.size * initialCapacity);
