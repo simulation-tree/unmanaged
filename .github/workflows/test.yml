@@ -44,4 +44,4 @@ jobs:
         if: always()
         with:
           name: Crash Dumps
-          path: "TestResults/*.dmp"
+          path: "TestResults/*/*.dmp"
