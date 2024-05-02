@@ -1,5 +1,4 @@
-﻿using Unmanaged;
-using Unmanaged.Collections;
+﻿using Unmanaged.Collections;
 
 namespace Tests
 {
@@ -29,20 +28,20 @@ namespace Tests
             using UnmanagedArray<int> array = new(span);
             Assert.That(array.Length, Is.EqualTo(8));
         }
-        
+
         [Test]
         public void ResizeArray()
         {
             using UnmanagedArray<int> array = new(4);
             array.Resize(8);
             Assert.That(array.Length, Is.EqualTo(8));
-        
+
             array[array.Length - 1] = 1;
-        
+
             array.Resize(4);
             Assert.That(array.Length, Is.EqualTo(4));
         }
-        
+
         [Test]
         public void ClearingArray()
         {
@@ -57,7 +56,7 @@ namespace Tests
             Assert.That(array[2], Is.EqualTo(0));
             Assert.That(array[3], Is.EqualTo(0));
         }
-        
+
         [Test]
         public void IndexingArray()
         {
