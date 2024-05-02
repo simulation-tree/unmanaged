@@ -300,18 +300,6 @@ namespace Unmanaged.Collections
             RemoveAt(list, index);
         }
 
-        public static int GetHashCode(UnsafeList* list)
-        {
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 23 + list->type.GetHashCode();
-                hash = hash * 23 + list->count.GetHashCode();
-                hash = hash * 23 + list->items.GetHashCode();
-                return hash;
-            }
-        }
-
         public static int GetContentHashCode(UnsafeList* list)
         {
             unchecked

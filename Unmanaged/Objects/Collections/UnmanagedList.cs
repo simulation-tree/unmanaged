@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Unmanaged.Collections
 {
-    public readonly unsafe struct UnmanagedList<T> : IDisposable, IReadOnlyList<T> where T : unmanaged
+    public readonly unsafe struct UnmanagedList<T> : IDisposable, IReadOnlyList<T>, IEquatable<UnmanagedList<T>> where T : unmanaged
     {
         private readonly UnsafeList* value;
 
@@ -162,7 +163,8 @@ namespace Unmanaged.Collections
 
         public readonly override int GetHashCode()
         {
-            return UnsafeList.GetHashCode(value);
+            nint ptr = (nint)value;
+            return HashCode.Combine(ptr, 7);
         }
 
         public readonly int GetContentHashCode()
@@ -185,14 +187,29 @@ namespace Unmanaged.Collections
             return new Enumerator(value);
         }
 
+        public bool Equals(UnmanagedList<T> other)
+        {
+            if (IsDisposed && other.IsDisposed)
+            {
+                return true;
+            }
+
+            return value == other.value;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is UnmanagedList<T> list && Equals(list);
+        }
+
         public struct Enumerator(UnsafeList* list) : IEnumerator<T>
         {
-            private UnsafeList* list = list;
+            private readonly UnsafeList* list = list;
             private int index = -1;
 
-            public T Current => UnsafeList.Get<T>(list, (uint)index);
+            public readonly T Current => UnsafeList.Get<T>(list, (uint)index);
 
-            object IEnumerator.Current => UnsafeList.Get<T>(list, (uint)index);
+            readonly object IEnumerator.Current => UnsafeList.Get<T>(list, (uint)index);
 
             public bool MoveNext()
             {
@@ -208,6 +225,16 @@ namespace Unmanaged.Collections
             public void Dispose()
             {
             }
+        }
+
+        public static bool operator ==(UnmanagedList<T> left, UnmanagedList<T> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(UnmanagedList<T> left, UnmanagedList<T> right)
+        {
+            return !left.Equals(right);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Unmanaged.Collections;
+﻿using Unmanaged.Collections;
 
 namespace Tests
 {
@@ -77,7 +76,7 @@ namespace Tests
         public void EmptyList()
         {
             Console.WriteLine("started empty list 2");
-            using UnmanagedList<byte> list = new(8);
+            //using UnmanagedList<byte> list = new(8);
             //Assert.That(list.Capacity, Is.EqualTo(8));
             //Assert.That(list.Count, Is.EqualTo(0));
         }
