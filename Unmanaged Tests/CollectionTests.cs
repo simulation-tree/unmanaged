@@ -73,8 +73,10 @@ namespace Tests
         }
 
         [Test]
-        public void EmptyList()
+        public unsafe void EmptyList()
         {
+            UnsafeList* list = UnsafeList.Allocate<byte>(4);
+            UnsafeList.Free(list);
             Console.WriteLine("started empty list 2");
             //using UnmanagedList<byte> list = new(8);
             //Assert.That(list.Capacity, Is.EqualTo(8));
