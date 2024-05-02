@@ -27,7 +27,7 @@ namespace Unmanaged.Collections
         public static void Free(UnsafeArray* array)
         {
             array->items.Dispose();
-            Marshal.FreeHGlobal((nint)array);
+            NativeMemory.Free(array);
         }
 
         public static bool IsDisposed(UnsafeArray* array)
@@ -48,7 +48,7 @@ namespace Unmanaged.Collections
         public static UnsafeArray* Allocate(RuntimeType type, uint length)
         {
             ThrowIfLengthIsZero(length);
-            nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
+            nint arrayPointer = (nint)NativeMemory.Alloc((uint)sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;
             array->items = new(type.size * length);

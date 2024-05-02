@@ -27,7 +27,7 @@ namespace Unmanaged.Collections
         public static void Free(UnsafeList* list)
         {
             list->items.Dispose();
-            Marshal.FreeHGlobal((nint)list);
+            NativeMemory.Free(list);
             list->count = 0;
         }
 
@@ -39,7 +39,7 @@ namespace Unmanaged.Collections
         public static UnsafeList* Allocate(RuntimeType type, uint initialCapacity = 1)
         {
             ThrowIfLengthIsZero(initialCapacity);
-            UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
+            UnsafeList* list = (UnsafeList*)NativeMemory.Alloc((uint)sizeof(UnsafeList));
             list->type = type;
             list->count = 0;
             list->items = new(type.size * initialCapacity);
@@ -49,10 +49,8 @@ namespace Unmanaged.Collections
         public static UnsafeList* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
-            list->type = type;
+            UnsafeList* list = Allocate(type, (uint)span.Length);
             list->count = (uint)span.Length;
-            list->items = new((1 + list->count) * type.size);
             Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);
             return list;
@@ -61,10 +59,8 @@ namespace Unmanaged.Collections
         public static UnsafeList* Allocate<T>(Span<T> span) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
-            list->type = type;
+            UnsafeList* list = Allocate(type, (uint)span.Length);
             list->count = (uint)span.Length;
-            list->items = new((1 + list->count) * type.size);
             Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);
             return list;

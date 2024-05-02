@@ -34,7 +34,7 @@ namespace Unmanaged
         {
             ThrowIfLengthIsZero(length);
             this.length = length;
-            pointer = Marshal.AllocHGlobal((int)length);
+            pointer = (nint)NativeMemory.Alloc(length);
             Allocations.Register(pointer);
         }
 
@@ -62,7 +62,7 @@ namespace Unmanaged
         public readonly void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
-            Marshal.FreeHGlobal(pointer);
+            NativeMemory.Free((void*)pointer);
             Allocations.Unregister(pointer);
         }
 
