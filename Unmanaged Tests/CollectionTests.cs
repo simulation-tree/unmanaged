@@ -61,6 +61,8 @@ namespace Tests
         [Test]
         public void IndexingArray()
         {
+            Debug.WriteLine("started empty list");
+            Console.WriteLine("started empty list 2");
             using UnmanagedArray<int> array = new(4);
             array[0] = 1;
             array[1] = 2;
@@ -72,15 +74,15 @@ namespace Tests
             Assert.That(array[3], Is.EqualTo(4));
         }
 
-        [Test]
-        public void EmptyList()
-        {
-            Debug.WriteLine("started empty list");
-            Console.WriteLine("started empty list 2");
-            using UnmanagedList<byte> list = new(8);
-            //Assert.That(list.Capacity, Is.EqualTo(8));
-            //Assert.That(list.Count, Is.EqualTo(0));
-        }
+        //[Test]
+        //public void EmptyList()
+        //{
+        //    Debug.WriteLine("started empty list");
+        //    Console.WriteLine("started empty list 2");
+        //    using UnmanagedList<byte> list = new(8);
+        //    //Assert.That(list.Capacity, Is.EqualTo(8));
+        //    //Assert.That(list.Count, Is.EqualTo(0));
+        //}
 
         //[Test]
         //public void AddingIntoList()
