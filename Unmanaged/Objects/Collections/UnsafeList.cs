@@ -33,12 +33,13 @@ namespace Unmanaged.Collections
 
         public static UnsafeList* Allocate<T>(uint initialCapacity = 1) where T : unmanaged
         {
+            Console.WriteLine("allocating");
             ThrowIfLengthIsZero(initialCapacity);
             RuntimeType type = RuntimeType.Get<T>();
-            Debug.WriteLine(type.size);
-            Debug.WriteLine(type);
+            Console.WriteLine("size:" + type.size);
+            Console.WriteLine("type: " + type);
             UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
-            Debug.WriteLine((nint)list);
+            Console.WriteLine((nint)list);
             list->type = type;
             list->count = 0;
             list->items = new(type.size * initialCapacity);
