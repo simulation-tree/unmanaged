@@ -27,23 +27,8 @@ namespace Unmanaged.Collections
         public static void Free(UnsafeList* list)
         {
             list->items.Dispose();
-            NativeMemory.Free(list);
-            Allocations.Unregister((nint)list);
-        }
-
-        public static bool IsDisposed(UnsafeList* list)
-        {
-            return list->items.IsDisposed;
-        }
-
-        public static uint GetCount(UnsafeList* list)
-        {
-            return list->count;
-        }
-
-        public static uint GetCapacity(UnsafeList* list)
-        {
-            return list->items.Length / list->type.size;
+            Marshal.FreeHGlobal((nint)list);
+            list->count = 0;
         }
 
         public static UnsafeList* Allocate<T>(uint initialCapacity = 1) where T : unmanaged
@@ -54,17 +39,20 @@ namespace Unmanaged.Collections
         public static UnsafeList* Allocate(RuntimeType type, uint initialCapacity = 1)
         {
             ThrowIfLengthIsZero(initialCapacity);
-            UnsafeList* list = (UnsafeList*)NativeMemory.AllocZeroed((uint)sizeof(UnsafeList));
+            UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
             list->type = type;
             list->count = 0;
-            list->items = new(type.size * initialCapacity, type.Alignment);
-            Allocations.Register((nint)list);
+            list->items = new(type.size * initialCapacity);
             return list;
         }
 
         public static UnsafeList* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            UnsafeList* list = Allocate<T>((uint)span.Length + 1);
+            RuntimeType type = RuntimeType.Get<T>();
+            UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
+            list->type = type;
+            list->count = (uint)span.Length;
+            list->items = new((1 + list->count) * type.size);
             Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);
             return list;
@@ -72,7 +60,11 @@ namespace Unmanaged.Collections
 
         public static UnsafeList* Allocate<T>(Span<T> span) where T : unmanaged
         {
-            UnsafeList* list = Allocate<T>((uint)span.Length + 1);
+            RuntimeType type = RuntimeType.Get<T>();
+            UnsafeList* list = (UnsafeList*)Marshal.AllocHGlobal(sizeof(UnsafeList));
+            list->type = type;
+            list->count = (uint)span.Length;
+            list->items = new((1 + list->count) * type.size);
             Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);
             return list;
@@ -137,7 +129,7 @@ namespace Unmanaged.Collections
             if (list->count == capacity)
             {
                 uint newCapacity = capacity * 2;
-                Allocation newItems = new(elementSize * newCapacity, list->type.Alignment);
+                Allocation newItems = new(elementSize * newCapacity);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
@@ -146,7 +138,7 @@ namespace Unmanaged.Collections
             Span<byte> destination = list->items.AsSpan<byte>((index + 1) * elementSize, (list->count - index) * elementSize);
             Span<byte> source = list->items.AsSpan<byte>(index * elementSize, (list->count - index) * elementSize);
             source.CopyTo(destination);
-            list->items.Write(index, item);
+            list->items.Write(index * elementSize, item);
             list->count++;
         }
 
@@ -157,13 +149,13 @@ namespace Unmanaged.Collections
             if (list->count == capacity)
             {
                 uint newCapacity = capacity * 2;
-                Allocation newItems = new(elementSize * newCapacity, list->type.Alignment);
+                Allocation newItems = new(elementSize * newCapacity);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
             }
 
-            list->items.Write(list->count, item);
+            list->items.Write(list->count * elementSize, item);
             list->count++;
         }
 
@@ -180,13 +172,13 @@ namespace Unmanaged.Collections
             if (list->count == capacity)
             {
                 uint newCapacity = capacity * 2;
-                Allocation newItems = new(elementSize * newCapacity, list->type.Alignment);
+                Allocation newItems = new(elementSize * newCapacity);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
             }
 
-            list->items.Write(list->count, item);
+            list->items.Write(list->count * elementSize, item);
             list->count++;
             return true;
         }
@@ -197,7 +189,7 @@ namespace Unmanaged.Collections
             uint newCount = list->count + count;
             if (newCount >= GetCapacity(list))
             {
-                Allocation newItems = new(elementSize * newCount, list->type.Alignment);
+                Allocation newItems = new(elementSize * newCount);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
@@ -215,7 +207,7 @@ namespace Unmanaged.Collections
             uint newCount = list->count + addLength;
             if (newCount >= capacity)
             {
-                Allocation newItems = new(list->type.size * newCount, list->type.Alignment);
+                Allocation newItems = new(list->type.size * newCount);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
@@ -338,6 +330,21 @@ namespace Unmanaged.Collections
             }
 
             return list->items.AsSpan<T>(start, length);
+        }
+
+        public static bool IsDisposed(UnsafeList* list)
+        {
+            return list->items.IsDisposed;
+        }
+
+        public static uint GetCount(UnsafeList* list)
+        {
+            return list->count;
+        }
+
+        public static uint GetCapacity(UnsafeList* list)
+        {
+            return list->items.length / list->type.size;
         }
 
         public static void CopyTo(UnsafeList* source, uint sourceIndex, UnsafeList* destination, uint destinationIndex)

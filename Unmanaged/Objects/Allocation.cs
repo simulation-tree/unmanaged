@@ -5,29 +5,41 @@ using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
-    public unsafe struct Allocation : IDisposable, IEquatable<Allocation>
+    /// <summary>
+    /// Unmanaged allocation.
+    /// </summary>
+    public readonly unsafe struct Allocation : IDisposable
     {
-        private uint length;
-        private void* value;
+        /// <summary>
+        /// Size of the allocation in bytes.
+        /// </summary>
+        public readonly uint length;
 
-        public readonly uint Length => length;
-        public readonly bool IsDisposed => value is null || Allocations.IsNull((nint)value);
+        private readonly nint pointer;
+
+        /// <summary>
+        /// Has this allocation been disposed? Also counts for instances that weren't allocated.
+        /// </summary>
+        public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
         public Allocation()
         {
-            throw new InvalidOperationException("Sizeless allocation not allowed");
+            throw new InvalidOperationException("Sizeless allocation is not allowed.");
         }
 
-        public Allocation(uint length, uint alignment = 8)
+        /// <summary>
+        /// Creates a new uninitialized allocation.
+        /// </summary>
+        public Allocation(uint length)
         {
             ThrowIfLengthIsZero(length);
-            value = NativeMemory.AlignedAlloc(length, alignment);
-            Allocations.Register((nint)value);
             this.length = length;
+            pointer = Marshal.AllocHGlobal((int)length);
+            Allocations.Register(pointer);
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfLengthIsZero(uint value)
+        private void ThrowIfLengthIsZero(uint value)
         {
             if (value == 0)
             {
@@ -36,7 +48,7 @@ namespace Unmanaged
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfOutOfRange(uint index)
+        private void ThrowIfOutOfRange(uint index)
         {
             if (index > length)
             {
@@ -44,74 +56,62 @@ namespace Unmanaged
             }
         }
 
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfOutOfRangeForCasting(uint size)
-        {
-            if (size > length)
-            {
-                throw new InvalidCastException("Cannot cast to type, size is too small.");
-            }
-        }
-
+        /// <summary>
+        /// Frees the allocation.
+        /// </summary>
         public readonly void Dispose()
         {
-            Allocations.ThrowIfNull((nint)value);
-            NativeMemory.AlignedFree(value);
-            Allocations.Unregister((nint)value);
-        }
-
-        public void Resize(uint length, uint alignment = 8)
-        {
-            Allocations.ThrowIfNull((nint)value);
-            Allocations.Unregister((nint)value);
-            value = NativeMemory.AlignedRealloc(value, length, alignment);
-            this.length = length;
-            Allocations.Register((nint)value);
-        }
-
-        public readonly T* AsPointer<T>() where T : unmanaged
-        {
-            Allocations.ThrowIfNull((nint)value);
-            if (length < sizeof(T))
-            {
-                throw new InvalidOperationException("Allocation is too small to be casted to the specified type.");
-            }
-
-            return (T*)value;
+            Allocations.ThrowIfNull(pointer);
+            Marshal.FreeHGlobal(pointer);
+            Allocations.Unregister(pointer);
         }
 
         public readonly void Write<T>(uint start, T value) where T : unmanaged
         {
-            //todo: its a bit uncomfortable to assume non byte index for a low level concept, if they
-            //become byte indices then id like to remove length field too
-            Allocations.ThrowIfNull((nint)this.value);
+            Allocations.ThrowIfNull(pointer);
             uint elementSize = (uint)sizeof(T);
             uint byteStart = start * elementSize;
             ThrowIfOutOfRange(byteStart + elementSize);
-            Unsafe.Write((void*)((nint)this.value + byteStart), value);
+            Unsafe.Write((void*)(pointer + byteStart), value);
         }
 
         public readonly Span<T> AsSpan<T>() where T : unmanaged
         {
-            Allocations.ThrowIfNull((nint)this.value);
-            T* items = (T*)this.value;
+            Allocations.ThrowIfNull(pointer);
+            T* items = (T*)pointer;
             return new Span<T>(items, (int)(length / sizeof(T)));
         }
 
         public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
-            Allocations.ThrowIfNull((nint)this.value);
+            Allocations.ThrowIfNull(pointer);
             uint endIndex = (uint)((start + length) * sizeof(T));
             ThrowIfOutOfRange(endIndex);
-            T* items = (T*)this.value;
+            T* items = (T*)pointer;
             return new Span<T>(items + start, (int)length);
         }
 
-        public readonly ref T As<T>() where T : unmanaged
+        public readonly ref T AsRef<T>() where T : unmanaged
         {
-            Allocations.ThrowIfNull((nint)this.value);
-            ThrowIfOutOfRangeForCasting((uint)sizeof(T));
-            return ref Unsafe.AsRef<T>((void*)this.value);
+            Allocations.ThrowIfNull(pointer);
+#if DEBUG
+            if (length < sizeof(T))
+            {
+                throw new InvalidCastException("Expected type isn't large enough to contain the bytes in the allocation");
+            }
+#endif
+
+            return ref Unsafe.AsRef<T>((void*)pointer);
+        }
+
+        /// <summary>
+        /// Resets the memory to zero.
+        /// </summary>
+        public readonly void Clear()
+        {
+            Allocations.ThrowIfNull(pointer);
+            Span<byte> span = AsSpan<byte>();
+            span.Clear();
         }
 
         /// <summary>
@@ -119,8 +119,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyTo(uint sourceIndex, uint sourceLength, Allocation destination, uint destinationIndex, uint destinationLength)
         {
-            Allocations.ThrowIfNull((nint)value);
-            Allocations.ThrowIfNull((nint)destination.value);
+            Allocations.ThrowIfNull(pointer);
+            Allocations.ThrowIfNull(destination.pointer);
             Span<byte> sourceSpan = AsSpan<byte>(sourceIndex, sourceLength);
             Span<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, destinationLength);
             sourceSpan.CopyTo(destinationSpan);
@@ -135,42 +135,6 @@ namespace Unmanaged
         public readonly void CopyTo(Allocation destination)
         {
             CopyTo(0, Math.Min(length, destination.length), destination, 0, destination.length);
-        }
-
-        public readonly void Clear()
-        {
-            NativeMemory.Clear((void*)value, length);
-        }
-
-        public override bool Equals(object? obj)
-        {
-            return obj is Allocation allocation && Equals(allocation);
-        }
-
-        public bool Equals(Allocation other)
-        {
-            if (IsDisposed && other.IsDisposed)
-            {
-                return true;
-            }
-
-            return value == other.value;
-        }
-
-        public override int GetHashCode()
-        {
-            nint ptr = (nint)value;
-            return HashCode.Combine(ptr, 7);
-        }
-
-        public static bool operator ==(Allocation left, Allocation right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Allocation left, Allocation right)
-        {
-            return !(left == right);
         }
     }
 }
