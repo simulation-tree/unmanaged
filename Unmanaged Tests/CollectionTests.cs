@@ -72,33 +72,33 @@ namespace Tests
             Assert.That(array[3], Is.EqualTo(4));
         }
 
-        //[Test]
-        //public void ListOfStrings()
-        //{
-        //    using UnmanagedList<FixedString> list = new();
-        //    list.Add("Hello");
-        //    list.Add(" ");
-        //    list.Add("there...");
-        //    Assert.That(list[0].ToString(), Is.EqualTo("Hello"));
-        //    Assert.That(list[1].ToString(), Is.EqualTo(" "));
-        //    Assert.That(list[2].ToString(), Is.EqualTo("there..."));
-        //}
-
         [Test]
-        public void ExpandingList()
+        public void ListOfStrings()
         {
-            using UnmanagedList<int> list = new();
-            list.Add(1);
-            list.Add(2);
-            list.Add(3);
-            list.Add(4);
-            Assert.That(list[0], Is.EqualTo(1));
-            Assert.That(list[1], Is.EqualTo(2));
-            Assert.That(list[2], Is.EqualTo(3));
-            Assert.That(list[3], Is.EqualTo(4));
-            Assert.That(list.Count, Is.EqualTo(4));
-            Assert.That(list.Capacity, Is.EqualTo(4));
+            using UnmanagedList<FixedString> list = new(3);
+            list.Add("Hello");
+            list.Add(" ");
+            list.Add("there...");
+            Assert.That(list[0].ToString(), Is.EqualTo("Hello"));
+            Assert.That(list[1].ToString(), Is.EqualTo(" "));
+            Assert.That(list[2].ToString(), Is.EqualTo("there..."));
         }
+
+        //[Test]
+        //public void ExpandingList()
+        //{
+        //    using UnmanagedList<int> list = new();
+        //    list.Add(1);
+        //    list.Add(2);
+        //    list.Add(3);
+        //    list.Add(4);
+        //    Assert.That(list[0], Is.EqualTo(1));
+        //    Assert.That(list[1], Is.EqualTo(2));
+        //    Assert.That(list[2], Is.EqualTo(3));
+        //    Assert.That(list[3], Is.EqualTo(4));
+        //    Assert.That(list.Count, Is.EqualTo(4));
+        //    Assert.That(list.Capacity, Is.EqualTo(4));
+        //}
         //
         //[Test]
         //public void RemoveAtIndex()

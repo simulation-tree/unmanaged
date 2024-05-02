@@ -134,7 +134,7 @@ namespace Unmanaged.Collections
             uint capacity = GetCapacity(list);
             if (list->count == capacity)
             {
-                uint newCapacity = capacity == 0 ? 1 : capacity * 2;
+                uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
@@ -155,7 +155,7 @@ namespace Unmanaged.Collections
             uint capacity = GetCapacity(list);
             if (list->count == capacity)
             {
-                uint newCapacity = capacity == 0 ? 1 : capacity * 2;
+                uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
@@ -179,7 +179,7 @@ namespace Unmanaged.Collections
             uint capacity = GetCapacity(list);
             if (list->count == capacity)
             {
-                uint newCapacity = capacity == 0 ? 1 : capacity * 2;
+                uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
