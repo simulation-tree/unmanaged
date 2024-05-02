@@ -15,15 +15,6 @@ namespace Unmanaged.Collections
             throw new InvalidOperationException("Use UnsafeArray.Create() instead.");
         }
 
-        [Conditional("DEBUG")]
-        private static void ThrowIfLengthIsZero(uint value)
-        {
-            if (value == 0)
-            {
-                //throw new ArgumentOutOfRangeException(nameof(value));
-            }
-        }
-
         public static void Free(UnsafeArray* array)
         {
             array->items.Dispose();
@@ -47,7 +38,6 @@ namespace Unmanaged.Collections
 
         public static UnsafeArray* Allocate(RuntimeType type, uint length)
         {
-            ThrowIfLengthIsZero(length);
             nint arrayPointer = (nint)NativeMemory.Alloc((uint)sizeof(UnsafeArray));
             UnsafeArray* array = (UnsafeArray*)arrayPointer;
             array->type = type;
