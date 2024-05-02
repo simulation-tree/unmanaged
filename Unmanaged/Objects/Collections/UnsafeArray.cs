@@ -12,7 +12,7 @@ namespace Unmanaged.Collections
 
         public UnsafeArray()
         {
-            throw new InvalidOperationException("Use UnsafeArray.Create() instead.");
+            throw new InvalidOperationException("Use UnsafeArray.Allocate() instead.");
         }
 
         [Conditional("DEBUG")]
@@ -20,14 +20,15 @@ namespace Unmanaged.Collections
         {
             if (value == 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(value));
+                throw new InvalidOperationException("Array allocations cannot be zero in length.");
             }
         }
 
         public static void Free(UnsafeArray* array)
         {
             array->items.Dispose();
-            Marshal.FreeHGlobal((nint)array);
+            NativeMemory.Free(array);
+            Allocations.Unregister((nint)array);
         }
 
         public static bool IsDisposed(UnsafeArray* array)
@@ -37,7 +38,7 @@ namespace Unmanaged.Collections
 
         public static uint GetLength(UnsafeArray* array)
         {
-            return array->items.length / array->type.size;
+            return array->items.Length / array->type.size;
         }
 
         public static UnsafeArray* Allocate<T>(uint length) where T : unmanaged
@@ -48,11 +49,10 @@ namespace Unmanaged.Collections
         public static UnsafeArray* Allocate(RuntimeType type, uint length)
         {
             ThrowIfLengthIsZero(length);
-            nint arrayPointer = Marshal.AllocHGlobal(sizeof(UnsafeArray));
-            UnsafeArray* array = (UnsafeArray*)arrayPointer;
+            UnsafeArray* array = (UnsafeArray*)NativeMemory.AllocZeroed((uint)sizeof(UnsafeArray));
             array->type = type;
-            array->items = new(type.size * length);
-            array->items.Clear();
+            array->items = new(type.size * length, type.Alignment);
+            Allocations.Register((nint)array);
             return array;
         }
 
@@ -149,9 +149,11 @@ namespace Unmanaged.Collections
         public static void Resize(UnsafeArray* array, uint length)
         {
             Allocation oldItems = array->items;
-            array->items = new(array->type.size * length);
-            oldItems.CopyTo(0, Math.Min(oldItems.length, array->items.length), array->items, 0, array->items.length);
+            RuntimeType type = array->type;
+            array->items = new(type.size * length, type.Alignment);
+            oldItems.CopyTo(0, Math.Min(oldItems.Length, array->items.Length), array->items, 0, array->items.Length);
             oldItems.Dispose();
+            //todo: use allocation.Resize() function here instead
         }
     }
 }

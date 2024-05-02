@@ -11,7 +11,7 @@ namespace Tests
             {
                 Allocation allocation = new();
                 Assert.That(allocation.IsDisposed, Is.False);
-                Assert.That(allocation.length, Is.EqualTo(0));
+                Assert.That(allocation.Length, Is.EqualTo(0));
                 allocation.Dispose();
             });
         }
@@ -104,7 +104,7 @@ namespace Tests
         [Test]
         public void AccessSpanOutOfBoundsError()
         {
-            using Allocation obj = new(sizeof(int));
+            using Allocation     obj = new(sizeof(int));
             Assert.Throws<IndexOutOfRangeException>(() => { obj.AsSpan<int>()[1] = 5; });
             Assert.Throws<IndexOutOfRangeException>(() => { obj.AsSpan<int>()[-1] = 5; });
             Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -136,7 +136,7 @@ namespace Tests
         public void ReadWithTypeOfDifferentSizeError()
         {
             using Allocation obj = new(sizeof(int));
-            Assert.Throws<InvalidCastException>(() => { obj.AsRef<long>(); });
+            Assert.Throws<InvalidCastException>(() => { obj.As<long>(); });
         }
 
         [Test]
@@ -149,6 +149,25 @@ namespace Tests
             Assert.That(bufferSpan[0], Is.EqualTo(5));
             bufferSpan[0] *= 2;
             Assert.That(obj.AsSpan<int>()[0], Is.EqualTo(10));
+        }
+
+        [Test]
+        public void ResizeAllocation()
+        {
+            Allocation alloc = new(sizeof(int) * 4);
+            Span<int> bufferSpan = alloc.AsSpan<int>();
+            bufferSpan[0] = 5;
+            bufferSpan[1] = 15;
+            bufferSpan[2] = 25;
+            bufferSpan[3] = 50;
+            alloc.Resize(sizeof(int) * 8);
+            bufferSpan = alloc.AsSpan<int>();
+            Assert.That(bufferSpan.Length, Is.EqualTo(8));
+            Assert.That(bufferSpan[0], Is.EqualTo(5));
+            Assert.That(bufferSpan[1], Is.EqualTo(15));
+            Assert.That(bufferSpan[2], Is.EqualTo(25));
+            Assert.That(bufferSpan[3], Is.EqualTo(50));
+            alloc.Dispose();
         }
     }
 }

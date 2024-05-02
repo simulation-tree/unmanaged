@@ -1,4 +1,6 @@
-﻿using Unmanaged.Collections;
+﻿using System.Runtime.InteropServices;
+using Unmanaged;
+using Unmanaged.Collections;
 
 namespace Tests
 {
@@ -17,8 +19,19 @@ namespace Tests
         [Test]
         public void ArrayLength()
         {
-            using UnmanagedArray<Guid> array = new(4);
+            UnmanagedArray<Guid> array = new(4);
             Assert.That(array.Length, Is.EqualTo(4));
+            array.Dispose();
+        }
+
+        [Test]
+        public unsafe void ManuallyAllocation()
+        {
+            void* allocation = NativeMemory.AlignedAlloc(4, 8);
+            NativeMemory.AlignedFree(allocation);
+
+            UnsafeArray* array = UnsafeArray.Allocate<int>(4);
+            UnsafeArray.Free(array);
         }
 
         [Test]
@@ -75,145 +88,142 @@ namespace Tests
         [Test]
         public unsafe void EmptyList()
         {
-            UnsafeList* list = UnsafeList.Allocate<byte>(4);
-            UnsafeList.Free(list);
-            Console.WriteLine("started empty list 2");
-            //using UnmanagedList<byte> list = new(8);
-            //Assert.That(list.Capacity, Is.EqualTo(8));
-            //Assert.That(list.Count, Is.EqualTo(0));
+            using UnmanagedList<byte> list = new(8);
+            Assert.That(list.Capacity, Is.EqualTo(8));
+            Assert.That(list.Count, Is.EqualTo(0));
         }
 
-        //[Test]
-        //public void AddingIntoList()
-        //{
-        //    using UnmanagedList<byte> list = new(1);
-        //    list.Add(32);
-        //    Assert.That(list[0], Is.EqualTo(32));
-        //    Assert.That(list.Count, Is.EqualTo(1));
-        //}
+        [Test]
+        public void AddingIntoList()
+        {
+            using UnmanagedList<byte> list = new(1);
+            list.Add(32);
+            Assert.That(list[0], Is.EqualTo(32));
+            Assert.That(list.Count, Is.EqualTo(1));
+        }
 
-        //[Test]
-        //public void ListOfStrings()
-        //{
-        //    using UnmanagedList<FixedString> list = new(3);
-        //    list.Add("Hello");
-        //    list.Add(" ");
-        //    list.Add("there...");
-        //    Assert.That(list[0].ToString(), Is.EqualTo("Hello"));
-        //    Assert.That(list[1].ToString(), Is.EqualTo(" "));
-        //    Assert.That(list[2].ToString(), Is.EqualTo("there..."));
-        //}
+        [Test]
+        public void ListOfStrings()
+        {
+            using UnmanagedList<FixedString> list = new(3);
+            list.Add("Hello");
+            list.Add(" ");
+            list.Add("there...");
+            Assert.That(list[0].ToString(), Is.EqualTo("Hello"));
+            Assert.That(list[1].ToString(), Is.EqualTo(" "));
+            Assert.That(list[2].ToString(), Is.EqualTo("there..."));
+        }
 
-        //[Test]
-        //public void ExpandingList()
-        //{
-        //    using UnmanagedList<int> list = new();
-        //    list.Add(1);
-        //    list.Add(2);
-        //    list.Add(3);
-        //    list.Add(4);
-        //    Assert.That(list[0], Is.EqualTo(1));
-        //    Assert.That(list[1], Is.EqualTo(2));
-        //    Assert.That(list[2], Is.EqualTo(3));
-        //    Assert.That(list[3], Is.EqualTo(4));
-        //    Assert.That(list.Count, Is.EqualTo(4));
-        //    Assert.That(list.Capacity, Is.EqualTo(4));
-        //}
-        //
-        //[Test]
-        //public void RemoveAtIndex()
-        //{
-        //    using UnmanagedList<int> list = new();
-        //    list.Add(1);
-        //    list.Add(2);
-        //    list.Add(3);
-        //    list.Add(4);
-        //    list.RemoveAt(1);
-        //    Assert.That(list[0], Is.EqualTo(1));
-        //    Assert.That(list[1], Is.EqualTo(3));
-        //    Assert.That(list[2], Is.EqualTo(4));
-        //    Assert.That(list.Count, Is.EqualTo(3));
-        //    Assert.That(list.Capacity, Is.EqualTo(4));
-        //}
-        //
-        //[Test]
-        //public void InsertIntoList()
-        //{
-        //    using UnmanagedList<int> list = new();
-        //    list.Add(1);
-        //    list.Add(2);
-        //    list.Add(4);
-        //    list.Insert(2, 3);
-        //    Assert.That(list[0], Is.EqualTo(1));
-        //    Assert.That(list[1], Is.EqualTo(2));
-        //    Assert.That(list[2], Is.EqualTo(3));
-        //    Assert.That(list[3], Is.EqualTo(4));
-        //}
-        //
-        //[Test]
-        //public void ListContains()
-        //{
-        //    using UnmanagedList<int> list = new();
-        //    list.Add(1);
-        //    list.Add(2);
-        //    list.Add(3);
-        //    list.Add(4);
-        //    Assert.That(list.Contains(3), Is.True);
-        //    Assert.That(list.Contains(5), Is.False);
-        //}
-        //
-        //[Test]
-        //public void ClearListThenAdd()
-        //{
-        //    using UnmanagedList<int> list = new();
-        //    list.Add(1);
-        //    list.Add(2);
-        //    list.Add(3);
-        //    list.Add(4);
-        //    list.Clear();
-        //    Assert.That(list.Count, Is.EqualTo(0));
-        //    list.Add(5);
-        //    Assert.That(list[0], Is.EqualTo(5));
-        //    Assert.That(list.Count, Is.EqualTo(1));
-        //}
-        //
-        //[Test]
-        //public void BuildListThenCopyToSpan()
-        //{
-        //    using UnmanagedList<int> list = new();
-        //    list.Add(1);
-        //    list.Add(2);
-        //    list.Add(3);
-        //    list.Add(4);
-        //    Span<int> span = stackalloc int[4];
-        //    list.CopyTo(span);
-        //    Assert.That(span[0], Is.EqualTo(1));
-        //    Assert.That(span[1], Is.EqualTo(2));
-        //    Assert.That(span[2], Is.EqualTo(3));
-        //    Assert.That(span[3], Is.EqualTo(4));
-        //}
-        //
-        //[Test]
-        //public void ListInsideArray()
-        //{
-        //    UnmanagedArray<UnmanagedList<byte>> nestedData = new(8);
-        //    for (uint i = 0; i < 8; i++)
-        //    {
-        //        ref UnmanagedList<byte> list = ref nestedData.GetRef(i);
-        //        list = new();
-        //        list.Add((byte)i);
-        //    }
-        //
-        //    for (uint i = 0; i < 8; i++)
-        //    {
-        //        UnmanagedList<byte> list = nestedData[i];
-        //        Assert.That(list[0], Is.EqualTo((byte)i));
-        //
-        //        list.Dispose();
-        //    }
-        //
-        //    nestedData.Dispose();
-        //    Assert.That(Allocations.Any, Is.False);
-        //}
+        [Test]
+        public void ExpandingList()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            Assert.That(list[0], Is.EqualTo(1));
+            Assert.That(list[1], Is.EqualTo(2));
+            Assert.That(list[2], Is.EqualTo(3));
+            Assert.That(list[3], Is.EqualTo(4));
+            Assert.That(list.Count, Is.EqualTo(4));
+            Assert.That(list.Capacity, Is.EqualTo(4));
+        }
+        
+        [Test]
+        public void RemoveAtIndex()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            list.RemoveAt(1);
+            Assert.That(list[0], Is.EqualTo(1));
+            Assert.That(list[1], Is.EqualTo(3));
+            Assert.That(list[2], Is.EqualTo(4));
+            Assert.That(list.Count, Is.EqualTo(3));
+            Assert.That(list.Capacity, Is.EqualTo(4));
+        }
+        
+        [Test]
+        public void InsertIntoList()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(4);
+            list.Insert(2, 3);
+            Assert.That(list[0], Is.EqualTo(1));
+            Assert.That(list[1], Is.EqualTo(2));
+            Assert.That(list[2], Is.EqualTo(3));
+            Assert.That(list[3], Is.EqualTo(4));
+        }
+        
+        [Test]
+        public void ListContains()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            Assert.That(list.Contains(3), Is.True);
+            Assert.That(list.Contains(5), Is.False);
+        }
+        
+        [Test]
+        public void ClearListThenAdd()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            list.Clear();
+            Assert.That(list.Count, Is.EqualTo(0));
+            list.Add(5);
+            Assert.That(list[0], Is.EqualTo(5));
+            Assert.That(list.Count, Is.EqualTo(1));
+        }
+        
+        [Test]
+        public void BuildListThenCopyToSpan()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            Span<int> span = stackalloc int[4];
+            list.CopyTo(span);
+            Assert.That(span[0], Is.EqualTo(1));
+            Assert.That(span[1], Is.EqualTo(2));
+            Assert.That(span[2], Is.EqualTo(3));
+            Assert.That(span[3], Is.EqualTo(4));
+        }
+        
+        [Test]
+        public void ListInsideArray()
+        {
+            UnmanagedArray<UnmanagedList<byte>> nestedData = new(8);
+            for (uint i = 0; i < 8; i++)
+            {
+                ref UnmanagedList<byte> list = ref nestedData.GetRef(i);
+                list = new();
+                list.Add((byte)i);
+            }
+        
+            for (uint i = 0; i < 8; i++)
+            {
+                UnmanagedList<byte> list = nestedData[i];
+                Assert.That(list[0], Is.EqualTo((byte)i));
+        
+                list.Dispose();
+            }
+        
+            nestedData.Dispose();
+            Assert.That(Allocations.Any, Is.False);
+        }
     }
 }

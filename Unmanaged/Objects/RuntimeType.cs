@@ -25,6 +25,24 @@ namespace Unmanaged
         /// </summary>
         public readonly Type Type => TypeTable.types[id];
 
+        public readonly uint Alignment
+        {
+            get
+            {
+                if ((size % 8) == 0)
+                {
+                    return 8;
+                }
+
+                if ((size % 4) == 0)
+                {
+                    return 4;
+                }
+
+                return (size % 2) == 0 ? (uint)2 : 1;
+            }
+        }
+
         private RuntimeType(ushort id, ushort size)
         {
             this.id = id;
