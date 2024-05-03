@@ -8,23 +8,23 @@ namespace Unmanaged
     /// <summary>
     /// Unmanaged container of data.
     /// </summary>
-    public readonly struct Container : IDisposable, IEquatable<Container>
+    public readonly unsafe struct Container : IDisposable, IEquatable<Container>
     {
         /// <summary>
         /// The type of the data stored.
         /// </summary>
         public readonly RuntimeType type;
 
-        private readonly nint pointer;
+        private readonly void* pointer;
 
-        public readonly bool IsDisposed => Allocations.IsNull(pointer);
+        public readonly bool IsDisposed => Allocations.IsNull((nint)pointer);
 
         public Container()
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Empty container is not supported.");
         }
 
-        private Container(nint pointer, RuntimeType type)
+        private Container(void* pointer, RuntimeType type)
         {
             this.pointer = pointer;
             this.type = type;
@@ -32,9 +32,9 @@ namespace Unmanaged
 
         public readonly void Dispose()
         {
-            Allocations.ThrowIfNull(pointer);
-            Marshal.FreeHGlobal(pointer);
-            Allocations.Unregister(pointer);
+            Allocations.ThrowIfNull((nint)pointer);
+            NativeMemory.Free(pointer);
+            Allocations.Unregister((nint)pointer);
         }
 
         [Conditional("DEBUG")]
@@ -48,15 +48,15 @@ namespace Unmanaged
 
         public unsafe readonly Span<byte> AsSpan()
         {
-            Allocations.ThrowIfNull(pointer);
-            return new Span<byte>((void*)pointer, type.size);
+            Allocations.ThrowIfNull((nint)pointer);
+            return new Span<byte>(pointer, type.size);
         }
 
         public unsafe readonly ref T AsRef<T>() where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
+            Allocations.ThrowIfNull((nint)pointer);
             ThrowIfSizeMismatch(sizeof(T));
-            return ref Unsafe.AsRef<T>((void*)pointer);
+            return ref Unsafe.AsRef<T>(pointer);
         }
 
         public readonly bool Is<T>() where T : unmanaged
@@ -81,18 +81,18 @@ namespace Unmanaged
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(pointer);
+            return HashCode.Combine((nint)pointer);
         }
 
         /// <summary>
         /// Allocates unmanaged memory to contain the given value.
         /// </summary>
-        public unsafe static Container Allocate<T>(T value) where T : unmanaged
+        public unsafe static Container Create<T>(T value) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            Container container = new(Marshal.AllocHGlobal(type.size), type);
-            Unsafe.Write((void*)container.pointer, value);
-            Allocations.Register(container.pointer);
+            Container container = new(NativeMemory.Alloc(type.size), type);
+            Unsafe.Write(container.pointer, value);
+            Allocations.Register((nint)container.pointer);
             return container;
         }
 

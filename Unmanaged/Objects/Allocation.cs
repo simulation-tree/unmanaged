@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// Unmanaged allocation.
+    /// An unmanaged allocation, that must be manually disposed.
     /// </summary>
     public readonly unsafe struct Allocation : IDisposable, IEquatable<Allocation>
     {
@@ -15,18 +15,18 @@ namespace Unmanaged
         /// </summary>
         public readonly uint length;
 
-        private readonly nint pointer;
+        private readonly void* pointer;
 
         /// <summary>
         /// Has this allocation been disposed? Also counts for instances that weren't allocated.
         /// </summary>
-        public readonly bool IsDisposed => Allocations.IsNull(pointer);
+        public readonly bool IsDisposed => Allocations.IsNull((nint)pointer);
 
         public Allocation()
         {
             this.length = 0;
-            pointer = (nint)NativeMemory.Alloc(0);
-            Allocations.Register(pointer);
+            pointer = NativeMemory.Alloc(0);
+            Allocations.Register((nint)pointer);
         }
 
         /// <summary>
@@ -35,8 +35,8 @@ namespace Unmanaged
         public Allocation(uint length)
         {
             this.length = length;
-            pointer = (nint)NativeMemory.Alloc(length);
-            Allocations.Register(pointer);
+            pointer = NativeMemory.Alloc(length);
+            Allocations.Register((nint)pointer);
         }
 
         [Conditional("DEBUG")]
@@ -53,39 +53,38 @@ namespace Unmanaged
         /// </summary>
         public readonly void Dispose()
         {
-            Allocations.ThrowIfNull(pointer);
-            NativeMemory.Free((void*)pointer);
-            Allocations.Unregister(pointer);
+            Allocations.ThrowIfNull((nint)pointer);
+            NativeMemory.Free(pointer);
+            Allocations.Unregister((nint)pointer);
         }
 
         public readonly void Write<T>(uint start, T value) where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
+            Allocations.ThrowIfNull((nint)pointer);
             uint elementSize = (uint)sizeof(T);
             uint byteStart = start * elementSize;
             ThrowIfOutOfRange(byteStart + elementSize);
-            Unsafe.Write((void*)(pointer + byteStart), value);
+            Unsafe.Write((void*)((nint)pointer + byteStart), value);
         }
 
         public readonly Span<T> AsSpan<T>() where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
-            T* items = (T*)pointer;
-            return new Span<T>(items, (int)(length / sizeof(T)));
+            Allocations.ThrowIfNull((nint)pointer);
+            ///T* items = (T*)pointer;
+            return new Span<T>(pointer, (int)(length / sizeof(T)));
         }
 
         public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
+            Allocations.ThrowIfNull((nint)pointer);
             uint endIndex = (uint)((start + length) * sizeof(T));
             ThrowIfOutOfRange(endIndex);
-            T* items = (T*)pointer;
-            return new Span<T>(items + start, (int)length);
+            return new Span<T>((void*)((nint)pointer + start), (int)length);
         }
 
         public readonly ref T AsRef<T>() where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
+            Allocations.ThrowIfNull((nint)pointer);
 #if DEBUG
             if (length < sizeof(T))
             {
@@ -93,7 +92,7 @@ namespace Unmanaged
             }
 #endif
 
-            return ref Unsafe.AsRef<T>((void*)pointer);
+            return ref Unsafe.AsRef<T>(pointer);
         }
 
         /// <summary>
@@ -101,8 +100,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void Clear()
         {
-            Allocations.ThrowIfNull(pointer);
-            NativeMemory.Clear((void*)pointer, length);
+            Allocations.ThrowIfNull((nint)pointer);
+            NativeMemory.Clear(pointer, length);
         }
 
         /// <summary>
@@ -110,8 +109,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyTo(uint sourceIndex, uint sourceLength, Allocation destination, uint destinationIndex, uint destinationLength)
         {
-            Allocations.ThrowIfNull(pointer);
-            Allocations.ThrowIfNull(destination.pointer);
+            Allocations.ThrowIfNull((nint)pointer);
+            Allocations.ThrowIfNull((nint)destination.pointer);
             Span<byte> sourceSpan = AsSpan<byte>(sourceIndex, sourceLength);
             Span<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, destinationLength);
             sourceSpan.CopyTo(destinationSpan);
@@ -140,12 +139,19 @@ namespace Unmanaged
                 return true;
             }
 
-            return pointer.Equals(other.pointer);
+            return pointer == other.pointer;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(pointer);
+            return HashCode.Combine((nint)pointer);
+        }
+
+        public static Allocation Create<T>(T value) where T : unmanaged
+        {
+            Allocation allocation = new((uint)sizeof(T));
+            allocation.Write(0, value);
+            return allocation;
         }
 
         public static bool operator ==(Allocation left, Allocation right)

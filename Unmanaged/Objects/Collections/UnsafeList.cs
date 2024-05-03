@@ -47,7 +47,7 @@ namespace Unmanaged.Collections
 
         public static UnsafeList* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            UnsafeList* list = Allocate<T>((uint)span.Length);
+            UnsafeList* list = Allocate<T>((uint)Math.Max(1, span.Length));
             list->count = (uint)span.Length;
             Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);
@@ -56,8 +56,7 @@ namespace Unmanaged.Collections
 
         public static UnsafeList* Allocate<T>(Span<T> span) where T : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<T>();
-            UnsafeList* list = Allocate(type, (uint)span.Length);
+            UnsafeList* list = Allocate<T>((uint)Math.Max(1, span.Length));
             list->count = (uint)span.Length;
             Span<T> items = list->items.AsSpan<T>();
             span.CopyTo(items);
