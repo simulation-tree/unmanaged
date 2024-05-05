@@ -102,9 +102,24 @@ namespace Unmanaged.Collections
             return UnsafeList.Contains(dictionary->keys, key);
         }
 
+        public static ReadOnlySpan<K> GetKeys<K>(UnsafeDictionary* dictionary) where K : unmanaged, IEquatable<K>
+        {
+            return UnsafeList.AsSpan<K>(dictionary->keys);
+        }
+
+        public static ReadOnlySpan<V> GetValues<V>(UnsafeDictionary* dictionary) where V : unmanaged
+        {
+            return UnsafeList.AsSpan<V>(dictionary->values);
+        }
+
         public static void Add<K, V>(UnsafeDictionary* dictionary, K key, V value) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
             ThrowIfSizeMismatch<K, V>(dictionary);
+            if (UnsafeList.Contains(dictionary->keys, key))
+            {
+                throw new ArgumentException("An element with the same key already exists.");
+            }
+
             UnsafeList.Add(dictionary->keys, key);
             UnsafeList.Add(dictionary->values, value);
             dictionary->count++;

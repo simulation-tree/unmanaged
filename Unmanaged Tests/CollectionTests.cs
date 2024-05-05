@@ -227,5 +227,24 @@ namespace Tests
             nestedData.Dispose();
             Assert.That(Allocations.Any, Is.False);
         }
+
+        [Test]
+        public void CreatingAndDisposingDictionary()
+        {
+            UnmanagedDictionary<byte, uint> map = new();
+            map.Add(0, 23);
+            map.Add(1, 42);
+            map.Add(2, 69);
+            Assert.That(map.ContainsKey(0), Is.True);
+            Assert.That(map.ContainsKey(1), Is.True);
+            Assert.That(map.ContainsKey(2), Is.True);
+            Assert.That(map.ContainsKey(3), Is.False);
+            Assert.That(map.GetRef(0), Is.EqualTo(23));
+            Assert.That(map.GetRef(1), Is.EqualTo(42));
+            Assert.That(map.GetRef(2), Is.EqualTo(69));
+            map.Dispose();
+
+            Assert.That(Allocations.Any, Is.False);
+        }
     }
 }

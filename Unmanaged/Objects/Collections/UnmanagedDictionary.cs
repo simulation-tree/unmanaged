@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Unmanaged.Collections
@@ -9,8 +10,36 @@ namespace Unmanaged.Collections
 
         public readonly uint Count => UnsafeDictionary.GetCount(value);
         public readonly bool IsDisposed => UnsafeDictionary.IsDisposed(value);
+        public readonly ReadOnlySpan<K> Keys => UnsafeDictionary.GetKeys<K>(value);
+        public readonly ReadOnlySpan<V> Values => UnsafeDictionary.GetValues<V>(value);
 
-        public readonly ref V this[K key] => ref GetRef(key);
+        public readonly V this[K key]
+        {
+            get
+            {
+                if (ContainsKey(key))
+                {
+                    return GetRef(key);
+                }
+                else
+                {
+                    throw new KeyNotFoundException($"The key '{key}' was not found in the dictionary.");
+                }
+            }
+            set
+            {
+                if (ContainsKey(key))
+                {
+                    ref var v = ref GetRef(key);
+                    v = value;
+                }
+                else
+                {
+                    ref var v = ref AddRef(key, default);
+                    v = value;
+                }
+            }
+        }
 
         public UnmanagedDictionary()
         {
