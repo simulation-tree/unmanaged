@@ -8,11 +8,8 @@ namespace Tests
         [Test]
         public void EmptyArray()
         {
-            Assert.Throws<InvalidOperationException>(() =>
-            {
-                using UnmanagedArray<int> array = new();
-                Assert.That(array.Length, Is.EqualTo(0));
-            });
+            using UnmanagedArray<int> array = new();
+            Assert.That(array.Length, Is.EqualTo(0));
         }
 
         [Test]
