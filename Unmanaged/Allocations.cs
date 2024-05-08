@@ -27,6 +27,8 @@ namespace Unmanaged
             }
         }
 
+        public static uint Count => (uint)instances.Count;
+
         public static IEnumerable<(object, StackTrace)> All
         {
             get

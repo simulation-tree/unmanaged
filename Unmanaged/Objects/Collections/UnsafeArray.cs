@@ -28,7 +28,7 @@ namespace Unmanaged.Collections
 
         public static uint GetLength(UnsafeArray* array)
         {
-            return array->items.length / array->type.size;
+            return array->items.Length / array->type.size;
         }
 
         public static UnsafeArray* Allocate<T>(uint length) where T : unmanaged
@@ -140,7 +140,7 @@ namespace Unmanaged.Collections
         {
             Allocation oldItems = array->items;
             array->items = new(array->type.size * length);
-            oldItems.CopyTo(0, Math.Min(oldItems.length, array->items.length), array->items, 0, array->items.length);
+            oldItems.CopyTo(0, Math.Min(oldItems.Length, array->items.Length), array->items, 0, array->items.Length);
             oldItems.Dispose();
         }
     }

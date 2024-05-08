@@ -9,8 +9,9 @@ namespace Tests
         {
             Allocation allocation = new();
             Assert.That(allocation.IsDisposed, Is.False);
-            Assert.That(allocation.length, Is.EqualTo(0));
+            Assert.That(allocation.Length, Is.EqualTo(0));
             allocation.Dispose();
+            Assert.That(Allocations.Any, Is.False);
         }
 
         [Test]
@@ -28,6 +29,18 @@ namespace Tests
             Assert.That(bufferSpan[1], Is.EqualTo(15));
             Assert.That(bufferSpan[2], Is.EqualTo(25));
             Assert.That(bufferSpan[3], Is.EqualTo(50));
+        }
+
+        [Test]
+        public void ResizeAllocation()
+        {
+            using Allocation a = new(sizeof(int));
+            a.Write(0, 1337);
+            a.Resize(sizeof(int) * 2);
+            a.Write(1, 1338);
+            Assert.That(Allocations.Count, Is.EqualTo(1));
+            Assert.That(a.AsSpan<int>()[0], Is.EqualTo(1337));
+            Assert.That(a.AsSpan<int>()[1], Is.EqualTo(1338));
         }
 
         [Test]

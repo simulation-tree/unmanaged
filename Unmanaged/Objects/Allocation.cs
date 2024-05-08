@@ -8,14 +8,12 @@ namespace Unmanaged
     /// <summary>
     /// An unmanaged allocation.
     /// </summary>
-    public readonly unsafe struct Allocation : IDisposable, IEquatable<Allocation>
+    public unsafe struct Allocation : IDisposable, IEquatable<Allocation>
     {
-        /// <summary>
-        /// Size of the allocation in bytes.
-        /// </summary>
-        public readonly uint length;
+        private uint length;
+        private void* pointer;
 
-        private readonly void* pointer;
+        public readonly uint Length => length;
 
         /// <summary>
         /// Has this allocation been disposed? Also counts for instances that weren't allocated.
@@ -40,9 +38,9 @@ namespace Unmanaged
         }
 
         [Conditional("DEBUG")]
-        private void ThrowIfOutOfRange(uint index)
+        private readonly void ThrowIfOutOfRange(uint index)
         {
-            if (index > length)
+            if (index > Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -71,7 +69,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull((nint)pointer);
             ///T* items = (T*)pointer;
-            return new Span<T>(pointer, (int)(length / sizeof(T)));
+            return new Span<T>(pointer, (int)(Length / sizeof(T)));
         }
 
         public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
@@ -86,7 +84,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull((nint)pointer);
 #if DEBUG
-            if (length < sizeof(T))
+            if (Length < sizeof(T))
             {
                 throw new InvalidCastException("Expected type isn't large enough to contain the bytes in the allocation");
             }
@@ -101,7 +99,18 @@ namespace Unmanaged
         public readonly void Clear()
         {
             Allocations.ThrowIfNull((nint)pointer);
-            NativeMemory.Clear(pointer, length);
+            NativeMemory.Clear(pointer, Length);
+        }
+
+        /// <summary>
+        /// Resizes the allocation, and leaves new bytes uninitialized.
+        /// </summary>
+        public void Resize(uint newLength)
+        {
+            Allocations.Unregister((nint)pointer);
+            pointer = NativeMemory.Realloc(pointer, newLength);
+            Allocations.Register((nint)pointer);
+            length = newLength;
         }
 
         /// <summary>
@@ -124,7 +133,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyTo(Allocation destination)
         {
-            CopyTo(0, Math.Min(length, destination.length), destination, 0, destination.length);
+            CopyTo(0, Math.Min(Length, destination.Length), destination, 0, destination.Length);
         }
 
         public override bool Equals(object? obj)

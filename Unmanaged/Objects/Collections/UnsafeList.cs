@@ -313,7 +313,7 @@ namespace Unmanaged.Collections
 
         public static uint GetCapacity(UnsafeList* list)
         {
-            return list->items.length / list->type.size;
+            return list->items.Length / list->type.size;
         }
 
         public static void CopyTo(UnsafeList* source, uint sourceIndex, UnsafeList* destination, uint destinationIndex)
