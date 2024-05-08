@@ -105,9 +105,39 @@ namespace Unmanaged.Collections
             return ref GetRef(key);
         }
 
-        public readonly void Remove(K key)
+        public readonly bool TryAdd(K key, V value)
         {
+            if (ContainsKey(key))
+            {
+                return false;
+            }
+            else
+            {
+                Add(key, value);
+                return true;
+            }
+        }
+
+        public readonly V Remove(K key)
+        {
+            V removed = GetRef(key);
             UnsafeDictionary.Remove<K, V>(value, key);
+            return removed;
+        }
+
+        public readonly bool TryRemove(K key, out V removed)
+        {
+            if (ContainsKey(key))
+            {
+                removed = GetRef(key);
+                Remove(key);
+                return true;
+            }
+            else
+            {
+                removed = default;
+                return false;
+            }
         }
 
         public readonly void Clear()

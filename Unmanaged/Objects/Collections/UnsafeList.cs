@@ -152,30 +152,6 @@ namespace Unmanaged.Collections
             list->count++;
         }
 
-        public static bool AddIfUnique<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
-        {
-            Span<T> span = list->items.AsSpan<T>(0, list->count);
-            if (span.Contains(item))
-            {
-                return false;
-            }
-
-            uint elementSize = list->type.size;
-            uint capacity = GetCapacity(list);
-            if (list->count == capacity)
-            {
-                uint newCapacity = capacity * 2;
-                Allocation newItems = new(elementSize * newCapacity);
-                list->items.CopyTo(newItems);
-                list->items.Dispose();
-                list->items = newItems;
-            }
-
-            list->items.Write(list->count, item);
-            list->count++;
-            return true;
-        }
-
         public static void AddDefault(UnsafeList* list, uint count = 1)
         {
             uint elementSize = list->type.size;

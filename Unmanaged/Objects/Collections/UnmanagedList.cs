@@ -88,9 +88,16 @@ namespace Unmanaged.Collections
             UnsafeList.Add(value, item);
         }
 
-        public readonly bool AddIfUnique<V>(V item) where V : unmanaged, IEquatable<V>
+        public readonly bool TryAdd<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeList.AddIfUnique(value, item);
+            Span<V> span = UnsafeList.AsSpan<V>(value);
+            if (span.Contains(item))
+            {
+                return false;
+            }
+
+            UnsafeList.Add(value, item);
+            return true;
         }
 
         /// <summary>
@@ -127,6 +134,16 @@ namespace Unmanaged.Collections
         public readonly uint Remove<V>(V item) where V : unmanaged, IEquatable<V>
         {
             return UnsafeList.Remove(value, item);
+        }
+
+        public readonly bool TryRemove<V>(V item) where V : unmanaged, IEquatable<V>
+        {
+            if (UnsafeList.TryIndexOf(value, item, out uint index))
+            {
+                UnsafeList.RemoveAt(value, index);
+                return true;
+            }
+            else return false;
         }
 
         public readonly void RemoveAt(uint index)

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// An unmanaged allocation, that must be manually disposed.
+    /// An unmanaged allocation.
     /// </summary>
     public readonly unsafe struct Allocation : IDisposable, IEquatable<Allocation>
     {
@@ -151,6 +151,20 @@ namespace Unmanaged
         {
             Allocation allocation = new((uint)sizeof(T));
             allocation.Write(0, value);
+            return allocation;
+        }
+
+        public static Allocation Create<T>(Span<T> span) where T : unmanaged
+        {
+            Allocation allocation = new((uint)(span.Length * sizeof(T)));
+            span.CopyTo(allocation.AsSpan<T>());
+            return allocation;
+        }
+
+        public static Allocation Create<T>(ReadOnlySpan<T> span) where T : unmanaged
+        {
+            Allocation allocation = new((uint)(span.Length * sizeof(T)));
+            span.CopyTo(allocation.AsSpan<T>());
             return allocation;
         }
 

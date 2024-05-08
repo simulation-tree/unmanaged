@@ -44,7 +44,7 @@ namespace Unmanaged
         [ExcludeFromCodeCoverage(Justification = "The callback code isn't easily testable")]
         static Allocations()
         {
-            AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
             {
                 if (instances.Count > 0)
                 {
