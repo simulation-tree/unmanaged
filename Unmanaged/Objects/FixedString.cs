@@ -8,7 +8,7 @@ using System.Text;
 namespace Unmanaged
 {
     /// <summary>
-    /// A fixed string that can be used in unmanaged code.
+    /// A string container that can be used in unmanaged code.
     /// Able to contain up to 290 characters within 256 bytes (7 bits per character).
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = Size)]

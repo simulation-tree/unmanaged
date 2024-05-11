@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
@@ -142,6 +141,11 @@ namespace Unmanaged.Collections
             array->items = new(array->type.size * length);
             oldItems.CopyTo(0, Math.Min(oldItems.Length, array->items.Length), array->items, 0, array->items.Length);
             oldItems.Dispose();
+        }
+
+        public static void Clear(UnsafeArray* array)
+        {
+            array->items.Clear();
         }
     }
 }

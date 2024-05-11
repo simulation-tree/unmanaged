@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
 {
@@ -60,7 +61,7 @@ namespace Unmanaged.Collections
         /// </summary>
         public readonly void Clear()
         {
-            AsSpan().Clear();
+            UnsafeArray.Clear(value);
         }
 
         /// <summary>
