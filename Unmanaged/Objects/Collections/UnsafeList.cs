@@ -303,7 +303,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeList* list)
         {
-            return list->items.IsDisposed;
+            return list is null || list->items.IsDisposed;
         }
 
         public static uint GetCount(UnsafeList* list)

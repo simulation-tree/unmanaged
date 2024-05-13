@@ -45,7 +45,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeDictionary* dictionary)
         {
-            return UnsafeList.IsDisposed(dictionary->keys);
+            return dictionary is null || UnsafeList.IsDisposed(dictionary->keys);
         }
 
         public static uint GetCount(UnsafeDictionary* dictionary)

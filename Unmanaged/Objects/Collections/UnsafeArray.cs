@@ -22,7 +22,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeArray* array)
         {
-            return array->items.IsDisposed;
+            return array is null || array->items.IsDisposed;
         }
 
         public static uint GetLength(UnsafeArray* array)
