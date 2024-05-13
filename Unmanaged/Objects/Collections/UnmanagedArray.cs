@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
 {
@@ -17,6 +16,8 @@ namespace Unmanaged.Collections
             get => UnsafeArray.Get<T>(value, index);
             set => UnsafeArray.Set<T>(this.value, index, value);
         }
+
+        public readonly ReadOnlySpan<T> this[Range range] => AsSpan()[range];
 
         int IReadOnlyCollection<T>.Count => (int)Length;
         T IReadOnlyList<T>.this[int index] => UnsafeArray.GetRef<T>(value, (uint)index);
