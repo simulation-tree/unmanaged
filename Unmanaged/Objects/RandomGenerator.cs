@@ -5,7 +5,7 @@ namespace Unmanaged
 {
     public readonly unsafe struct RandomGenerator : IDisposable
     {
-        private readonly nint pointer;
+        private readonly void* pointer;
 
         /// <summary>
         /// Creates a new disposable randomness generator.
@@ -25,15 +25,14 @@ namespace Unmanaged
                 hash ^= hash >> 13;
                 hash ^= hash << 3;
                 hash ^= hash >> 27;
-                nint tempAlloc = Marshal.AllocHGlobal(((int)(pid + ticks) % 3) + 1);
-                Marshal.FreeHGlobal(tempAlloc);
-                tempAlloc = tempAlloc.GetHashCode() * Environment.TickCount;
-                seed *= (ulong)(tempAlloc + hash);
+                void* tempAlloc = NativeMemory.Alloc((uint)((pid + ticks) % 3 + 1));
+                nint tempAddress = (nint)tempAlloc;
+                NativeMemory.Free(tempAlloc);
+                tempAddress *= Environment.TickCount;
+                seed *= (ulong)(tempAddress - hash);
 
-                pointer = Marshal.AllocHGlobal(sizeof(ulong));
-                Allocations.Register(pointer);
-                seed += (ulong)pointer.GetHashCode();
-
+                pointer = Allocations.Allocate(sizeof(ulong));
+                seed += (ulong)pointer;
                 ulong* t = (ulong*)pointer;
                 *t = seed;
             }
@@ -44,10 +43,9 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(ulong seed)
         {
-            pointer = Marshal.AllocHGlobal(sizeof(ulong));
-            Allocations.Register(pointer);
+            pointer = Allocations.Allocate(sizeof(ulong));
             ulong* t = (ulong*)pointer;
-            *t = seed + (ulong)pointer.GetHashCode();
+            *t = seed;
         }
 
         /// <summary>
@@ -69,8 +67,7 @@ namespace Unmanaged
         public readonly void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
-            Allocations.Unregister(pointer);
-            Marshal.FreeHGlobal(pointer);
+            Allocations.Free(pointer);
         }
 
         public readonly ulong NextULong()

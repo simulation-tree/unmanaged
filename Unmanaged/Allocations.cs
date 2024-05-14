@@ -1,163 +1,118 @@
-﻿using System;
+﻿#if DEBUG
+#define TRACE_ALLOCATIONS
+#endif
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Unmanaged
 {
-    /// <summary>
-    /// Static debug utility for tracking unmanaged instances.
-    /// </summary>
-    public static class Allocations
+    public static unsafe class Allocations
     {
+        private static readonly HashSet<nint> addresses = [];
         private static readonly Dictionary<nint, StackTrace> allocations = [];
-        private static readonly HashSet<nint> instances = [];
-        private static readonly HashSet<nint> everDisposed = [];
         private static readonly Dictionary<nint, StackTrace> disposals = [];
 
-        /// <summary>
-        /// <c>true</c> if there are any instances allocated at the moment.
-        /// </summary>
-        public static bool Any
-        {
-            get
-            {
-                return instances.Count > 0;
-            }
-        }
+        public static uint Count => (uint)addresses.Count;
 
-        public static uint Count => (uint)instances.Count;
-
-        public static IEnumerable<(object, StackTrace)> All
-        {
-            get
-            {
-                foreach (nint pointer in instances)
-                {
-                    if (allocations.TryGetValue(pointer, out StackTrace? stackTrace))
-                    {
-                        yield return (pointer, stackTrace);
-                    }
-                }
-            }
-        }
-
-        [ExcludeFromCodeCoverage(Justification = "The callback code isn't easily testable")]
         static Allocations()
         {
-            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
             {
-                if (instances.Count > 0)
-                {
-                    StringBuilder leaks = new();
-                    leaks.Append(instances.Count);
-                    leaks.Append(" unmanaged instance(s) were left undisposed: ");
-                    leaks.AppendLine();
-                    foreach (nint pointer in instances)
-                    {
-                        StackTrace stackTrace = allocations[pointer];
-                        leaks.Append(pointer);
-                        leaks.Append(" allocated at:");
-                        leaks.AppendLine();
-                        leaks.Append(stackTrace);
-                        leaks.AppendLine();
-                    }
-
-                    throw new SystemException(leaks.ToString());
-                }
+                ThrowIfAnyAllocation();
             };
         }
 
-        [Conditional("DEBUG")]
-        public static void Register(nint pointer)
+        public static void ThrowIfAnyAllocation()
         {
-            if (instances.Add(pointer))
+            if (addresses.Count > 0)
             {
-                StackTrace stackTrace = new(1, true);
-                instances.Add(pointer);
-                allocations[pointer] = stackTrace;
-            }
-            else
-            {
-                if (allocations.TryGetValue(pointer, out StackTrace? previousStackTrace))
+                StringBuilder exceptionBuilder = new();
+                foreach (nint address in addresses)
                 {
-                    throw new InvalidOperationException($"Pointer {pointer} has already been allocated from:\n{previousStackTrace}.");
+                    exceptionBuilder.AppendLine($"Leaked memory at {address:X} allocated from:\n{allocations[address]}");
                 }
-                else
-                {
-                    throw new InvalidOperationException($"Pointer {pointer} has already been allocated.");
-                }
+
+                string exceptionMessage = exceptionBuilder.ToString();
+                throw new Exception(exceptionMessage);
             }
         }
 
-        [Conditional("DEBUG")]
-        public static void Unregister(nint pointer)
+        public static void* Allocate(uint size)
         {
-            if (instances.Remove(pointer))
+            void* pointer = NativeMemory.Alloc(size);
+            nint address = (nint)pointer;
+            addresses.Add(address);
+#if TRACE_ALLOCATIONS
+            allocations[address] = new StackTrace(1, true);
+            disposals[address] = null!;
+#endif
+            return pointer;
+        }
+
+        public static void Free(void* pointer)
+        {
+            nint address = (nint)pointer;
+            addresses.Remove(address);
+            NativeMemory.Free(pointer);
+#if TRACE_ALLOCATIONS
+            disposals[address] = new StackTrace(1, true);
+#endif
+        }
+
+        public static void* Reallocate(void* pointer, uint newSize)
+        {
+            nint oldAddress = (nint)pointer;
+            addresses.Remove(oldAddress);
+            void* newPointer = NativeMemory.Realloc(pointer, newSize);
+            nint newAddress = (nint)newPointer;
+            addresses.Add(newAddress);
+            return newPointer;
+        }
+
+        public static bool IsNull(void* pointer)
+        {
+            nint address = (nint)pointer;
+            return IsNull(address);
+        }
+
+        public static void ThrowIfNull(void* pointer)
+        {
+            nint address = (nint)pointer;
+            ThrowIfNull(address);
+        }
+
+        public static void Register(nint address)
+        {
+            addresses.Add(address);
+        }
+
+        public static void Unregister(nint address)
+        {
+            addresses.Remove(address);
+        }
+
+        public static void ThrowIfNull(nint address)
+        {
+            if (!addresses.Contains(address))
             {
-                everDisposed.Add(pointer);
-                StackTrace stackTrace = new(1, true);
-                disposals[pointer] = stackTrace;
-            }
-            else
-            {
-                foreach ((nint disposedInstance, StackTrace disposedStackTrace) in disposals)
+#if TRACE_ALLOCATIONS
+                if (disposals.TryGetValue(address, out StackTrace? stackTrace))
                 {
-                    if (disposedInstance.Equals(pointer))
-                    {
-                        throw new ObjectDisposedException($"Pointer {pointer} was disposed at\n{disposedStackTrace}.");
-                    }
+                    throw new NullReferenceException($"Null pointer from:\n{stackTrace}");
                 }
-
-                throw new NullReferenceException($"Pointer {pointer} has never been registered.");
-            }
-        }
-
-#if DEBUG
-        public static bool IsNull(nint pointer)
-        {
-            if (instances.Contains(pointer))
-            {
-                return false;
-            }
-
-            if (everDisposed.Contains(pointer))
-            {
-                return true;
-            }
-
-            return true;
-        }
-#else
-        public static bool IsNull(nint pointer) => false;
 #endif
 
-        [Conditional("DEBUG")]
-        public static void ThrowIfNull(nint pointer)
+                throw new NullReferenceException("Null pointer.");
+            }
+        }
+
+        public static bool IsNull(nint address)
         {
-            if (instances.Contains(pointer))
-            {
-                return;
-            }
-
-            foreach ((nint disposedInstance, StackTrace stackTrace) in disposals)
-            {
-                if (disposedInstance.Equals(pointer))
-                {
-                    throw new ObjectDisposedException($"Pointer {pointer} has been disposed at\n{stackTrace}.");
-                }
-            }
-
-            foreach ((nint allocatedInstance, _) in allocations)
-            {
-                if (allocatedInstance.Equals(pointer))
-                {
-                    return;
-                }
-            }
-
-            throw new NullReferenceException($"Pointer {pointer} has never been registered.");
+            return !addresses.Contains(address);
         }
     }
 }

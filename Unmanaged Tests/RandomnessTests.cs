@@ -8,7 +8,7 @@ namespace Tests
         [Test]
         public void UniformDistribution()
         {
-            using RandomGenerator rng = new(1337);
+            RandomGenerator rng = new(1337);
             const int iterations = 1000000;
             float min = 1f;
             float max = 0f;
@@ -25,6 +25,8 @@ namespace Tests
             Assert.That(min, Is.LessThan(0.1f));
             Assert.That(max, Is.GreaterThan(0.9f));
             Assert.That(avg, Is.EqualTo(0.5f).Within(0.05f));
+            rng.Dispose();
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]

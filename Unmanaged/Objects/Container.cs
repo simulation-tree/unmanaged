@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
@@ -17,7 +16,7 @@ namespace Unmanaged
 
         private readonly void* pointer;
 
-        public readonly bool IsDisposed => Allocations.IsNull((nint)pointer);
+        public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
         public Container()
         {
@@ -32,9 +31,8 @@ namespace Unmanaged
 
         public readonly void Dispose()
         {
-            Allocations.ThrowIfNull((nint)pointer);
-            NativeMemory.Free(pointer);
-            Allocations.Unregister((nint)pointer);
+            Allocations.ThrowIfNull(pointer);
+            Allocations.Free(pointer);
         }
 
         [Conditional("DEBUG")]
@@ -48,13 +46,13 @@ namespace Unmanaged
 
         public unsafe readonly Span<byte> AsSpan()
         {
-            Allocations.ThrowIfNull((nint)pointer);
+            Allocations.ThrowIfNull(pointer);
             return new Span<byte>(pointer, type.size);
         }
 
         public unsafe readonly ref T AsRef<T>() where T : unmanaged
         {
-            Allocations.ThrowIfNull((nint)pointer);
+            Allocations.ThrowIfNull(pointer);
             ThrowIfSizeMismatch(sizeof(T));
             return ref Unsafe.AsRef<T>(pointer);
         }
@@ -90,9 +88,8 @@ namespace Unmanaged
         public unsafe static Container Create<T>(T value) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            Container container = new(NativeMemory.Alloc(type.size), type);
+            Container container = new(Allocations.Allocate(type.size), type);
             Unsafe.Write(container.pointer, value);
-            Allocations.Register((nint)container.pointer);
             return container;
         }
 

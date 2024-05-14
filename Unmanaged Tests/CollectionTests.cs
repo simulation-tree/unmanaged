@@ -222,7 +222,7 @@ namespace Tests
             }
         
             nestedData.Dispose();
-            Assert.That(Allocations.Any, Is.False);
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -241,7 +241,7 @@ namespace Tests
             Assert.That(map.GetRef(2), Is.EqualTo(69));
             map.Dispose();
 
-            Assert.That(Allocations.Any, Is.False);
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
     }
 }

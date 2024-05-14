@@ -11,7 +11,7 @@ namespace Tests
             Assert.That(allocation.IsDisposed, Is.False);
             Assert.That(allocation.Length, Is.EqualTo(0));
             allocation.Dispose();
-            Assert.That(Allocations.Any, Is.False);
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -46,18 +46,18 @@ namespace Tests
         [Test]
         public void AllocateAndFree()
         {
-            nint pointer = 1337;
-            Allocations.Register(pointer);
-            Allocations.Unregister(pointer);
-            Assert.Throws<ObjectDisposedException>(() => { Allocations.Unregister(pointer); });
-            Assert.That(Allocations.IsNull(pointer), Is.True);
+            nint address = 1337;
+            Allocations.Register(address);
+            Assert.That(Allocations.IsNull(address), Is.False);
+            Allocations.Unregister(address);
+            Assert.That(Allocations.IsNull(address), Is.True);
         }
 
         [Test]
         public void ThrowNeverAllocatedPointer()
         {
             nint pointer = Guid.NewGuid().GetHashCode();
-            Assert.Throws<NullReferenceException>(() => { Allocations.Unregister(pointer); });
+            Assert.Throws<NullReferenceException>(() => { Allocations.ThrowIfNull(pointer); });
         }
 
         [Test]
@@ -84,7 +84,7 @@ namespace Tests
         {
             Allocation obj = new(sizeof(int));
             obj.Dispose();
-            Assert.Throws<ObjectDisposedException>(() => obj.Dispose());
+            Assert.Throws<NullReferenceException>(() => obj.Dispose());
         }
 
         [Test]
@@ -132,14 +132,13 @@ namespace Tests
             Allocation b = new(sizeof(int));
             Allocation c = new(sizeof(int));
 
-            Assert.That(Allocations.Any, Is.True);
-            Assert.That(Allocations.All.Count(), Is.EqualTo(3));
+            Assert.That(Allocations.Count, Is.EqualTo(3));
 
             a.Dispose();
             b.Dispose();
             c.Dispose();
 
-            Assert.That(Allocations.Any, Is.False);
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
