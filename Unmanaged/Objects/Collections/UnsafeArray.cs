@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
 {
     public unsafe struct UnsafeArray
     {
         private RuntimeType type;
+        private uint length;
         private Allocation items;
 
         public UnsafeArray()
@@ -17,17 +17,22 @@ namespace Unmanaged.Collections
         public static void Free(UnsafeArray* array)
         {
             array->items.Dispose();
-            NativeMemory.Free(array);
+            Allocations.Free(array);
         }
 
         public static bool IsDisposed(UnsafeArray* array)
         {
-            return array is null || array->items.IsDisposed;
+            return Allocations.IsNull(array);
         }
 
         public static uint GetLength(UnsafeArray* array)
         {
-            return array->items.Length / array->type.size;
+            return array->length;
+        }
+
+        public static nint GetAddress(UnsafeArray* array)
+        {
+            return array->items.Address;
         }
 
         public static UnsafeArray* Allocate<T>(uint length) where T : unmanaged
@@ -37,9 +42,9 @@ namespace Unmanaged.Collections
 
         public static UnsafeArray* Allocate(RuntimeType type, uint length)
         {
-            nint arrayPointer = (nint)NativeMemory.Alloc((uint)sizeof(UnsafeArray));
-            UnsafeArray* array = (UnsafeArray*)arrayPointer;
+            UnsafeArray* array = Allocations.Allocate<UnsafeArray>();
             array->type = type;
+            array->length = length;
             array->items = new(type.size * length);
             array->items.Clear();
             return array;
@@ -71,18 +76,6 @@ namespace Unmanaged.Collections
             return ref span[(int)index];
         }
 
-        public static T Get<T>(UnsafeArray* array, uint index) where T : unmanaged
-        {
-            Span<T> span = AsSpan<T>(array);
-            return span[(int)index];
-        }
-
-        public static void Set<T>(UnsafeArray* array, uint index, T value) where T : unmanaged
-        {
-            Span<T> span = AsSpan<T>(array);
-            span[(int)index] = value;
-        }
-
         public static Span<T> AsSpan<T>(UnsafeArray* array) where T : unmanaged
         {
             return array->items.AsSpan<T>();
@@ -91,18 +84,6 @@ namespace Unmanaged.Collections
         public static Span<T> AsSpan<T>(UnsafeArray* array, uint start, uint length) where T : unmanaged
         {
             return array->items.AsSpan<T>(start, length);
-        }
-
-        public static uint IndexOf<T>(UnsafeArray* array, T value) where T : unmanaged, IEquatable<T>
-        {
-            Span<T> span = AsSpan<T>(array);
-            int i = span.IndexOf(value);
-            if (i == -1)
-            {
-                throw new NullReferenceException("Item not found.");
-            }
-
-            return (uint)i;
         }
 
         public static bool TryIndexOf<T>(UnsafeArray* array, T value, out uint index) where T : unmanaged, IEquatable<T>
@@ -121,12 +102,6 @@ namespace Unmanaged.Collections
             }
         }
 
-        public static bool Contains<T>(UnsafeArray* array, T value) where T : unmanaged, IEquatable<T>
-        {
-            Span<T> span = AsSpan<T>(array);
-            return span.Contains(value);
-        }
-
         public static void CopyTo(UnsafeArray* source, uint sourceIndex, UnsafeArray* destination, uint destinationIndex)
         {
             uint elementSize = source->type.size;
@@ -135,11 +110,12 @@ namespace Unmanaged.Collections
             sourceSpan.CopyTo(destinationSpan);
         }
 
-        public static void Resize(UnsafeArray* array, uint length)
+        public static void Resize(UnsafeArray* array, uint newLength)
         {
             Allocation oldItems = array->items;
-            array->items = new(array->type.size * length);
-            oldItems.CopyTo(0, Math.Min(oldItems.Length, array->items.Length), array->items, 0, array->items.Length);
+            array->items = new(array->type.size * newLength);
+            array->length = newLength;
+            oldItems.CopyTo(0, Math.Min(oldItems.Length, array->length), array->items, 0, array->length);
             oldItems.Dispose();
         }
 

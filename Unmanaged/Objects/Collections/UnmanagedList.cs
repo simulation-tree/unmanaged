@@ -11,6 +11,7 @@ namespace Unmanaged.Collections
         public readonly bool IsDisposed => UnsafeList.IsDisposed(value);
         public readonly uint Count => UnsafeList.GetCount(value);
         public readonly uint Capacity => UnsafeList.GetCapacity(value);
+        public readonly nint Address => UnsafeList.GetAddress(value);
 
         public readonly T this[uint index]
         {

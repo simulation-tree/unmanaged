@@ -20,6 +20,8 @@ namespace Unmanaged
         /// </summary>
         public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
+        public readonly nint Address => (nint)pointer;
+
         public Allocation()
         {
             this.length = 0;

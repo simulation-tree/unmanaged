@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
 {
@@ -21,12 +20,12 @@ namespace Unmanaged.Collections
         {
             UnsafeList.Free(dictionary->keys);
             UnsafeList.Free(dictionary->values);
-            Marshal.FreeHGlobal((nint)dictionary);
             dictionary->keyType = default;
             dictionary->valueType = default;
             dictionary->count = 0;
             dictionary->keys = default;
             dictionary->values = default;
+            Allocations.Free(dictionary);
         }
 
         [Conditional("DEBUG")]
@@ -56,8 +55,7 @@ namespace Unmanaged.Collections
         public static UnsafeDictionary* Allocate<K, V>(uint initialCapacity = 1) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
             RuntimeType type = RuntimeType.Get<K>();
-            nint dictionaryPointer = Marshal.AllocHGlobal(sizeof(UnsafeDictionary));
-            UnsafeDictionary* dictionary = (UnsafeDictionary*)dictionaryPointer;
+            UnsafeDictionary* dictionary = Allocations.Allocate<UnsafeDictionary>();
             dictionary->keyType = type;
             dictionary->valueType = RuntimeType.Get<V>();
             dictionary->count = 0;
@@ -68,8 +66,7 @@ namespace Unmanaged.Collections
 
         public static UnsafeDictionary* Allocate(RuntimeType keyType, RuntimeType valueType, uint initialCapacity = 1)
         {
-            nint dictionaryPointer = Marshal.AllocHGlobal(sizeof(UnsafeDictionary));
-            UnsafeDictionary* dictionary = (UnsafeDictionary*)dictionaryPointer;
+            UnsafeDictionary* dictionary = Allocations.Allocate<UnsafeDictionary>();
             dictionary->keyType = keyType;
             dictionary->valueType = valueType;
             dictionary->count = 0;

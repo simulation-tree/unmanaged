@@ -1,9 +1,16 @@
-﻿using Unmanaged;
+﻿using System;
+using Unmanaged;
 
 namespace Tests
 {
     public class ContainerTests
     {
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
+
         [Test]
         public void ContainValueAndCompare()
         {

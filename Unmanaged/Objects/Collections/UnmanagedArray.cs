@@ -10,11 +10,12 @@ namespace Unmanaged.Collections
 
         public readonly bool IsDisposed => UnsafeArray.IsDisposed(value);
         public readonly uint Length => UnsafeArray.GetLength(value);
+        public readonly nint Address => UnsafeArray.GetAddress(value);
 
         public readonly T this[uint index]
         {
-            get => UnsafeArray.Get<T>(value, index);
-            set => UnsafeArray.Set<T>(this.value, index, value);
+            get => UnsafeArray.GetRef<T>(value, index);
+            set => UnsafeArray.GetRef<T>(this.value, index) = value;
         }
 
         public readonly ReadOnlySpan<T> this[Range range] => AsSpan()[range];
@@ -73,11 +74,6 @@ namespace Unmanaged.Collections
             return UnsafeArray.AsSpan<T>(value);
         }
 
-        public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
-        {
-            return UnsafeArray.IndexOf(this.value, value);
-        }
-
         public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             return UnsafeArray.TryIndexOf(this.value, value, out index);
@@ -85,7 +81,7 @@ namespace Unmanaged.Collections
 
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeArray.Contains(this.value, value);
+            return TryIndexOf(value, out _);
         }
 
         public readonly void Resize(uint length)
@@ -100,12 +96,12 @@ namespace Unmanaged.Collections
 
         public readonly T Get(uint index)
         {
-            return UnsafeArray.Get<T>(value, index);
+            return UnsafeArray.GetRef<T>(value, index);
         }
 
         public readonly void Set(uint index, T value)
         {
-            UnsafeArray.Set<T>(this.value, index, value);
+            UnsafeArray.GetRef<T>(this.value, index) = value;
         }
 
         public readonly void CopyTo(Span<T> span)
@@ -149,7 +145,7 @@ namespace Unmanaged.Collections
             private readonly UnsafeArray* array = array;
             private int index = -1;
 
-            public readonly T Current => UnsafeArray.Get<T>(array, (uint)index);
+            public readonly T Current => UnsafeArray.GetRef<T>(array, (uint)index);
 
             readonly object IEnumerator.Current => Current;
 

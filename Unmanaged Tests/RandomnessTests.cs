@@ -1,10 +1,17 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using Unmanaged;
 
 namespace Tests
 {
     public class RandomnessTests
     {
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
+
         [Test]
         public void UniformDistribution()
         {
@@ -26,13 +33,12 @@ namespace Tests
             Assert.That(max, Is.GreaterThan(0.9f));
             Assert.That(avg, Is.EqualTo(0.5f).Within(0.05f));
             rng.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void UniformDistributionDouble()
         {
-            using RandomGenerator rng = new(1337);
+            RandomGenerator rng = new(1337);
             const int iterations = 1000000;
             double min = 1d;
             double max = 0d;
@@ -49,6 +55,7 @@ namespace Tests
             Assert.That(min, Is.LessThan(0.1d));
             Assert.That(max, Is.GreaterThan(0.9d));
             Assert.That(avg, Is.EqualTo(0.5d).Within(0.05d));
+            rng.Dispose();
         }
 
         [Test]
@@ -60,11 +67,12 @@ namespace Tests
             float avg = 0f;
             for (int i = 0; i < iterations; i++)
             {
-                using RandomGenerator rng = new();
+                RandomGenerator rng = new();
                 float value = rng.NextFloat();
                 min = Math.Min(min, value);
                 max = Math.Max(max, value);
                 avg += value;
+                rng.Dispose();
             }
 
             avg /= iterations;
@@ -97,7 +105,7 @@ namespace Tests
             max = 0f;
             avg = 0f;
             stopwatch.Restart();
-            using RandomGenerator rng = new(1337);
+            RandomGenerator rng = new(1337);
             for (int i = 0; i < iterations; i++)
             {
                 float value = rng.NextFloat();
@@ -108,6 +116,7 @@ namespace Tests
 
             stopwatch.Stop();
             Console.WriteLine($"RandomGenerator: {stopwatch.ElapsedMilliseconds}ms");
+            rng.Dispose();
         }
     }
 }

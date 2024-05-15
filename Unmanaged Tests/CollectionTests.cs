@@ -1,10 +1,17 @@
-﻿using Unmanaged;
+﻿using System;
+using Unmanaged;
 using Unmanaged.Collections;
 
 namespace Tests
 {
     public class CollectionTests
     {
+        [TearDown]
+        public void CleanUp()
+        {
+            Allocations.ThrowIfAnyAllocation();
+        }
+
         [Test]
         public void EmptyArray()
         {
@@ -186,6 +193,27 @@ namespace Tests
             Assert.That(span[1], Is.EqualTo(2));
             Assert.That(span[2], Is.EqualTo(3));
             Assert.That(span[3], Is.EqualTo(4));
+        }
+
+        [Test]
+        public unsafe void ReadBytesFromList()
+        {
+            UnsafeList* data = UnsafeList.Allocate<int>();
+            UnsafeList.Add(data, 1);
+            UnsafeList.Add(data, 2);
+            UnsafeList.Add(data, 3);
+            UnsafeList.Add(data, 4);
+
+            Span<byte> span = UnsafeList.AsSpan<byte>(data);
+            int value1 = BitConverter.ToInt32(span.Slice(0, 4));
+            int value2 = BitConverter.ToInt32(span.Slice(4, 4));
+            int value3 = BitConverter.ToInt32(span.Slice(8, 4));
+            int value4 = BitConverter.ToInt32(span.Slice(12, 4));
+            Assert.That(value1, Is.EqualTo(1));
+            Assert.That(value2, Is.EqualTo(2));
+            Assert.That(value3, Is.EqualTo(3));
+            Assert.That(value4, Is.EqualTo(4));
+            UnsafeList.Free(data);
         }
 
         [Test]

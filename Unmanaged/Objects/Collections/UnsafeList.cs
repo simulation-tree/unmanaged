@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace Unmanaged.Collections
 {
@@ -8,6 +7,7 @@ namespace Unmanaged.Collections
     {
         private RuntimeType type;
         private uint count;
+        private uint capacity;
         private Allocation items;
 
         public UnsafeList()
@@ -27,7 +27,7 @@ namespace Unmanaged.Collections
         public static void Free(UnsafeList* list)
         {
             list->items.Dispose();
-            NativeMemory.Free(list);
+            Allocations.Free(list);
         }
 
         public static UnsafeList* Allocate<T>(uint initialCapacity = 1) where T : unmanaged
@@ -38,9 +38,10 @@ namespace Unmanaged.Collections
         public static UnsafeList* Allocate(RuntimeType type, uint initialCapacity = 1)
         {
             ThrowIfLengthIsZero(initialCapacity);
-            UnsafeList* list = (UnsafeList*)NativeMemory.Alloc((uint)sizeof(UnsafeList));
+            UnsafeList* list = Allocations.Allocate<UnsafeList>();
             list->type = type;
             list->count = 0;
+            list->capacity = initialCapacity;
             list->items = new(type.size * initialCapacity);
             return list;
         }
@@ -123,6 +124,7 @@ namespace Unmanaged.Collections
             {
                 uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
+                list->capacity = newCapacity;
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
@@ -143,6 +145,7 @@ namespace Unmanaged.Collections
             {
                 uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
+                list->capacity = newCapacity;
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
@@ -159,6 +162,7 @@ namespace Unmanaged.Collections
             if (newCount >= GetCapacity(list))
             {
                 Allocation newItems = new(elementSize * newCount);
+                list->capacity = newCount;
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
@@ -177,6 +181,7 @@ namespace Unmanaged.Collections
             if (newCount >= capacity)
             {
                 Allocation newItems = new(list->type.size * newCount);
+                list->capacity = newCount;
                 list->items.CopyTo(newItems);
                 list->items.Dispose();
                 list->items = newItems;
@@ -259,6 +264,21 @@ namespace Unmanaged.Collections
             RemoveAt(list, index);
         }
 
+        public static void RemoveAtBySwapping(UnsafeList* list, uint index)
+        {
+            uint count = list->count;
+            if (index >= count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            uint lastIndex = count - 1;
+            Span<byte> lastElement = list->items.AsSpan<byte>(lastIndex * list->type.size, list->type.size);
+            Span<byte> indexElement = list->items.AsSpan<byte>(index * list->type.size, list->type.size);
+            lastElement.CopyTo(indexElement);
+            list->count = lastIndex;
+        }
+
         public static int GetContentHashCode(UnsafeList* list)
         {
             unchecked
@@ -278,22 +298,28 @@ namespace Unmanaged.Collections
 
         public static Span<T> AsSpan<T>(UnsafeList* list) where T : unmanaged
         {
-            return list->items.AsSpan<T>(0, list->count);
+            uint size = list->type.size;
+            uint count = size / (uint)sizeof(T) * list->count;
+            return list->items.AsSpan<T>(0, count);
         }
 
         public static Span<T> AsSpan<T>(UnsafeList* list, uint start) where T : unmanaged
         {
-            if (start >= list->count)
+            uint size = list->type.size;
+            uint count = size / (uint)sizeof(T) * list->count;
+            if (start >= count)
             {
                 throw new IndexOutOfRangeException();
             }
 
-            return list->items.AsSpan<T>(start, list->count - start);
+            return list->items.AsSpan<T>(start, count - start);
         }
 
         public static Span<T> AsSpan<T>(UnsafeList* list, uint start, uint length) where T : unmanaged
         {
-            if (start + length > list->count)
+            uint size = list->type.size;
+            uint count = size / (uint)sizeof(T) * list->count;
+            if (start + length > count)
             {
                 throw new IndexOutOfRangeException();
             }
@@ -303,7 +329,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeList* list)
         {
-            return list is null || list->items.IsDisposed;
+            return Allocations.IsNull(list);
         }
 
         public static uint GetCount(UnsafeList* list)
@@ -313,7 +339,12 @@ namespace Unmanaged.Collections
 
         public static uint GetCapacity(UnsafeList* list)
         {
-            return list->items.Length / list->type.size;
+            return list->capacity;
+        }
+
+        public static nint GetAddress(UnsafeList* list)
+        {
+            return list->items.Address;
         }
 
         public static void CopyTo(UnsafeList* source, uint sourceIndex, UnsafeList* destination, uint destinationIndex)

@@ -53,6 +53,11 @@ namespace Unmanaged
             return pointer;
         }
 
+        public static T* Allocate<T>() where T : unmanaged
+        {
+            return (T*)Allocate((uint)sizeof(T));
+        }
+
         public static void Free(void* pointer)
         {
             nint address = (nint)pointer;
@@ -100,9 +105,14 @@ namespace Unmanaged
             if (!addresses.Contains(address))
             {
 #if TRACE_ALLOCATIONS
-                if (disposals.TryGetValue(address, out StackTrace? stackTrace))
+                if (allocations.TryGetValue(address, out StackTrace? stackTrace))
                 {
-                    throw new NullReferenceException($"Null pointer from:\n{stackTrace}");
+                    throw new NullReferenceException($"Null pointer that was previously allocated at:\n{stackTrace}");
+                }
+
+                if (disposals.TryGetValue(address, out stackTrace))
+                {
+                    throw new NullReferenceException($"Null pointer that was previously disposed at:\n{stackTrace}");
                 }
 #endif
 
