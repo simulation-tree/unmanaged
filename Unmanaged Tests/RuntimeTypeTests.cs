@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using Unmanaged;
 
@@ -47,18 +50,18 @@ namespace Tests
             string result = s.ToString();
 
             List<uint> values = new();
-            values.Add(84327);
-            values.Add(100252);
-            values.Add(164309);
-            values.Add(179070);
-            values.Add(295439);
-            values.Add(310200);
-            values.Add(557678);
-            values.Add(572439);
-            values.Add(315623);
-            values.Add(575600);
-            values.Add(111465);
-            values.Add(162741);
+            values.Add(118635);
+            values.Add(77710);
+            values.Add(144269); //short
+            values.Add(195740);
+            values.Add(283011); //int
+            values.Add(268946);
+            values.Add(589356); //long
+            values.Add(575291);
+            values.Add(265195);
+            values.Add(534554); //double
+            values.Add(111961);
+            values.Add(158381);
 
             StringBuilder s2 = new();
             foreach (var value in values)
@@ -68,6 +71,84 @@ namespace Tests
 
             string result2 = s2.ToString();
             Assert.That(result, Is.EqualTo(result2));
+        }
+
+        [Test]
+        public void CheckDuplicatesFrequency()
+        {
+            TextWriter previousOutput = Console.Out;
+            StringWriter output = new();
+            Console.SetOut(output);
+            List<RuntimeType> types = new();
+            MethodInfo getMethod = typeof(RuntimeType).GetMethod("Get") ?? throw new Exception("Get method not found");
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                string? assemblyName = assembly.GetName()?.Name;
+                if (assemblyName == "Unmanaged" || assemblyName == "System.Runtime" || assemblyName == "System.Private.CoreLib")
+                {
+                    foreach (Type type in assembly.GetTypes())
+                    {
+                        if (type.FullName?.Contains("<PrivateImplementationDetails>") == true) continue;
+
+                        if (IsUnmanagedType(type))
+                        {
+                            MethodInfo genericMethod = getMethod.MakeGenericMethod(type);
+                            RuntimeType runtimeType = (RuntimeType)(genericMethod.Invoke(null, null) ?? throw new Exception("Invalid type"));
+                            types.Add(runtimeType);
+                        }
+                    }
+                }
+            }
+
+            int collisions = output.ToString().Count(c => c == '\n');
+            float percentage = collisions / (float)types.Count;
+            if (collisions == 0)
+            {
+                percentage = 0f;
+            }
+
+            Console.SetOut(previousOutput);
+            Console.WriteLine($"Total types: {types.Count}, collision %: {percentage * 100f}%");
+
+            static bool IsUnmanagedType(Type type)
+            {
+                if (type == typeof(void))
+                {
+                    return false;
+                }
+
+                if (!type.IsValueType || type.IsGenericType || type.IsByRef || type.IsByRefLike)
+                {
+                    return false;
+                }
+
+                if (type.IsPrimitive)
+                {
+                    return true;
+                }
+
+                Stack<Type> stack = new();
+                stack.Push(type);
+                while (stack.Count > 0)
+                {
+                    Type current = stack.Pop();
+                    FieldInfo[] fields = current.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    foreach (FieldInfo field in fields)
+                    {
+                        if (!field.FieldType.IsValueType || type.IsGenericType || type.IsByRef || type.IsByRefLike)
+                        {
+                            return false;
+                        }
+
+                        if (!field.FieldType.IsPrimitive)
+                        {
+                            stack.Push(field.FieldType);
+                        }
+                    }
+                }
+
+                return true;
+            }
         }
 
         [Test]

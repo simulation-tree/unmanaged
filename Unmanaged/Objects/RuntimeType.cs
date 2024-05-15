@@ -14,20 +14,20 @@ namespace Unmanaged
     public readonly struct RuntimeType : IEquatable<RuntimeType>
     {
         /// <summary>
-        /// Size in bytes of the type.
+        /// Size of the type.
         /// </summary>
         public readonly ushort size;
 
-        private readonly ushort id;
+        private readonly ushort hash;
 
         /// <summary>
         /// The <see cref="System.Type"/> that this instance was created from.
         /// </summary>
-        public readonly Type Type => TypeTable.types[id];
+        public readonly Type Type => TypeTable.types[hash];
 
         private RuntimeType(ushort id, ushort size)
         {
-            this.id = id;
+            this.hash = id;
             this.size = size;
         }
 
@@ -39,24 +39,24 @@ namespace Unmanaged
         {
             unchecked
             {
-                id = (ushort)rawValue;
+                hash = (ushort)rawValue;
                 size = (ushort)(rawValue >> 16);
             }
         }
 
         /// <returns>The <see cref="Type.ToString"/> result.</returns>
-        public override string ToString()
+        public readonly override string ToString()
         {
             return Type.ToString();
         }
 
         /// <returns>A number value that can represent this instance.</returns>
-        public uint AsRawValue()
+        public readonly uint AsRawValue()
         {
             unchecked
             {
                 uint rawValue = default;
-                rawValue |= id;
+                rawValue |= hash;
                 rawValue |= (uint)size << 16;
                 return rawValue;
             }
@@ -64,7 +64,7 @@ namespace Unmanaged
 
         public readonly override int GetHashCode()
         {
-            return id.GetHashCode();
+            return hash.GetHashCode();
         }
 
         public readonly override bool Equals(object? obj)
@@ -74,12 +74,12 @@ namespace Unmanaged
 
         public readonly bool Equals(RuntimeType other)
         {
-            return id == other.id;
+            return hash == other.hash;
         }
 
         public readonly bool Is<T>() where T : unmanaged
         {
-            return RuntimeTypeHash<T>.value == id;
+            return RuntimeTypeHash<T>.value == hash;
         }
 
         /// <summary>
@@ -109,7 +109,8 @@ namespace Unmanaged
                     int hash = GetHashCode(type);
                     while (TypeTable.typeIds.Contains((ushort)hash))
                     {
-                        hash += 15372988;
+                        hash += 174440041;
+                        Console.WriteLine($"Collision detected for {type}");
                     }
 
                     value = (ushort)hash;
@@ -120,11 +121,12 @@ namespace Unmanaged
 
             private static int GetHashCode(Type type)
             {
-                ReadOnlySpan<char> aqn = type.FullName;
+                ReadOnlySpan<char> aqn = type.AssemblyQualifiedName.AsSpan();
                 int hash = 0;
                 for (int i = 0; i < aqn.Length; i++)
                 {
-                    hash = (hash << 5) - hash + aqn[i];
+                    char c = aqn[i];
+                    hash = (hash << 5) - hash + (c * 174440041);
                 }
 
                 return hash;
