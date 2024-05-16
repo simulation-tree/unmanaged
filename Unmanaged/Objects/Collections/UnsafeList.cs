@@ -86,20 +86,6 @@ namespace Unmanaged.Collections
             return span[(int)index];
         }
 
-        /// <summary>
-        /// Returns the bytes for the element at the given index.
-        /// </summary>
-        public static Span<byte> Get(UnsafeList* list, uint index)
-        {
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
-            uint elementSize = list->type.size;
-            return list->items.AsSpan<byte>(index * elementSize, elementSize);
-        }
-
         public static void Set<T>(UnsafeList* list, uint index, T value) where T : unmanaged
         {
             if (index >= list->count)
@@ -109,6 +95,20 @@ namespace Unmanaged.Collections
 
             Span<T> span = list->items.AsSpan<T>(0, list->count);
             span[(int)index] = value;
+        }
+
+        /// <summary>
+        /// Returns the bytes for the element at the given index.
+        /// </summary>
+        public static Span<byte> GetBytes(UnsafeList* list, uint index)
+        {
+            if (index >= list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            uint elementSize = list->type.size;
+            return list->items.AsSpan<byte>(index * elementSize, elementSize);
         }
 
         public static void Insert<T>(UnsafeList* list, uint index, T item) where T : unmanaged

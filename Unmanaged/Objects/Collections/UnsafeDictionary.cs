@@ -16,13 +16,6 @@ namespace Unmanaged.Collections
             throw new InvalidOperationException("Use UnsafeDictionary.Allocate() to create an UnsafeDictionary.");
         }
 
-        public static void Free(ref UnsafeDictionary* dictionary)
-        {
-            UnsafeList.Free(ref dictionary->keys);
-            UnsafeList.Free(ref dictionary->values);
-            Allocations.Free(ref dictionary);
-        }
-
         [Conditional("DEBUG")]
         private static void ThrowIfSizeMismatch<K, V>(UnsafeDictionary* dictionary) where K : unmanaged where V : unmanaged
         {
@@ -44,6 +37,7 @@ namespace Unmanaged.Collections
 
         public static uint GetCount(UnsafeDictionary* dictionary)
         {
+            Allocations.ThrowIfNull(dictionary);
             return dictionary->count;
         }
 
@@ -70,8 +64,17 @@ namespace Unmanaged.Collections
             return dictionary;
         }
 
+        public static void Free(ref UnsafeDictionary* dictionary)
+        {
+            Allocations.ThrowIfNull(dictionary);
+            UnsafeList.Free(ref dictionary->keys);
+            UnsafeList.Free(ref dictionary->values);
+            Allocations.Free(ref dictionary);
+        }
+
         public static ref V GetValueRef<K, V>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
+            Allocations.ThrowIfNull(dictionary);
             ThrowIfSizeMismatch<K, V>(dictionary);
             uint index = UnsafeList.IndexOf<K>(dictionary->keys, key);
             return ref UnsafeList.GetRef<V>(dictionary->values, index);
@@ -79,6 +82,7 @@ namespace Unmanaged.Collections
 
         public static ref K GetKeyRef<K, V>(UnsafeDictionary* dictionary, uint index) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
+            Allocations.ThrowIfNull(dictionary);
             ThrowIfSizeMismatch<K, V>(dictionary);
             if (index >= dictionary->count)
             {
@@ -90,22 +94,26 @@ namespace Unmanaged.Collections
 
         public static bool ContainsKey<K, V>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
+            Allocations.ThrowIfNull(dictionary);
             ThrowIfSizeMismatch<K, V>(dictionary);
             return UnsafeList.Contains(dictionary->keys, key);
         }
 
         public static ReadOnlySpan<K> GetKeys<K>(UnsafeDictionary* dictionary) where K : unmanaged, IEquatable<K>
         {
+            Allocations.ThrowIfNull(dictionary);
             return UnsafeList.AsSpan<K>(dictionary->keys);
         }
 
         public static ReadOnlySpan<V> GetValues<V>(UnsafeDictionary* dictionary) where V : unmanaged
         {
+            Allocations.ThrowIfNull(dictionary);
             return UnsafeList.AsSpan<V>(dictionary->values);
         }
 
         public static void Add<K, V>(UnsafeDictionary* dictionary, K key, V value) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
+            Allocations.ThrowIfNull(dictionary);
             ThrowIfSizeMismatch<K, V>(dictionary);
             if (UnsafeList.Contains(dictionary->keys, key))
             {
@@ -119,6 +127,7 @@ namespace Unmanaged.Collections
 
         public static void Remove<K, V>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
+            Allocations.ThrowIfNull(dictionary);
             ThrowIfSizeMismatch<K, V>(dictionary);
             uint index = UnsafeList.Remove<K>(dictionary->keys, key);
             UnsafeList.RemoveAt(dictionary->values, index);
@@ -127,6 +136,7 @@ namespace Unmanaged.Collections
 
         public static void Clear<K, V>(UnsafeDictionary* dictionary) where K : unmanaged where V : unmanaged
         {
+            Allocations.ThrowIfNull(dictionary);
             UnsafeList.Clear(dictionary->keys);
             UnsafeList.Clear(dictionary->values);
             dictionary->count = 0;

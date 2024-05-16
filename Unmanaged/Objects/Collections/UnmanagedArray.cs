@@ -79,6 +79,16 @@ namespace Unmanaged.Collections
             return UnsafeArray.TryIndexOf(this.value, value, out index);
         }
 
+        public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
+        {
+            if (!TryIndexOf(value, out uint index))
+            {
+                throw new NullReferenceException($"The value {value} was not found in the array.");
+            }
+
+            return index;
+        }
+
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
         {
             return TryIndexOf(value, out _);

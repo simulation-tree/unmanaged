@@ -64,7 +64,7 @@ namespace Unmanaged
 
         public readonly override int GetHashCode()
         {
-            return hash.GetHashCode();
+            return AsRawValue().GetHashCode();
         }
 
         public readonly override bool Equals(object? obj)

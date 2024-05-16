@@ -46,6 +46,11 @@ namespace Unmanaged.Collections
             value = UnsafeDictionary.Allocate<K, V>();
         }
 
+        public UnmanagedDictionary(UnsafeDictionary* dictionary)
+        {
+            value = dictionary;
+        }
+
         public UnmanagedDictionary(uint initialCapacity)
         {
             value = UnsafeDictionary.Allocate<K, V>(initialCapacity);

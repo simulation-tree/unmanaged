@@ -283,9 +283,9 @@ namespace Tests
             Assert.That(map.ContainsKey(1), Is.True);
             Assert.That(map.ContainsKey(2), Is.True);
             Assert.That(map.ContainsKey(3), Is.False);
-            Assert.That(map.GetRef(0), Is.EqualTo(23));
-            Assert.That(map.GetRef(1), Is.EqualTo(42));
-            Assert.That(map.GetRef(2), Is.EqualTo(69));
+            Assert.That(map[0], Is.EqualTo(23));
+            Assert.That(map[1], Is.EqualTo(42));
+            Assert.That(map[2], Is.EqualTo(69));
             map.Dispose();
 
             Assert.That(Allocations.Count, Is.EqualTo(0));
