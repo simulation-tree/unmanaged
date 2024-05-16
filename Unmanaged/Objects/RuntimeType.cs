@@ -92,6 +92,43 @@ namespace Unmanaged
             return new(id, (ushort)sizeof(T));
         }
 
+        /// <summary>
+        /// Returns a hash that represents the set of types given (regardless of order).
+        /// </summary>
+        public static int CalculateHash(ReadOnlySpan<RuntimeType> types)
+        {
+            int typeCount = types.Length;
+            Span<RuntimeType> typesSpan = stackalloc RuntimeType[typeCount];
+            types.CopyTo(typesSpan);
+            int hash = 0;
+            while (typeCount > 0)
+            {
+                uint max = 0;
+                int index = -1;
+                for (int i = 0; i < typeCount; i++)
+                {
+                    RuntimeType type = typesSpan[i];
+                    uint typeHash = type.AsRawValue() * (uint)types.Length;
+                    if (typeHash > max)
+                    {
+                        max = typeHash;
+                        index = i;
+                    }
+                }
+
+                unchecked
+                {
+                    hash += (int)max * 174440041;
+                }
+
+                RuntimeType last = typesSpan[typeCount - 1];
+                typesSpan[index] = last;
+                typeCount--;
+            }
+
+            return hash;
+        }
+
         public static bool operator ==(RuntimeType left, RuntimeType right) => left.Equals(right);
         public static bool operator !=(RuntimeType left, RuntimeType right) => !left.Equals(right);
         public static bool operator ==(RuntimeType left, Type right) => left.Type == right;
