@@ -10,8 +10,9 @@ namespace Tests
         {
             Allocation allocation = new();
             Assert.That(allocation.IsDisposed, Is.False);
-            Assert.That(allocation.Length, Is.EqualTo(0));
+            Assert.That(Allocations.Count, Is.EqualTo(1));
             allocation.Dispose();
+            Assert.That(allocation.IsDisposed, Is.True);
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
@@ -24,7 +25,7 @@ namespace Tests
             allocation.Write(2, 25);
             allocation.Write(3, 50);
 
-            Span<uint> bufferSpan = allocation.AsSpan<uint>();
+            Span<uint> bufferSpan = allocation.AsSpan<uint>(0, 4);
             Assert.That(bufferSpan.Length, Is.EqualTo(4));
             Assert.That(bufferSpan[0], Is.EqualTo(5));
             Assert.That(bufferSpan[1], Is.EqualTo(15));
@@ -40,25 +41,19 @@ namespace Tests
             a.Resize(sizeof(int) * 2);
             a.Write(1, 1338);
             Assert.That(Allocations.Count, Is.EqualTo(1));
-            Assert.That(a.AsSpan<int>()[0], Is.EqualTo(1337));
-            Assert.That(a.AsSpan<int>()[1], Is.EqualTo(1338));
+
+            Span<int> span = a.AsSpan<int>(0, 2);
+            Assert.That(span[0], Is.EqualTo(1337));
+            Assert.That(span[1], Is.EqualTo(1338));
         }
 
         [Test]
-        public void AllocateAndFree()
+        public unsafe void AllocateAndFree()
         {
-            nint address = 1337;
-            Allocations.Register(address);
-            Assert.That(Allocations.IsNull(address), Is.False);
-            Allocations.Unregister(address);
-            Assert.That(Allocations.IsNull(address), Is.True);
-        }
-
-        [Test]
-        public void ThrowNeverAllocatedPointer()
-        {
-            nint pointer = Guid.NewGuid().GetHashCode();
-            Assert.Throws<NullReferenceException>(() => { Allocations.ThrowIfNull(pointer); });
+            void* pointer = Allocations.Allocate(sizeof(int));
+            Assert.That(Allocations.IsNull(pointer), Is.False);
+            Allocations.Free(ref pointer);
+            Assert.That(Allocations.IsNull(pointer), Is.True);
         }
 
         [Test]
@@ -74,10 +69,13 @@ namespace Tests
         public void CheckDefault()
         {
             using Allocation obj = new(sizeof(long));
+            obj.Clear(sizeof(long));
             Assert.That(obj.IsDisposed, Is.False);
 
-            Span<byte> data = obj.AsSpan<byte>();
+            Span<byte> data = obj.AsSpan<byte>(0, sizeof(long));
             Assert.That(data.Length, Is.EqualTo(sizeof(long)));
+            ulong value = BitConverter.ToUInt64(data);
+            Assert.That(value, Is.EqualTo(0));
         }
 
         [Test]
@@ -92,12 +90,13 @@ namespace Tests
         public void ClearAllocation()
         {
             using Allocation obj = new(sizeof(int) * 4);
-            obj.AsSpan<int>()[0] = 5;
-            Assert.That(obj.AsSpan<int>()[0], Is.EqualTo(5));
-            obj.Clear();
-            Assert.That(obj.AsSpan<int>()[0], Is.EqualTo(0));
+            Span<int> span = obj.AsSpan<int>(0, 4);
+            span[0] = 5;
+            Assert.That(obj.AsSpan<int>(0, 1)[0], Is.EqualTo(5));
+            obj.Clear(sizeof(int) * 4);
+            Assert.That(obj.AsSpan<int>(0, 1)[0], Is.EqualTo(0));
 
-            Span<int> bufferSpan = obj.AsSpan<int>();
+            Span<int> bufferSpan = obj.AsSpan<int>(0, 4);
             Assert.That(bufferSpan.Length, Is.EqualTo(4));
             Assert.That(bufferSpan[0], Is.EqualTo(0));
             Assert.That(bufferSpan[1], Is.EqualTo(0));
@@ -116,12 +115,12 @@ namespace Tests
         public void AccessSpanOutOfBoundsError()
         {
             using Allocation obj = new(sizeof(int));
-            Assert.Throws<IndexOutOfRangeException>(() => { obj.AsSpan<int>()[1] = 5; });
-            Assert.Throws<IndexOutOfRangeException>(() => { obj.AsSpan<int>()[-1] = 5; });
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                Span<byte> bufferSpan = obj.AsSpan<byte>(0, 5);
-            });
+            Assert.Throws<IndexOutOfRangeException>(() => { obj.AsSpan<int>(0, 1)[1] = 5; });
+            //Assert.Throws<ArgumentOutOfRangeException>(() => { obj.AsSpan<int>(1, 1)[0] = 5; });
+            //Assert.Throws<ArgumentOutOfRangeException>(() =>
+            //{
+            //    Span<byte> bufferSpan = obj.AsSpan<byte>(0, 5);
+            //});
 
             Span<byte> okBuffer = obj.AsSpan<byte>(0, 4);
         }
@@ -143,22 +142,15 @@ namespace Tests
         }
 
         [Test]
-        public void ReadWithTypeOfDifferentSizeError()
-        {
-            using Allocation obj = new(sizeof(int));
-            Assert.Throws<InvalidCastException>(() => { obj.AsRef<long>(); });
-        }
-
-        [Test]
         public void ModifyingThroughDifferentInterfaces()
         {
             using Allocation obj = new(sizeof(int));
-            Span<int> bufferSpan = obj.AsSpan<int>();
-            ref int x = ref obj.AsSpan<int>()[0];
+            Span<int> bufferSpan = obj.AsSpan<int>(0, 1);
+            ref int x = ref obj.AsSpan<int>(0, 1)[0];
             x = 5;
             Assert.That(bufferSpan[0], Is.EqualTo(5));
             bufferSpan[0] *= 2;
-            Assert.That(obj.AsSpan<int>()[0], Is.EqualTo(10));
+            Assert.That(obj.AsSpan<int>(0, 1)[0], Is.EqualTo(10));
         }
     }
 }

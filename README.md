@@ -1,21 +1,47 @@
-
 # Unmanaged
-Library containing some commonly used definitions, implemented using unsafe code.
+Library containing useful definitions implemented using unmanaged code, for unmanaged code.
 
-### Safety and Allocations
-The `Allocation` type acts as the root component that other types use, it implements handling of `null`
-and disposed references, but only when compiling with the `#DEBUG` compiler flag. They differ from regular
-class objects in that they need to be disposed manually and aren't watched by the garbage collector:
+### Allocations
+The `Allocation` type acts as a common root definition that other types use:
 ```cs
-using Allocation allocation = new(sizeof(uint));
+Allocation allocation = new(sizeof(uint) * 4);
 Span<uint> span = allocation.AsSpan<uint>();
-span[0] = 5;
-ref uint value = ref allocation.AsRef<uint>();
 Span<byte> allocationBytes = allocation.AsSpan<byte>();
+allocation.Dispose();
+```
+These can also originate from `Allocations` static class, in the form of pointers:
+```cs
+public struct Player 
+{
+    public int health;
+    public Allocation inventory;
+}
+
+Player* player = Allocations.Allocate<Player>();
+player->health = 100;
+player->inventory = new(sizeof(uint) * 10);
+Span<uint> inventorySpan = player->inventory.AsSpan<uint>();
+
+player->inventory.Dispose();
+Allocations.Free(player);
 ```
 
-If allocations are still present when the current domain exits (app closes), an exception will be thrown
-to notify of all the allocations that weren't disposed, and from where they were created.
+### Safety
+When compiling with a debug profile, all allocations originating from the `Allocations`
+class or the `Allocation` type have their addresses tracked. And exceptions can
+be thrown when attempting to access addresses belonging to freed/unallocated memory.
+
+Those thrown exceptions will also contain stack traces, at the cost of runtime efficiency.
+This can be disabled with the `#IGNORE_STACKTRACES` flag.
+
+When compiling with a release profile, these checks are dropped. The executing program
+is instead expected to always maintain the the arguments written with C# code. Allocation
+tracking can be reenabled with the `#TRACK_ALLOCATIONS` flag.
+
+### Final leak guard
+In your bootstrap code, `Allocations.ThrowIfAnyAllocation()` can be called to purposefully
+throw an exception if any allocations are still present. Though only if compiling with a debug
+profile, or if the `#TRACK_ALLOCATIONS` flag is set.
 
 ### Collections
 A few collection types are available:
@@ -31,16 +57,14 @@ Span<int> listSpan = list.AsSpan();
 ```
 
 ### Runtime Type
-This is an unmanaged compatible type that replaces `System.Type`, but it requires that the type it's
-representing is also an unmanaged type:
+A type that replaces `System.Type`, and only for unmanaged type definitions:
 ```cs
-RuntimeType type = RuntimeType.Get<int>();
-string fullName = type.Type.FullName;
+RuntimeType type = RuntimeType.Get<uint>();
+Type systemType = type.Type;
 ```
 
 ### Containers
-Similar to the `Allocation` type, but with a type associated with it in order to safely contain
-a value of that type:
+These are for containing a value, together with the type that it is:
 ```cs
 using Container myFloat = Container.Create(5f);
 RuntimeType type = myFloat.type;
@@ -70,8 +94,8 @@ int value = random.NextInt();
 ```
 
 ### Contributing and Direction
-This library is developed as a module to provide the fundamental pieces that `System` would
-for other projects, but with unsafe code. Commonly putting the user in a position where they
-need to excerise more absolute control over their data, at the benefit of efficiency.
+This library is developed to provide the fundamental pieces that a `System` namespace would
+for other projects, but using unmanaged code. Commonly putting the user in a position where they
+need to excerise more manual control over their data, at the benefit of efficiency.
 
 Contributions to this are welcome.

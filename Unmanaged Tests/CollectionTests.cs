@@ -15,8 +15,10 @@ namespace Tests
         [Test]
         public void EmptyArray()
         {
-            using UnmanagedArray<int> array = new();
+            UnmanagedArray<int> array = new();
             Assert.That(array.Length, Is.EqualTo(0));
+            array.Dispose();
+            Assert.That(array.IsDisposed, Is.True);
         }
 
         [Test]
@@ -121,13 +123,13 @@ namespace Tests
             Assert.That(list.Count, Is.EqualTo(4));
             Assert.That(list.Capacity, Is.EqualTo(4));
         }
-        
+
         [Test]
         public void RemoveAtIndex()
         {
             using UnmanagedList<int> list = new();
             list.Add(1);
-            list.Add(2);
+            list.Add(2); //removed
             list.Add(3);
             list.Add(4);
             list.RemoveAt(1);
@@ -137,7 +139,23 @@ namespace Tests
             Assert.That(list.Count, Is.EqualTo(3));
             Assert.That(list.Capacity, Is.EqualTo(4));
         }
-        
+
+        [Test]
+        public void RemoveAtIndexWithSwapback()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2); //removed
+            list.Add(3);
+            list.Add(4);
+            list.RemoveAtBySwapping(1);
+            Assert.That(list[0], Is.EqualTo(1));
+            Assert.That(list[1], Is.EqualTo(4));
+            Assert.That(list[2], Is.EqualTo(3));
+            Assert.That(list.Count, Is.EqualTo(3));
+            Assert.That(list.Capacity, Is.EqualTo(4));
+        }
+
         [Test]
         public void InsertIntoList()
         {
@@ -151,7 +169,7 @@ namespace Tests
             Assert.That(list[2], Is.EqualTo(3));
             Assert.That(list[3], Is.EqualTo(4));
         }
-        
+
         [Test]
         public void ListContains()
         {
@@ -163,7 +181,7 @@ namespace Tests
             Assert.That(list.Contains(3), Is.True);
             Assert.That(list.Contains(5), Is.False);
         }
-        
+
         [Test]
         public void ClearListThenAdd()
         {
@@ -178,7 +196,7 @@ namespace Tests
             Assert.That(list[0], Is.EqualTo(5));
             Assert.That(list.Count, Is.EqualTo(1));
         }
-        
+
         [Test]
         public void BuildListThenCopyToSpan()
         {
@@ -213,7 +231,8 @@ namespace Tests
             Assert.That(value2, Is.EqualTo(2));
             Assert.That(value3, Is.EqualTo(3));
             Assert.That(value4, Is.EqualTo(4));
-            UnsafeList.Free(data);
+            UnsafeList.Free(ref data);
+            Assert.That(UnsafeList.IsDisposed(data), Is.True);
         }
 
         [Test]
@@ -229,7 +248,7 @@ namespace Tests
             Assert.That(otherSpan[3], Is.EqualTo('l'));
             Assert.That(otherSpan[4], Is.EqualTo('o'));
         }
-        
+
         [Test]
         public void ListInsideArray()
         {
@@ -240,15 +259,15 @@ namespace Tests
                 list = new();
                 list.Add((byte)i);
             }
-        
+
             for (uint i = 0; i < 8; i++)
             {
                 UnmanagedList<byte> list = nestedData[i];
                 Assert.That(list[0], Is.EqualTo((byte)i));
-        
+
                 list.Dispose();
             }
-        
+
             nestedData.Dispose();
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }

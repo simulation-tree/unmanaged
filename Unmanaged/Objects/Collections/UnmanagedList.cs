@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace Unmanaged.Collections
 {
-    public readonly unsafe struct UnmanagedList<T> : IDisposable, IReadOnlyList<T>, IEquatable<UnmanagedList<T>> where T : unmanaged
+    public unsafe struct UnmanagedList<T> : IDisposable, IReadOnlyList<T>, IEquatable<UnmanagedList<T>> where T : unmanaged
     {
-        private readonly UnsafeList* value;
+        private UnsafeList* value;
 
         public readonly bool IsDisposed => UnsafeList.IsDisposed(value);
         public readonly uint Count => UnsafeList.GetCount(value);
@@ -56,9 +56,9 @@ namespace Unmanaged.Collections
             }
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
-            UnsafeList.Free(value);
+            UnsafeList.Free(ref value);
         }
 
         /// <summary>
@@ -150,6 +150,11 @@ namespace Unmanaged.Collections
         public readonly void RemoveAt(uint index)
         {
             UnsafeList.RemoveAt(value, index);
+        }
+
+        public readonly void RemoveAtBySwapping(uint index)
+        {
+            UnsafeList.RemoveAtBySwapping(value, index);
         }
 
         /// <summary>

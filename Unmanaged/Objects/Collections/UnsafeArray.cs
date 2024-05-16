@@ -14,15 +14,16 @@ namespace Unmanaged.Collections
             throw new InvalidOperationException("Use UnsafeArray.Create() instead.");
         }
 
-        public static void Free(UnsafeArray* array)
+        public static void Free(ref UnsafeArray* array)
         {
             array->items.Dispose();
-            Allocations.Free(array);
+            Allocations.Free(ref array);
+            array = null;
         }
 
         public static bool IsDisposed(UnsafeArray* array)
         {
-            return Allocations.IsNull(array);
+            return Allocations.IsNull(array) || array->items.IsDisposed;
         }
 
         public static uint GetLength(UnsafeArray* array)
@@ -46,14 +47,14 @@ namespace Unmanaged.Collections
             array->type = type;
             array->length = length;
             array->items = new(type.size * length);
-            array->items.Clear();
+            array->items.Clear(type.size * length);
             return array;
         }
 
         public static UnsafeArray* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             UnsafeArray* array = Allocate<T>((uint)span.Length);
-            span.CopyTo(array->items.AsSpan<T>());
+            span.CopyTo(array->items.AsSpan<T>(0, array->length));
             return array;
         }
 
@@ -78,7 +79,7 @@ namespace Unmanaged.Collections
 
         public static Span<T> AsSpan<T>(UnsafeArray* array) where T : unmanaged
         {
-            return array->items.AsSpan<T>();
+            return array->items.AsSpan<T>(0, array->length);
         }
 
         public static Span<T> AsSpan<T>(UnsafeArray* array, uint start, uint length) where T : unmanaged
@@ -113,15 +114,16 @@ namespace Unmanaged.Collections
         public static void Resize(UnsafeArray* array, uint newLength)
         {
             Allocation oldItems = array->items;
+            uint oldLength = array->length;
             array->items = new(array->type.size * newLength);
             array->length = newLength;
-            oldItems.CopyTo(0, Math.Min(oldItems.Length, array->length), array->items, 0, array->length);
+            oldItems.CopyTo(0, Math.Min(oldLength, newLength), array->items, 0, newLength);
             oldItems.Dispose();
         }
 
         public static void Clear(UnsafeArray* array)
         {
-            array->items.Clear();
+            array->items.Clear(array->length * array->type.size);
         }
     }
 }

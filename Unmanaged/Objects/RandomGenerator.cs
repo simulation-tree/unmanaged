@@ -3,9 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
-    public readonly unsafe struct RandomGenerator : IDisposable
+    public unsafe struct RandomGenerator : IDisposable
     {
-        private readonly void* pointer;
+        private void* pointer;
 
         /// <summary>
         /// Creates a new disposable randomness generator.
@@ -64,10 +64,10 @@ namespace Unmanaged
         {
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
-            Allocations.Free(pointer);
+            Allocations.Free(ref pointer);
         }
 
         public readonly ulong NextULong()

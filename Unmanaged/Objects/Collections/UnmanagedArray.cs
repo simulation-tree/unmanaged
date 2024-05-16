@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 namespace Unmanaged.Collections
 {
-    public readonly unsafe struct UnmanagedArray<T> : IDisposable, IReadOnlyList<T>, IEquatable<UnmanagedArray<T>> where T : unmanaged
+    public unsafe struct UnmanagedArray<T> : IDisposable, IReadOnlyList<T>, IEquatable<UnmanagedArray<T>> where T : unmanaged
     {
-        private readonly UnsafeArray* value;
+        private UnsafeArray* value;
 
         public readonly bool IsDisposed => UnsafeArray.IsDisposed(value);
         public readonly uint Length => UnsafeArray.GetLength(value);
@@ -53,9 +53,9 @@ namespace Unmanaged.Collections
             span.CopyTo(AsSpan());
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
-            UnsafeArray.Free(value);
+            UnsafeArray.Free(ref value);
         }
 
         /// <summary>

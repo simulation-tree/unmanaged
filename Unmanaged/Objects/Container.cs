@@ -7,14 +7,14 @@ namespace Unmanaged
     /// <summary>
     /// Unmanaged container of data.
     /// </summary>
-    public readonly unsafe struct Container : IDisposable, IEquatable<Container>
+    public unsafe struct Container : IDisposable, IEquatable<Container>
     {
         /// <summary>
         /// The type of the data stored.
         /// </summary>
         public readonly RuntimeType type;
 
-        private readonly void* pointer;
+        private void* pointer;
 
         public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
@@ -29,10 +29,10 @@ namespace Unmanaged
             this.type = type;
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
-            Allocations.Free(pointer);
+            Allocations.Free(ref pointer);
         }
 
         [Conditional("DEBUG")]

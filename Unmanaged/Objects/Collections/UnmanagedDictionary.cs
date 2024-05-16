@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 
 namespace Unmanaged.Collections
 {
-    public readonly unsafe struct UnmanagedDictionary<K, V> : IDisposable where K : unmanaged, IEquatable<K> where V : unmanaged
+    public unsafe struct UnmanagedDictionary<K, V> : IDisposable where K : unmanaged, IEquatable<K> where V : unmanaged
     {
-        private readonly UnsafeDictionary* value;
+        private UnsafeDictionary* value;
 
         public readonly uint Count => UnsafeDictionary.GetCount(value);
         public readonly bool IsDisposed => UnsafeDictionary.IsDisposed(value);
@@ -51,9 +51,9 @@ namespace Unmanaged.Collections
             value = UnsafeDictionary.Allocate<K, V>(initialCapacity);
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
-            UnsafeDictionary.Free(value);
+            UnsafeDictionary.Free(ref value);
         }
 
         public readonly bool ContainsKey(K key)

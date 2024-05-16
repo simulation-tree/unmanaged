@@ -15,7 +15,7 @@ namespace Unmanaged
             data.Dispose();
         }
 
-        [Conditional("DEBUG")]
+        [Conditional("TRACK_ALLOCATIONS")]
         private readonly void ThrowIfDisposed()
         {
             if (data.IsDisposed)

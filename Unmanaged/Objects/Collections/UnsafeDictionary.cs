@@ -16,16 +16,11 @@ namespace Unmanaged.Collections
             throw new InvalidOperationException("Use UnsafeDictionary.Allocate() to create an UnsafeDictionary.");
         }
 
-        public static void Free(UnsafeDictionary* dictionary)
+        public static void Free(ref UnsafeDictionary* dictionary)
         {
-            UnsafeList.Free(dictionary->keys);
-            UnsafeList.Free(dictionary->values);
-            dictionary->keyType = default;
-            dictionary->valueType = default;
-            dictionary->count = 0;
-            dictionary->keys = default;
-            dictionary->values = default;
-            Allocations.Free(dictionary);
+            UnsafeList.Free(ref dictionary->keys);
+            UnsafeList.Free(ref dictionary->values);
+            Allocations.Free(ref dictionary);
         }
 
         [Conditional("DEBUG")]
@@ -44,7 +39,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeDictionary* dictionary)
         {
-            return dictionary is null || UnsafeList.IsDisposed(dictionary->keys);
+            return Allocations.IsNull(dictionary) || UnsafeList.IsDisposed(dictionary->keys);
         }
 
         public static uint GetCount(UnsafeDictionary* dictionary)

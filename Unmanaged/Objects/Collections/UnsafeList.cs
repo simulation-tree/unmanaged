@@ -24,10 +24,10 @@ namespace Unmanaged.Collections
             }
         }
 
-        public static void Free(UnsafeList* list)
+        public static void Free(ref UnsafeList* list)
         {
             list->items.Dispose();
-            Allocations.Free(list);
+            Allocations.Free(ref list);
         }
 
         public static UnsafeList* Allocate<T>(uint initialCapacity = 1) where T : unmanaged
@@ -50,7 +50,7 @@ namespace Unmanaged.Collections
         {
             UnsafeList* list = Allocate<T>((uint)Math.Max(1, span.Length));
             list->count = (uint)span.Length;
-            Span<T> items = list->items.AsSpan<T>();
+            Span<T> items = list->items.AsSpan<T>(0, list->count);
             span.CopyTo(items);
             return list;
         }
@@ -59,7 +59,7 @@ namespace Unmanaged.Collections
         {
             UnsafeList* list = Allocate<T>((uint)Math.Max(1, span.Length));
             list->count = (uint)span.Length;
-            Span<T> items = list->items.AsSpan<T>();
+            Span<T> items = list->items.AsSpan<T>(0, list->count);
             span.CopyTo(items);
             return list;
         }
@@ -71,7 +71,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            Span<T> span = list->items.AsSpan<T>();
+            Span<T> span = list->items.AsSpan<T>(0, list->count);
             return ref span[(int)index];
         }
 
@@ -82,7 +82,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
             }
 
-            Span<T> span = list->items.AsSpan<T>();
+            Span<T> span = list->items.AsSpan<T>(0, list->count);
             return span[(int)index];
         }
 
@@ -107,7 +107,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            Span<T> span = list->items.AsSpan<T>();
+            Span<T> span = list->items.AsSpan<T>(0, list->count);
             span[(int)index] = value;
         }
 
@@ -125,7 +125,7 @@ namespace Unmanaged.Collections
                 uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
                 list->capacity = newCapacity;
-                list->items.CopyTo(newItems);
+                list->items.CopyTo(0, list->count * elementSize, newItems, 0, list->count * elementSize);
                 list->items.Dispose();
                 list->items = newItems;
             }
@@ -146,7 +146,7 @@ namespace Unmanaged.Collections
                 uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
                 list->capacity = newCapacity;
-                list->items.CopyTo(newItems);
+                list->items.CopyTo(0, list->count * elementSize, newItems, 0, newCapacity * elementSize);
                 list->items.Dispose();
                 list->items = newItems;
             }
@@ -163,7 +163,7 @@ namespace Unmanaged.Collections
             {
                 Allocation newItems = new(elementSize * newCount);
                 list->capacity = newCount;
-                list->items.CopyTo(newItems);
+                list->items.CopyTo(0, elementSize * list->count, newItems, 0, elementSize * newCount);
                 list->items.Dispose();
                 list->items = newItems;
             }
@@ -180,9 +180,10 @@ namespace Unmanaged.Collections
             uint newCount = list->count + addLength;
             if (newCount >= capacity)
             {
-                Allocation newItems = new(list->type.size * newCount);
+                uint elementSize = list->type.size;
+                Allocation newItems = new(elementSize * newCount);
                 list->capacity = newCount;
-                list->items.CopyTo(newItems);
+                list->items.CopyTo(0, elementSize * list->count, newItems, 0, elementSize * newCount);
                 list->items.Dispose();
                 list->items = newItems;
             }
@@ -252,18 +253,6 @@ namespace Unmanaged.Collections
             list->count--;
         }
 
-        public static void RemoveAt<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
-        {
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
-            Span<T> span = list->items.AsSpan<T>();
-            removed = span[(int)index];
-            RemoveAt(list, index);
-        }
-
         public static void RemoveAtBySwapping(UnsafeList* list, uint index)
         {
             uint count = list->count;
@@ -279,14 +268,39 @@ namespace Unmanaged.Collections
             list->count = lastIndex;
         }
 
+        public static void RemoveAt<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
+        {
+            if (index >= list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            Span<T> span = list->items.AsSpan<T>(0, list->count);
+            removed = span[(int)index];
+            RemoveAt(list, index);
+        }
+
+        public static void RemoveAtBySwapping<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
+        {
+            if (index >= list->count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            Span<T> span = list->items.AsSpan<T>(0, list->count);
+            removed = span[(int)index];
+            RemoveAtBySwapping(list, index);
+        }
+
         public static int GetContentHashCode(UnsafeList* list)
         {
             unchecked
             {
                 int hash = 17;
+                uint byteCount = list->type.size * list->count;
                 hash = hash * 23 + list->type.GetHashCode();
                 hash = hash * 23 + list->count.GetHashCode();
-                hash = hash * 23 + Djb2Hash.GetDjb2HashCode(list->items.AsSpan<byte>());
+                hash = hash * 23 + Djb2Hash.GetDjb2HashCode(list->items.AsSpan<byte>(0, byteCount));
                 return hash;
             }
         }
@@ -329,7 +343,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeList* list)
         {
-            return Allocations.IsNull(list);
+            return Allocations.IsNull(list) || list->items.IsDisposed;
         }
 
         public static uint GetCount(UnsafeList* list)

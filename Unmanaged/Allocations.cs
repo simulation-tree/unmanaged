@@ -1,5 +1,7 @@
 ﻿#if DEBUG
-#define TRACE_ALLOCATIONS
+#define TRACK_ALLOCATIONS
+#else
+#define IGNORE_STACKTRACES
 #endif
 
 using System;
@@ -28,27 +30,39 @@ namespace Unmanaged
 
         public static void ThrowIfAnyAllocation()
         {
+#if TRACK_ALLOCATIONS
             if (addresses.Count > 0)
             {
                 StringBuilder exceptionBuilder = new();
                 foreach (nint address in addresses)
                 {
-                    exceptionBuilder.AppendLine($"Leaked memory at {address:X} allocated from:\n{allocations[address]}");
+                    if (allocations.TryGetValue(address, out StackTrace? allocation))
+                    {
+                        exceptionBuilder.AppendLine($"Leaked memory at {address:X} allocated from:\n{allocation}");
+                    }
+                    else
+                    {
+                        exceptionBuilder.AppendLine($"Leaked memory at {address:X}.");
+                    }
                 }
 
                 string exceptionMessage = exceptionBuilder.ToString();
                 throw new Exception(exceptionMessage);
             }
+#endif
         }
 
         public static void* Allocate(uint size)
         {
-            void* pointer = NativeMemory.Alloc(size);
+            //void* pointer = NativeMemory.Alloc(size);
+            void* pointer = NativeMemory.AlignedAlloc(size, GetAlignment(size));
             nint address = (nint)pointer;
+#if TRACK_ALLOCATIONS
             addresses.Add(address);
-#if TRACE_ALLOCATIONS
+#if !IGNORE_STACKTRACES
             allocations[address] = new StackTrace(1, true);
             disposals[address] = null!;
+#endif
 #endif
             return pointer;
         }
@@ -58,53 +72,61 @@ namespace Unmanaged
             return (T*)Allocate((uint)sizeof(T));
         }
 
-        public static void Free(void* pointer)
+        public static void Free(ref void* pointer)
         {
             nint address = (nint)pointer;
+            NativeMemory.AlignedFree(pointer);
+#if TRACK_ALLOCATIONS
             addresses.Remove(address);
-            NativeMemory.Free(pointer);
-#if TRACE_ALLOCATIONS
+#if !IGNORE_STACKTRACES
             disposals[address] = new StackTrace(1, true);
 #endif
+#endif
+            pointer = null;
+        }
+
+        public static void Free<T>(ref T* pointer) where T : unmanaged
+        {
+            void* voidPointer = pointer;
+            Free(ref voidPointer);
+            pointer = null;
         }
 
         public static void* Reallocate(void* pointer, uint newSize)
         {
             nint oldAddress = (nint)pointer;
+#if TRACK_ALLOCATIONS
             addresses.Remove(oldAddress);
-            void* newPointer = NativeMemory.Realloc(pointer, newSize);
+#endif
+            void* newPointer = NativeMemory.AlignedRealloc(pointer, newSize, GetAlignment(newSize));
             nint newAddress = (nint)newPointer;
+#if TRACK_ALLOCATIONS
             addresses.Add(newAddress);
+#endif
             return newPointer;
         }
 
         public static bool IsNull(void* pointer)
         {
+            if (pointer is null)
+            {
+                return true;
+            }
+
+#if TRACK_ALLOCATIONS
             nint address = (nint)pointer;
-            return IsNull(address);
+            return !addresses.Contains(address);
+#else
+            return false;
+#endif
         }
 
         public static void ThrowIfNull(void* pointer)
         {
-            nint address = (nint)pointer;
-            ThrowIfNull(address);
-        }
-
-        public static void Register(nint address)
-        {
-            addresses.Add(address);
-        }
-
-        public static void Unregister(nint address)
-        {
-            addresses.Remove(address);
-        }
-
-        public static void ThrowIfNull(nint address)
-        {
-            if (!addresses.Contains(address))
+            if (IsNull(pointer))
             {
-#if TRACE_ALLOCATIONS
+#if !IGNORE_STACKTRACES
+                nint address = (nint)pointer;
                 if (allocations.TryGetValue(address, out StackTrace? stackTrace))
                 {
                     throw new NullReferenceException($"Null pointer that was previously allocated at:\n{stackTrace}");
@@ -115,14 +137,33 @@ namespace Unmanaged
                     throw new NullReferenceException($"Null pointer that was previously disposed at:\n{stackTrace}");
                 }
 #endif
-
                 throw new NullReferenceException("Null pointer.");
             }
         }
 
-        public static bool IsNull(nint address)
+        public static uint GetAlignment<T>() where T : unmanaged
         {
-            return !addresses.Contains(address);
+            return GetAlignment((uint)sizeof(T));
+        }
+
+        public static uint GetAlignment(uint size)
+        {
+            if (size % 8 == 0)
+            {
+                return 8;
+            }
+            else if (size % 4 == 0)
+            {
+                return 4;
+            }
+            else if (size % 2 == 0)
+            {
+                return 2;
+            }
+            else
+            {
+                return 1;
+            }
         }
     }
 }
