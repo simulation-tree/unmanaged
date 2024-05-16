@@ -100,7 +100,7 @@ namespace Tests
                 }
             }
 
-            int collisions = output.ToString().Count(c => c == '\n');
+            int collisions = output.ToString().Count(c => c == '\n') - 1;
             float percentage = collisions / (float)types.Count;
             if (collisions == 0)
             {
