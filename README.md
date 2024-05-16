@@ -31,11 +31,11 @@ When compiling with a debug profile, all allocations originating from the `Alloc
 class or the `Allocation` type have their addresses tracked. And exceptions can
 be thrown when attempting to access addresses belonging to freed/unallocated memory.
 
-Those thrown exceptions will also contain stack traces, at the cost of runtime efficiency.
-This can be disabled with the `#IGNORE_STACKTRACES` flag.
+These thrown exceptions will also contain stack traces, at the cost of runtime efficiency.
+Use the `#IGNORE_STACKTRACES` flag to disable this.
 
 When compiling with a release profile, these checks are dropped. The executing program
-is instead expected to always maintain the the arguments written with C# code. Allocation
+is instead expected to perfectly maintain the arguments written with its C# code. Allocation
 tracking can be reenabled with the `#TRACK_ALLOCATIONS` flag.
 
 ### Final leak guard
