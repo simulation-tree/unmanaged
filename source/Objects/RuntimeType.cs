@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
@@ -146,8 +148,12 @@ namespace Unmanaged
                     int hash = GetHashCode(type);
                     while (TypeTable.typeIds.Contains((ushort)hash))
                     {
+                        #if TEST
+                        Console.WriteLine($"Collision hash detected between {type} and {TypeTable.types[(ushort)hash]}");
+                        #else
+                        Debug.WriteLine($"Collision hash detected between {type} and {TypeTable.types[(ushort)hash]}");
+                        #endif
                         hash += 174440041;
-                        Console.WriteLine($"Collision detected for {type}");
                     }
 
                     value = (ushort)hash;
@@ -172,7 +178,7 @@ namespace Unmanaged
 
         private static class TypeTable
         {
-            internal static readonly HashSet<ushort> typeIds = [];
+            internal static readonly List<ushort> typeIds = [];
             internal static readonly Dictionary<ushort, Type> types = [];
         }
     }
