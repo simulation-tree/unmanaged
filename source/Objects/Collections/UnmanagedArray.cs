@@ -19,10 +19,12 @@ namespace Unmanaged.Collections
         }
 
         public readonly ReadOnlySpan<T> this[Range range] => AsSpan()[range];
+        readonly int IReadOnlyCollection<T>.Count => (int)Length;
+        readonly T IReadOnlyList<T>.this[int index] => UnsafeArray.GetRef<T>(value, (uint)index);
 
-        int IReadOnlyCollection<T>.Count => (int)Length;
-        T IReadOnlyList<T>.this[int index] => UnsafeArray.GetRef<T>(value, (uint)index);
-
+        /// <summary>
+        /// Creates a new empty array
+        /// </summary>
         public UnmanagedArray()
         {
             value = UnsafeArray.Allocate<T>(0);
@@ -119,22 +121,22 @@ namespace Unmanaged.Collections
             AsSpan().CopyTo(span);
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        readonly IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             return new Enumerator(value);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return new Enumerator(value);
         }
 
-        public override bool Equals(object? obj)
+        public override readonly bool Equals(object? obj)
         {
             return obj is UnmanagedArray<T> array && Equals(array);
         }
 
-        public bool Equals(UnmanagedArray<T> other)
+        public readonly bool Equals(UnmanagedArray<T> other)
         {
             if (IsDisposed && other.IsDisposed)
             {
@@ -144,7 +146,7 @@ namespace Unmanaged.Collections
             return value == other.value;
         }
 
-        public override int GetHashCode()
+        public override readonly int GetHashCode()
         {
             nint ptr = (nint)value;
             return HashCode.Combine(ptr, 7);
