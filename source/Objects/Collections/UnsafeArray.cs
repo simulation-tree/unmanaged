@@ -117,7 +117,7 @@ namespace Unmanaged.Collections
             uint oldLength = array->length;
             array->items = new(array->type.size * newLength);
             array->length = newLength;
-            oldItems.CopyTo(0, Math.Min(oldLength, newLength), array->items, 0, newLength);
+            oldItems.CopyTo(array->items, 0, 0, Math.Min(oldLength, newLength));
             oldItems.Dispose();
         }
 

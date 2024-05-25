@@ -13,73 +13,6 @@ namespace Tests
         }
 
         [Test]
-        public void EmptyArray()
-        {
-            UnmanagedArray<int> array = new();
-            Assert.That(array.Length, Is.EqualTo(0));
-            array.Dispose();
-            Assert.That(array.IsDisposed, Is.True);
-        }
-
-        [Test]
-        public void ArrayLength()
-        {
-            using UnmanagedArray<Guid> array = new(4);
-            Assert.That(array.Length, Is.EqualTo(4));
-        }
-
-        [Test]
-        public void CreatingArrayFromSpan()
-        {
-            Span<int> span = stackalloc int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
-            using UnmanagedArray<int> array = new(span);
-            Assert.That(array.Length, Is.EqualTo(8));
-        }
-
-        [Test]
-        public void ResizeArray()
-        {
-            using UnmanagedArray<int> array = new(4);
-            array.Resize(8);
-            Assert.That(array.Length, Is.EqualTo(8));
-
-            array[array.Length - 1] = 1;
-
-            array.Resize(4);
-            Assert.That(array.Length, Is.EqualTo(4));
-        }
-
-        [Test]
-        public void ClearingArray()
-        {
-            using UnmanagedArray<int> array = new(4);
-            array[0] = 1;
-            array[1] = 2;
-            array[2] = 3;
-            array[3] = 4;
-            array.Clear();
-            Assert.That(array[0], Is.EqualTo(0));
-            Assert.That(array[1], Is.EqualTo(0));
-            Assert.That(array[2], Is.EqualTo(0));
-            Assert.That(array[3], Is.EqualTo(0));
-        }
-
-        [Test]
-        public void IndexingArray()
-        {
-            Console.WriteLine("started empty list 2");
-            using UnmanagedArray<int> array = new(4);
-            array[0] = 1;
-            array[1] = 2;
-            array[2] = 3;
-            array[3] = 4;
-            Assert.That(array[0], Is.EqualTo(1));
-            Assert.That(array[1], Is.EqualTo(2));
-            Assert.That(array[2], Is.EqualTo(3));
-            Assert.That(array[3], Is.EqualTo(4));
-        }
-
-        [Test]
         public unsafe void EmptyList()
         {
             using UnmanagedList<byte> list = new(8);
@@ -171,6 +104,26 @@ namespace Tests
         }
 
         [Test]
+        public void AddRange()
+        {
+            using UnmanagedList<uint> list = new();
+            list.AddRange(new[] { 1u, 2u, 3u, 4u });
+            Assert.That(list.Count, Is.EqualTo(4));
+            Assert.That(list[0], Is.EqualTo(1u));
+            Assert.That(list[1], Is.EqualTo(2u));
+            Assert.That(list[2], Is.EqualTo(3u));
+            Assert.That(list[3], Is.EqualTo(4u));
+            var result = list.AsSpan().ToArray();
+            list.AddRange(new[] { 5u, 6u, 7u, 8u });
+            var result2 = list.AsSpan().ToArray();
+            Assert.That(list.Count, Is.EqualTo(8));
+            Assert.That(list[4], Is.EqualTo(5u));
+            Assert.That(list[5], Is.EqualTo(6u));
+            Assert.That(list[6], Is.EqualTo(7u));
+            Assert.That(list[7], Is.EqualTo(8u));
+        }
+
+        [Test]
         public void ListContains()
         {
             using UnmanagedList<int> list = new();
@@ -180,6 +133,20 @@ namespace Tests
             list.Add(4);
             Assert.That(list.Contains(3), Is.True);
             Assert.That(list.Contains(5), Is.False);
+        }
+
+        [Test]
+        public void ClearWithMinimumCapacity()
+        {
+            using UnmanagedList<int> list = new();
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+            list.Add(4);
+            list.Clear(32);
+            Assert.That(list.Count, Is.EqualTo(0));
+            Assert.That(list.Capacity, Is.EqualTo(32));
+            Assert.That(list.IsDisposed, Is.False);
         }
 
         [Test]

@@ -62,7 +62,7 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Returns a span for the contents of the list.
+        /// Returns the span for the contents of the list.
         /// </summary>
         public readonly Span<T> AsSpan()
         {
@@ -114,6 +114,10 @@ namespace Unmanaged.Collections
             UnsafeList.AddRange(value, items);
         }
 
+        /// <summary>
+        /// Returns the index of the given item in the list, otherwise
+        /// throws an <see cref="Exception"/> if none found.
+        /// </summary>
         public readonly uint IndexOf<V>(V item) where V : unmanaged, IEquatable<V>
         {
             return UnsafeList.IndexOf(value, item);
@@ -166,18 +170,23 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Clears the list all elements and ensures the capacity is at least the minimum capacity.
+        /// Clears the list all elements and ensures that the capacity at least
+        /// the given amount.
         /// </summary>
         public readonly void Clear(uint minimumCapacity)
         {
-            UnsafeList.Clear(value);
-            uint capacity = UnsafeList.GetCapacity(value);
+            uint capacity = Capacity;
             if (capacity < minimumCapacity)
             {
                 UnsafeList.AddDefault(value, minimumCapacity - capacity);
             }
+
+            UnsafeList.Clear(value);
         }
 
+        /// <summary>
+        /// Returns the element at the given index by reference.
+        /// </summary>
         public readonly ref T GetRef(uint index)
         {
             return ref UnsafeList.GetRef<T>(value, index);

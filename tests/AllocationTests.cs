@@ -152,5 +152,31 @@ namespace Tests
             bufferSpan[0] *= 2;
             Assert.That(obj.AsSpan<int>(0, 1)[0], Is.EqualTo(10));
         }
+
+        [Test]
+        public void CopyingIntoAnother()
+        {
+            using Allocation a = new(sizeof(int) * 4);
+            using Allocation b = new(sizeof(int) * 8);
+            a.Write(0, 1);
+            a.Write(1, 2);
+            a.Write(2, 3);
+            a.Write(3, 4);
+            a.CopyTo(b, 0, 0, sizeof(int) * 4);
+            b.Write(4 + 0, 5);
+            b.Write(4 + 1, 6);
+            b.Write(4 + 2, 7);
+            b.Write(4 + 3, 8);
+            Span<int> bufferSpan = b.AsSpan<int>(0, 8);
+            Assert.That(bufferSpan.Length, Is.EqualTo(8));
+            Assert.That(bufferSpan[0], Is.EqualTo(1));
+            Assert.That(bufferSpan[1], Is.EqualTo(2));
+            Assert.That(bufferSpan[2], Is.EqualTo(3));
+            Assert.That(bufferSpan[3], Is.EqualTo(4));
+            Assert.That(bufferSpan[4], Is.EqualTo(5));
+            Assert.That(bufferSpan[5], Is.EqualTo(6));
+            Assert.That(bufferSpan[6], Is.EqualTo(7));
+            Assert.That(bufferSpan[7], Is.EqualTo(8));
+        }
     }
 }

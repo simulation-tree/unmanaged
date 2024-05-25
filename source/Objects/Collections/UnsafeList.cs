@@ -125,7 +125,7 @@ namespace Unmanaged.Collections
                 uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
                 list->capacity = newCapacity;
-                list->items.CopyTo(0, list->count * elementSize, newItems, 0, list->count * elementSize);
+                list->items.CopyTo(newItems, 0, 0, list->count * elementSize);
                 list->items.Dispose();
                 list->items = newItems;
             }
@@ -146,7 +146,7 @@ namespace Unmanaged.Collections
                 uint newCapacity = capacity * 2;
                 Allocation newItems = new(elementSize * newCapacity);
                 list->capacity = newCapacity;
-                list->items.CopyTo(0, list->count * elementSize, newItems, 0, newCapacity * elementSize);
+                list->items.CopyTo(newItems, 0, 0, list->count * elementSize);
                 list->items.Dispose();
                 list->items = newItems;
             }
@@ -163,7 +163,7 @@ namespace Unmanaged.Collections
             {
                 Allocation newItems = new(elementSize * newCount);
                 list->capacity = newCount;
-                list->items.CopyTo(0, elementSize * list->count, newItems, 0, elementSize * newCount);
+                list->items.CopyTo(newItems, 0, 0, elementSize * list->count);
                 list->items.Dispose();
                 list->items = newItems;
             }
@@ -183,7 +183,7 @@ namespace Unmanaged.Collections
                 uint elementSize = list->type.size;
                 Allocation newItems = new(elementSize * newCount);
                 list->capacity = newCount;
-                list->items.CopyTo(0, elementSize * list->count, newItems, 0, elementSize * newCount);
+                list->items.CopyTo(newItems, 0, 0, elementSize * list->count);
                 list->items.Dispose();
                 list->items = newItems;
             }
