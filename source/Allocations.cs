@@ -28,6 +28,9 @@ namespace Unmanaged
             };
         }
 
+        /// <summary>
+        /// Throws an <see cref="Exception"/> if there are any memory leaks.
+        /// </summary>
         public static void ThrowIfAnyAllocation()
         {
 #if TRACK_ALLOCATIONS
