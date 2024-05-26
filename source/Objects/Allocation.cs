@@ -32,6 +32,11 @@ namespace Unmanaged
             pointer = Allocations.Allocate(0);
         }
 
+        public Allocation(void* pointer)
+        {
+            this.pointer = pointer;
+        }
+
         /// <summary>
         /// Creates a new uninitialized allocation.
         /// </summary>
@@ -49,12 +54,30 @@ namespace Unmanaged
             Allocations.Free(ref pointer);
         }
 
-        public readonly void Write<T>(uint index, T value) where T : unmanaged
+        public void Write<T>(T value) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(pointer);
+            Unsafe.Write(pointer, value);
+        }
+
+        public void Write<T>(uint index, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             uint elementSize = (uint)sizeof(T);
             uint byteStart = index * elementSize;
             Unsafe.Write((void*)((nint)pointer + byteStart), value);
+        }
+
+        /// <summary>
+        /// Writes the given span into the memory.
+        /// </summary>
+        public void Write<T>(ReadOnlySpan<T> span) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(pointer);
+            fixed (T* ptr = span)
+            {
+                Unsafe.CopyBlock((void*)((nint)pointer), ptr, (uint)(span.Length * sizeof(T)));
+            }
         }
 
         /// <returns>A span of bytes for the given slice range of memory.</returns>
@@ -134,7 +157,7 @@ namespace Unmanaged
         public static Allocation Create<T>(T value) where T : unmanaged
         {
             Allocation allocation = new((uint)sizeof(T));
-            allocation.Write(0, value);
+            allocation.Write(value);
             return allocation;
         }
 

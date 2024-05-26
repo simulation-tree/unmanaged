@@ -109,7 +109,7 @@ namespace Unmanaged
 
         public FixedString(sbyte* value)
         {
-            this = FromUTF8Bytes(new ReadOnlySpan<byte>(value, Size));
+            this = CreateFromUTF8Bytes(new ReadOnlySpan<byte>(value, Size));
         }
 
         /// <summary>
@@ -398,14 +398,7 @@ namespace Unmanaged
             return new Enumerator(this);
         }
 
-        public unsafe readonly int CopyUTF8Bytes(Span<byte> bytes)
-        {
-            Span<char> span = stackalloc char[length];
-            CopyTo(span);
-            return Encoding.UTF8.GetBytes(span, bytes);
-        }
-
-        public static FixedString FromUTF8Bytes(ReadOnlySpan<byte> bytes)
+        public static FixedString CreateFromUTF8Bytes(ReadOnlySpan<byte> bytes)
         {
             Span<char> buffer = stackalloc char[bytes.Length];
             ushort length = (ushort)Encoding.UTF8.GetChars(bytes, buffer);

@@ -117,7 +117,7 @@ namespace Tests
         {
             string a = "Hello World!";
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(a);
-            FixedString b = FixedString.FromUTF8Bytes(bytes);
+            FixedString b = FixedString.CreateFromUTF8Bytes(bytes);
             Assert.That(b.ToString(), Is.EqualTo(a));
         }
     }

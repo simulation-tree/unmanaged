@@ -4,73 +4,126 @@ using Unmanaged.Collections;
 
 namespace Unmanaged
 {
-    public unsafe struct BinaryReader(ReadOnlySpan<byte> data) : IDisposable
+    public unsafe struct BinaryReader : IDisposable
     {
-        private readonly UnmanagedList<byte> data = new(data);
+        private UnmanagedList<byte> data;
         private uint position;
 
-        public readonly void Dispose()
+        public uint Position
+        {
+            readonly get => position;
+            set
+            {
+                position = value;
+            }
+        }
+
+        public readonly uint Length => data.Count;
+        public readonly bool IsDisposed => data.IsDisposed;
+
+        public BinaryReader(ReadOnlySpan<byte> data)
+        {
+            this.data = new(data);
+            position = 0;
+        }
+
+        public BinaryReader(UnmanagedList<byte> data)
+        {
+            this.data = data;
+            position = 0;
+        }
+
+        public BinaryReader()
+        {
+            data = new();
+            position = 0;
+        }
+
+        public void Dispose()
         {
             ThrowIfDisposed();
             data.Dispose();
+            data = default;
+        }
+
+        /// <summary>
+        /// Returns the data of the reader as a span.
+        /// </summary>
+        public readonly ReadOnlySpan<byte> AsSpan()
+        {
+            return data.AsSpan();
         }
 
         [Conditional("TRACK_ALLOCATIONS")]
         private readonly void ThrowIfDisposed()
         {
-            if (data.IsDisposed)
+            if (IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(BinaryReader));
             }
         }
 
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfEndOfData()
+        public readonly T PeekValue<T>() where T : unmanaged
         {
-            if (position >= data.Count)
-            {
-                throw new InvalidOperationException("End of data.");
-            }
+            return PeekValue<T>(position);
         }
 
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfReadPastEnd(uint size)
+        public readonly T PeekValue<T>(uint position) where T : unmanaged
         {
-            if (position + size > data.Count)
-            {
-                throw new InvalidOperationException("Read past end of data.");
-            }
-        }
-
-        public T ReadValue<T>() where T : unmanaged
-        {
-            ThrowIfDisposed();
-            ThrowIfEndOfData();
-
-            uint size = (uint)(sizeof(T));
-            ThrowIfReadPastEnd(size);
-
+            uint size = (uint)sizeof(T);
             byte* ptr = stackalloc byte[(int)size];
             for (uint i = 0; i < size; i++)
             {
                 ptr[i] = data[position + i];
             }
 
-            position += size;
             return *(T*)ptr;
         }
 
+        public readonly ReadOnlySpan<T> PeekSpan<T>(uint length) where T : unmanaged
+        {
+            return PeekSpan<T>(position, length);
+        }
+
+        public T ReadValue<T>() where T : unmanaged
+        {
+            T value = PeekValue<T>();
+            Advance<T>();
+            return value;
+        }
+
+        public void Advance(uint size)
+        {
+            position += size;
+        }
+
+        public void Advance<T>(uint length = 1) where T : unmanaged
+        {
+            Advance((uint)sizeof(T) * length);
+        }
+
+        /// <summary>
+        /// Reads a span of values from the reader with the specified length.
+        /// </summary>
         public ReadOnlySpan<T> ReadSpan<T>(uint length) where T : unmanaged
         {
-            ThrowIfDisposed();
-            ThrowIfEndOfData();
+            if (length + position > data.Count)
+            {
+                throw new InvalidOperationException("Read past end of data.");
+            }
 
-            uint size = (uint)(sizeof(T) * length);
-            ThrowIfReadPastEnd(size);
+            ReadOnlySpan<T> span = PeekSpan<T>(position, length);
+            position += (uint)(sizeof(T) * length);
+            return span;
+        }
 
+        /// <summary>
+        /// Reads a span starting at the given position in bytes.
+        /// </summary>
+        public readonly ReadOnlySpan<T> PeekSpan<T>(uint position, uint length) where T : unmanaged
+        {
             nint address = (nint)(data.Address + position);
-            var span = new Span<T>((T*)address, (int)length);
-            position += size;
+            Span<T> span = new((T*)address, (int)length);
             return span;
         }
 

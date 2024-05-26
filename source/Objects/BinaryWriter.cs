@@ -7,9 +7,16 @@ namespace Unmanaged
     {
         private readonly UnmanagedList<byte> data;
 
+        public readonly bool IsDisposed => data.IsDisposed;
+
         public BinaryWriter()
         {
             data = new();
+        }
+
+        public BinaryWriter(UnmanagedList<byte> data)
+        {
+            this.data = data;
         }
 
         public readonly void WriteValue<T>(T value) where T : unmanaged
