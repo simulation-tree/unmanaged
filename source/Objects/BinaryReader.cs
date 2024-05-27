@@ -9,6 +9,9 @@ namespace Unmanaged
         private UnmanagedList<byte> data;
         private uint position;
 
+        /// <summary>
+        /// Position of the reader in the byte stream.
+        /// </summary>
         public uint Position
         {
             readonly get => position;
@@ -18,7 +21,11 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Length of the byte stream.
+        /// </summary>
         public readonly uint Length => data.Count;
+
         public readonly bool IsDisposed => data.IsDisposed;
 
         public BinaryReader(ReadOnlySpan<byte> data)

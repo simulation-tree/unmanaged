@@ -54,13 +54,13 @@ namespace Unmanaged
             Allocations.Free(ref pointer);
         }
 
-        public void Write<T>(T value) where T : unmanaged
+        public readonly void Write<T>(T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             Unsafe.Write(pointer, value);
         }
 
-        public void Write<T>(uint index, T value) where T : unmanaged
+        public readonly void Write<T>(uint index, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             uint elementSize = (uint)sizeof(T);
@@ -68,10 +68,19 @@ namespace Unmanaged
             Unsafe.Write((void*)((nint)pointer + byteStart), value);
         }
 
+        public readonly void Write<T>(Span<T> span) where T : unmanaged
+        {
+            Allocations.ThrowIfNull(pointer);
+            fixed (T* ptr = span)
+            {
+                Unsafe.CopyBlock((void*)((nint)pointer), ptr, (uint)(span.Length * sizeof(T)));
+            }
+        }
+
         /// <summary>
         /// Writes the given span into the memory.
         /// </summary>
-        public void Write<T>(ReadOnlySpan<T> span) where T : unmanaged
+        public readonly void Write<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             fixed (T* ptr = span)
