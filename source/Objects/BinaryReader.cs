@@ -134,10 +134,10 @@ namespace Unmanaged
             return span;
         }
 
-        public T ReadSerializable<T>() where T : unmanaged, IDeserializable
+        public T ReadObject<T>() where T : unmanaged, IBinaryObject
         {
             T value = default;
-            value.Deserialize(ref this);
+            value.Read(ref this);
             return value;
         }
     }

@@ -8,6 +8,8 @@ namespace Unmanaged
         private readonly UnmanagedList<byte> data;
 
         public readonly bool IsDisposed => data.IsDisposed;
+        public readonly uint Length => data.Count;
+        public readonly nint Address => data.Address;
 
         public BinaryWriter()
         {
@@ -42,9 +44,9 @@ namespace Unmanaged
             }
         }
 
-        public readonly void WriteSerializable<T>(T value) where T : unmanaged, ISerializable
+        public readonly void WriteObject<T>(T value) where T : unmanaged, IBinaryObject
         {
-            value.Serialize(this);
+            value.Write(this);
         }
 
         public readonly void Dispose()
@@ -52,26 +54,14 @@ namespace Unmanaged
             data.Dispose();
         }
 
-        public readonly ReadOnlySpan<byte> AsSpan()
+        public readonly Span<byte> AsSpan()
         {
             return data.AsSpan();
         }
-    }
 
-    public interface ISerializable
-    {
-        /// <summary>
-        /// Serializes the object into the writer.
-        /// </summary>
-        void Serialize(BinaryWriter writer);
-    }
-
-    public interface IDeserializable
-    {
-        /// <summary>
-        /// Deserializes the object from it's <c>default</c> state, with
-        /// the data in the reader.
-        /// </summary>
-        void Deserialize(ref BinaryReader reader);
+        public readonly ReadOnlySpan<T> AsSpan<T>(uint position, uint length) where T : unmanaged
+        {
+            return new((void*)(data.Address + position), (int)length);
+        }
     }
 }
