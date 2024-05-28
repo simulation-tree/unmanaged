@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 using Unmanaged.Serialization.Unsafe;
 
 namespace Unmanaged
@@ -27,15 +29,6 @@ namespace Unmanaged
         public BinaryReader(ReadOnlySpan<byte> data, uint position = 0)
         {
             reader = UnsafeBinaryReader.Allocate(data, position);
-        }
-
-        public BinaryReader(ReadOnlySpan<char> data, uint position = 0)
-        {
-            fixed (char* ptr = data)
-            {
-                Span<byte> bytes = new(ptr, data.Length * sizeof(char));
-                reader = UnsafeBinaryReader.Allocate(bytes, position);
-            }
         }
 
         public BinaryReader()
@@ -84,6 +77,68 @@ namespace Unmanaged
             }
         }
 
+        public readonly byte PeekUTF8(uint position, out char low, out char high)
+        {
+            high = default;
+            byte firstByte = PeekValue<byte>(position);
+            int codePoint;
+            byte additional;
+            if ((firstByte & 0x80) == 0)
+            {
+                additional = 0;
+                codePoint = firstByte;
+            }
+            else if ((firstByte & 0xE0) == 0xC0)
+            {
+                additional = 1;
+                codePoint = firstByte & 0x1F;
+            }
+            else if ((firstByte & 0xF0) == 0xE0)
+            {
+                additional = 2;
+                codePoint = firstByte & 0x0F;
+            }
+            else if ((firstByte & 0xF8) == 0xF0)
+            {
+                additional = 3;
+                codePoint = firstByte & 0x07;
+            }
+            else
+            {
+                throw new InvalidDataException("Invalid UTF-8 byte sequence");
+            }
+
+            for (uint j = 1; j <= additional; j++)
+            {
+                byte next = PeekValue<byte>(position + j);
+                if ((next & 0xC0) != 0x80)
+                {
+                    throw new InvalidDataException("Invalid UTF-8 continuation byte");
+                }
+
+                codePoint = (codePoint << 6) | (next & 0x3F);
+            }
+
+            if (codePoint <= 0xFFFF)
+            {
+                low = (char)codePoint;
+            }
+            else
+            {
+                codePoint -= 0x10000;
+                high = (char)((codePoint >> 10) + 0xD800);
+                low = (char)((codePoint & 0x3FF) + 0xDC00);
+            }
+
+            additional++;
+            return additional;
+        }
+
+        public readonly byte PeekUTF8(out char low, out char high)
+        {
+            return PeekUTF8(Position, out low, out high);
+        }
+
         public readonly T PeekValue<T>() where T : unmanaged
         {
             return PeekValue<T>(Position);
@@ -92,7 +147,11 @@ namespace Unmanaged
         public readonly T PeekValue<T>(uint position) where T : unmanaged
         {
             uint size = (uint)sizeof(T);
-            ThrowIfReadingPastLength(position + size);
+            if (position + size > Length)
+            {
+                return default;
+            }
+
             nint address = (nint)(((nint)(reader + 1)) + position);
             return *(T*)address;
         }
@@ -143,11 +202,54 @@ namespace Unmanaged
             return span;
         }
 
+        public readonly int PeekUTF8Span(uint position, uint length, Span<char> buffer)
+        {
+            uint start = position;
+            int t = 0;
+            for (int i = 0; i < length; i++)
+            {
+                uint cLength = PeekUTF8(position, out char low, out char high);
+                if (low == default)
+                {
+                    break;
+                }
+
+                if (high != default)
+                {
+                    buffer[t++] = high;
+                    buffer[t++] = low;
+                }
+                else
+                {
+                    buffer[t++] = low;
+                }
+
+                position += cLength;
+            }
+
+            return t;
+        }
+
+        public readonly int ReadUTF8Span(uint length, Span<char> buffer)
+        {
+            uint start = Position;
+            int read = PeekUTF8Span(start, length, buffer);
+            Advance((uint)read);
+            return read;
+        }
+
         public readonly T ReadObject<T>() where T : unmanaged, ISerializable
         {
             T value = default;
             value.Read(this);
             return value;
+        }
+
+        public static BinaryReader CreateFromUTF8(ReadOnlySpan<char> text)
+        {
+            Span<byte> buffer = stackalloc byte[text.Length * sizeof(char)];
+            int written = Encoding.UTF8.GetBytes(text, buffer);
+            return new BinaryReader(buffer[..written]);
         }
     }
 }

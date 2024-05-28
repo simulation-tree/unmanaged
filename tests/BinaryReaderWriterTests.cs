@@ -36,5 +36,29 @@ namespace Tests
             using BinaryReader reader = new(writer.AsSpan());
             Assert.That(reader.ReadSpan<char>(11).ToString(), Is.EqualTo("Hello there"));
         }
+
+        [Test]
+        public void ReadUTF8Text()
+        {
+            byte[] data = new byte[] { 239, 187, 191, 60, 80, 114, 111, 106, 101, 99, 116, 32, 83, 100, 107 };
+            using BinaryReader reader = new(data);
+            Span<char> sample = stackalloc char[15];
+            reader.ReadUTF8Span(15, sample);
+            Assert.That(sample.ToString(), Is.EqualTo("﻿<Project Sdk\0\0"));
+        }
+
+        [Test]
+        public void WriteUTF8Text()
+        {
+            string myString = "Hello, 你好, 🌍";
+            using BinaryWriter writer = new();
+            writer.WriteUTF8Span(myString.AsSpan());
+            using BinaryReader reader = new(writer.AsSpan());
+            Span<char> sample = stackalloc char[32];
+            int length = reader.ReadUTF8Span(32, sample);
+            ReadOnlySpan<char> result = sample.Slice(0, length);
+            string resultString = new string(result);
+            Assert.That(resultString, Is.EqualTo(myString));
+        }
     }
 }

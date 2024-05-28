@@ -290,7 +290,7 @@ namespace Unmanaged
         /// <summary>
         /// Copies the contents into the destination buffer.
         /// </summary>
-        public readonly unsafe void CopyTo(Span<char> buffer)
+        public readonly unsafe int CopyTo(Span<char> buffer)
         {
             int outputIndex = 0;
             ulong temp = 0;
@@ -309,10 +309,12 @@ namespace Unmanaged
                     outputIndex++;
                     if (outputIndex >= buffer.Length)
                     {
-                        return;
+                        return length;
                     }
                 }
             }
+
+            return length;
         }
 
         /// <inheritdoc/>
