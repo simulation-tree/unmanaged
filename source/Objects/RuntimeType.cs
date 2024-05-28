@@ -134,6 +134,9 @@ namespace Unmanaged
         public static bool operator !=(RuntimeType left, RuntimeType right) => !left.Equals(right);
         public static bool operator ==(RuntimeType left, Type right) => left.Type == right;
         public static bool operator !=(RuntimeType left, Type right) => left.Type != right;
+        public static bool operator ==(Type left, RuntimeType right) => left == right.Type;
+        public static bool operator !=(Type left, RuntimeType right) => left != right.Type;
+        public static implicit operator Type(RuntimeType type) => type.Type;
 
         private static class RuntimeTypeHash<T>
         {

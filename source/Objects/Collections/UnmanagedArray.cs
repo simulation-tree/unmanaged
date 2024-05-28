@@ -69,7 +69,7 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Returns the span for the array.
+        /// Returns the array as a span.
         /// </summary>
         public readonly Span<T> AsSpan()
         {

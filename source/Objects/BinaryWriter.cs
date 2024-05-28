@@ -75,6 +75,9 @@ namespace Unmanaged
             UnsafeBinaryWriter.Free(ref value);
         }
 
+        /// <summary>
+        /// All bytes written into the writer.
+        /// </summary>
         public readonly Span<byte> AsSpan()
         {
             return new((void*)Address, (int)Length);
