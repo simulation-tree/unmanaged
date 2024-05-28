@@ -19,6 +19,7 @@ namespace Unmanaged.Collections
         }
 
         public readonly ReadOnlySpan<T> this[Range range] => AsSpan()[range];
+
         readonly int IReadOnlyCollection<T>.Count => (int)Length;
         readonly T IReadOnlyList<T>.this[int index] => UnsafeArray.GetRef<T>(value, (uint)index);
 

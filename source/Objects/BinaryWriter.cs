@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using Unmanaged.Serialization.Unsafe;
 
 namespace Unmanaged
@@ -9,6 +8,10 @@ namespace Unmanaged
         private UnsafeBinaryWriter* value;
 
         public readonly bool IsDisposed => UnsafeBinaryWriter.IsDisposed(value);
+
+        /// <summary>
+        /// Amount of bytes put into the writer.
+        /// </summary>
         public readonly uint Length
         {
             get => UnsafeBinaryWriter.SetPosition(value);
