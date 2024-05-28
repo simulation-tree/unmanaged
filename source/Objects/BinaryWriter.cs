@@ -24,23 +24,14 @@ namespace Unmanaged
         public readonly void WriteValue<T>(T value) where T : unmanaged
         {
             byte* ptr = (byte*)&value;
-            int size = sizeof(T);
-            for (int i = 0; i < size; i++)
-            {
-                data.Add(ptr[i]);
-            }
+            data.AddRange(new(ptr, sizeof(T)));
         }
 
         public readonly void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             fixed (T* ptr = span)
             {
-                byte* bytePtr = (byte*)ptr;
-                int size = sizeof(T) * span.Length;
-                for (int i = 0; i < size; i++)
-                {
-                    data.Add(bytePtr[i]);
-                }
+                data.AddRange(new(ptr, span.Length * sizeof(T)));
             }
         }
 
