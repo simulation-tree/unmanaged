@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -148,11 +147,11 @@ namespace Unmanaged
                     int hash = GetHashCode(type);
                     while (TypeTable.typeIds.Contains((ushort)hash))
                     {
-                        #if TEST
+#if TEST
                         Console.WriteLine($"Collision hash detected between {type} and {TypeTable.types[(ushort)hash]}");
-                        #else
+#else
                         Debug.WriteLine($"Collision hash detected between {type} and {TypeTable.types[(ushort)hash]}");
-                        #endif
+#endif
                         hash += 174440041;
                     }
 

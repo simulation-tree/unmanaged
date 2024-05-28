@@ -129,8 +129,9 @@ namespace Unmanaged.Collections
         {
             Allocations.ThrowIfNull(dictionary);
             ThrowIfSizeMismatch<K, V>(dictionary);
-            uint index = UnsafeList.Remove<K>(dictionary->keys, key);
-            UnsafeList.RemoveAt(dictionary->values, index);
+            uint index = UnsafeList.IndexOf(dictionary->keys, key);
+            UnsafeList.RemoveAtBySwapping<K>(dictionary->keys, index, out _);
+            UnsafeList.RemoveAtBySwapping(dictionary->values, index);
             dictionary->count--;
         }
 

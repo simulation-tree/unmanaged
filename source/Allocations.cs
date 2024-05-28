@@ -109,6 +109,13 @@ namespace Unmanaged
             return newPointer;
         }
 
+        public static T* Reallocate<T>(T* pointer, uint newSize) where T : unmanaged
+        {
+            void* voidPointer = pointer;
+            void* newPointer = Reallocate(voidPointer, newSize);
+            return (T*)newPointer;
+        }
+
         public static bool IsNull(void* pointer)
         {
             if (pointer is null)

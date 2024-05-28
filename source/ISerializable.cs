@@ -1,6 +1,6 @@
 ﻿namespace Unmanaged
 {
-    public interface IBinaryObject
+    public interface ISerializable
     {
         /// <summary>
         /// Serializes the object into the writer.
@@ -11,6 +11,6 @@
         /// Deserializes the object from it's <c>default</c> state, with
         /// the data in the reader.
         /// </summary>
-        void Read(ref BinaryReader reader);
+        void Read(BinaryReader reader);
     }
 }

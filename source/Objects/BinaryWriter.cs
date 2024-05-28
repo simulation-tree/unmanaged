@@ -1,58 +1,68 @@
 ﻿using System;
-using Unmanaged.Collections;
+using Unmanaged.Serialization.Unsafe;
 
 namespace Unmanaged
 {
-    public readonly unsafe struct BinaryWriter : IDisposable
+    public unsafe struct BinaryWriter : IDisposable
     {
-        private readonly UnmanagedList<byte> data;
+        private UnsafeBinaryWriter* value;
 
-        public readonly bool IsDisposed => data.IsDisposed;
-        public readonly uint Length => data.Count;
-        public readonly nint Address => data.Address;
+        public readonly bool IsDisposed => UnsafeBinaryWriter.IsDisposed(value);
+        public readonly uint Length
+        {
+            get => UnsafeBinaryWriter.SetPosition(value);
+            set => UnsafeBinaryWriter.SetPosition(this.value, value);
+        }
+
+        public readonly nint Address => UnsafeBinaryWriter.GetAddress(value);
 
         public BinaryWriter()
         {
-            data = new();
+            value = UnsafeBinaryWriter.Allocate();
         }
 
-        public BinaryWriter(UnmanagedList<byte> data)
+        public void WriteValue<T>(T value) where T : unmanaged
         {
-            this.data = data;
+            T* ptr = &value;
+            UnsafeBinaryWriter.Write(ref this.value, ptr, (uint)sizeof(T));
         }
 
-        public readonly void WriteValue<T>(T value) where T : unmanaged
-        {
-            byte* ptr = (byte*)&value;
-            data.AddRange(new(ptr, sizeof(T)));
-        }
-
-        public readonly void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
+        public void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             fixed (T* ptr = span)
             {
-                data.AddRange(new(ptr, span.Length * sizeof(T)));
+                UnsafeBinaryWriter.Write(ref this.value, ptr, (uint)(span.Length * sizeof(T)));
             }
         }
 
-        public readonly void WriteObject<T>(T value) where T : unmanaged, IBinaryObject
+        public readonly void WriteObject<T>(T value) where T : unmanaged, ISerializable
         {
             value.Write(this);
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
-            data.Dispose();
+            UnsafeBinaryWriter.Free(ref value);
         }
 
         public readonly Span<byte> AsSpan()
         {
-            return data.AsSpan();
+            return new((void*)Address, (int)Length);
+        }
+
+        public readonly Span<byte> AsSpan(uint position, uint length)
+        {
+            return AsSpan().Slice((int)position, (int)length);
+        }
+
+        public readonly ReadOnlySpan<T> AsSpan<T>() where T : unmanaged
+        {
+            return new((void*)Address, (int)Length / sizeof(T));
         }
 
         public readonly ReadOnlySpan<T> AsSpan<T>(uint position, uint length) where T : unmanaged
         {
-            return new((void*)(data.Address + position), (int)length);
+            return AsSpan<T>().Slice((int)position, (int)length);
         }
     }
 }

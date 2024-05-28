@@ -27,6 +27,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Creates an empty allocation.
+        /// </summary>
         public Allocation()
         {
             pointer = Allocations.Allocate(0);

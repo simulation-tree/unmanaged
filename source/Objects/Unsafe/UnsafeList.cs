@@ -226,13 +226,6 @@ namespace Unmanaged.Collections
             return span.Contains(item);
         }
 
-        public static uint Remove<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
-        {
-            uint index = IndexOf(list, item);
-            RemoveAt(list, index);
-            return index;
-        }
-
         public static void RemoveAt(UnsafeList* list, uint index)
         {
             uint count = list->count;
@@ -346,14 +339,24 @@ namespace Unmanaged.Collections
             return Allocations.IsNull(list) || list->items.IsDisposed;
         }
 
-        public static uint GetCount(UnsafeList* list)
+        public static ref uint GetCountRef(UnsafeList* list)
         {
-            return list->count;
+            return ref list->count;
         }
 
         public static uint GetCapacity(UnsafeList* list)
         {
             return list->capacity;
+        }
+
+        public static void SetCapacity(UnsafeList* list, uint newCapacity)
+        {
+            uint elementSize = list->type.size;
+            Allocation newItems = new(elementSize * newCapacity);
+            list->capacity = newCapacity;
+            list->items.CopyTo(newItems, 0, 0, list->count * elementSize);
+            list->items.Dispose();
+            list->items = newItems;
         }
 
         public static nint GetAddress(UnsafeList* list)

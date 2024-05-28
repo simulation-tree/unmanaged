@@ -18,8 +18,10 @@ namespace Tests
             writer.WriteValue(32);
             writer.WriteValue(64);
             writer.WriteValue(128);
-
-            using BinaryReader reader = new(writer.AsSpan());
+            Assert.That(writer.Length, Is.EqualTo(sizeof(int) * 3));
+            byte[] bytes = writer.AsSpan().ToArray();
+            using BinaryReader reader = new(bytes);
+            byte[] readerBytes = reader.AsSpan().ToArray();
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(32));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(64));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(128));

@@ -9,8 +9,13 @@ namespace Unmanaged.Collections
         private UnsafeList* value;
 
         public readonly bool IsDisposed => UnsafeList.IsDisposed(value);
-        public readonly uint Count => UnsafeList.GetCount(value);
-        public readonly uint Capacity => UnsafeList.GetCapacity(value);
+        public readonly uint Count => UnsafeList.GetCountRef(value);
+        public readonly uint Capacity
+        {
+            get => UnsafeList.GetCapacity(value);
+            set => UnsafeList.SetCapacity(this.value, value);
+        }
+
         public readonly nint Address => UnsafeList.GetAddress(value);
 
         public readonly T this[uint index]
@@ -136,19 +141,20 @@ namespace Unmanaged.Collections
             return UnsafeList.Contains(value, item);
         }
 
-        public readonly uint Remove<V>(V item) where V : unmanaged, IEquatable<V>
+        /// <summary>
+        /// Removes the given item from the list by swapping it with the removed element.
+        /// </summary>
+        public readonly bool Remove<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            return UnsafeList.Remove(value, item);
-        }
-
-        public readonly bool TryRemove<V>(V item) where V : unmanaged, IEquatable<V>
-        {
-            if (UnsafeList.TryIndexOf(value, item, out uint index))
+            if (TryIndexOf(item, out uint index))
             {
-                UnsafeList.RemoveAt(value, index);
+                RemoveAtBySwapping(index);
                 return true;
             }
-            else return false;
+            else
+            {
+                return false;
+            }
         }
 
         public readonly void RemoveAt(uint index)
@@ -245,7 +251,7 @@ namespace Unmanaged.Collections
             public bool MoveNext()
             {
                 index++;
-                return index < UnsafeList.GetCount(list);
+                return index < UnsafeList.GetCountRef(list);
             }
 
             public void Reset()
