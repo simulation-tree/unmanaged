@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 
 namespace Unmanaged.Serialization.Unsafe
@@ -31,13 +32,14 @@ namespace Unmanaged.Serialization.Unsafe
 
         public static UnsafeBinaryReader* Allocate(Stream stream, uint position = 0)
         {
-            uint streamLength = (uint)stream.Length;
-            void* ptr = Allocations.Allocate((uint)(sizeof(UnsafeBinaryReader) + streamLength));
+            uint length = (uint)stream.Length;
+            void* ptr = Allocations.Allocate((uint)(sizeof(UnsafeBinaryReader) + length));
             UnsafeBinaryReader* ptrTyped = (UnsafeBinaryReader*)ptr;
-            ptrTyped[0] = new(position, streamLength);
+            ptrTyped[0] = new(position, length);
             nint destination = ((nint)ptr + sizeof(UnsafeBinaryReader));
-            Span<byte> streamSpan = new((byte*)destination, (int)streamLength);
-            stream.Read(streamSpan);
+            Span<byte> streamSpan = new((byte*)destination, (int)length);
+            int read = stream.Read(streamSpan);
+            Debug.Assert(read == length, "Failed to read the entire stream.");
             return ptrTyped;
         }
 
