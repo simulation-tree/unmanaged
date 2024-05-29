@@ -31,9 +31,14 @@ namespace Unmanaged
             reader = UnsafeBinaryReader.Allocate(data, position);
         }
 
+        public BinaryReader(Stream stream, uint position = 0)
+        {
+            reader = UnsafeBinaryReader.Allocate(stream, position);
+        }
+
         public BinaryReader()
         {
-            reader = UnsafeBinaryReader.Allocate(default);
+            reader = UnsafeBinaryReader.Allocate([]);
         }
 
         public void Dispose()

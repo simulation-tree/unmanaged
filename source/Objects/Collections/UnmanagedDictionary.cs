@@ -147,7 +147,7 @@ namespace Unmanaged.Collections
 
         public readonly void Clear()
         {
-            UnsafeDictionary.Clear<K, V>(value);
+            UnsafeDictionary.Clear(value);
         }
     }
 }

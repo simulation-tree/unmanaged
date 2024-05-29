@@ -135,7 +135,7 @@ namespace Unmanaged.Collections
             dictionary->count--;
         }
 
-        public static void Clear<K, V>(UnsafeDictionary* dictionary) where K : unmanaged where V : unmanaged
+        public static void Clear(UnsafeDictionary* dictionary)
         {
             Allocations.ThrowIfNull(dictionary);
             UnsafeList.Clear(dictionary->keys);

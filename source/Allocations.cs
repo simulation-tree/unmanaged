@@ -18,7 +18,15 @@ namespace Unmanaged
         private static readonly Dictionary<nint, StackTrace> allocations = [];
         private static readonly Dictionary<nint, StackTrace> disposals = [];
 
+#if TRACK_ALLOCATIONS
+        /// <summary>
+        /// Amount of allocations made that have not been freed.
+        /// This value is always 0 in release builds.
+        /// </summary>
         public static uint Count => (uint)addresses.Count;
+#else
+        public const uint Count = 0;
+#endif
 
         static Allocations()
         {

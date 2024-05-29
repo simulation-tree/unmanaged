@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace Unmanaged.Serialization.Unsafe
 {
@@ -25,6 +26,18 @@ namespace Unmanaged.Serialization.Unsafe
                 System.Runtime.CompilerServices.Unsafe.CopyBlock((void*)destination, ptrBytes, length);
             }
 
+            return ptrTyped;
+        }
+
+        public static UnsafeBinaryReader* Allocate(Stream stream, uint position = 0)
+        {
+            uint streamLength = (uint)stream.Length;
+            void* ptr = Allocations.Allocate((uint)(sizeof(UnsafeBinaryReader) + streamLength));
+            UnsafeBinaryReader* ptrTyped = (UnsafeBinaryReader*)ptr;
+            ptrTyped[0] = new(position, streamLength);
+            nint destination = ((nint)ptr + sizeof(UnsafeBinaryReader));
+            Span<byte> streamSpan = new((byte*)destination, (int)streamLength);
+            stream.Read(streamSpan);
             return ptrTyped;
         }
 

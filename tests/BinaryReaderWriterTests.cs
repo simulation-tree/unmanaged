@@ -38,6 +38,33 @@ namespace Tests
         }
 
         [Test]
+        public void CreateReaderFromBytes()
+        {
+            using var stream = new System.IO.MemoryStream();
+            using System.IO.BinaryWriter binWriter = new(stream);
+            binWriter.Write(32);
+            binWriter.Write(64);
+            binWriter.Write(128);
+            byte[] bytes = stream.ToArray();
+            using BinaryReader reader = new(bytes);
+            Assert.That(reader.ReadValue<int>(), Is.EqualTo(32));
+            Assert.That(reader.ReadValue<int>(), Is.EqualTo(64));
+            Assert.That(reader.ReadValue<int>(), Is.EqualTo(128));
+        }
+
+        [Test]
+        public void CreateReaderFromStream()
+        {
+            using var stream = new System.IO.MemoryStream();
+            stream.Write([32, 0, 0, 0, 64, 0, 0, 0, 128, 0, 0, 0]);
+            stream.Position = 0;
+            using BinaryReader reader = new(stream);
+            Assert.That(reader.ReadValue<int>(), Is.EqualTo(32));
+            Assert.That(reader.ReadValue<int>(), Is.EqualTo(64));
+            Assert.That(reader.ReadValue<int>(), Is.EqualTo(128));
+        }
+
+        [Test]
         public void ReadUTF8Text()
         {
             byte[] data = new byte[] { 239, 187, 191, 60, 80, 114, 111, 106, 101, 99, 116, 32, 83, 100, 107 };
