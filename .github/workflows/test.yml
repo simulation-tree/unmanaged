@@ -26,12 +26,16 @@ jobs:
         run: ls
 
       - name: Test project
-        #run: dotnet test -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults" --blame --blame-crash-dump-type full --blame-hang-dump-type full --blame-hang-timeout 60s -v diag
         run: dotnet test -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults"
 
       - name: Generate HTML report from test results
         if: always()
-        run: reportgenerator -reports:"TestResults/*/*.xml" -reporttypes:html -targetdir:"TestResults/html"
+        uses: danielpalme/ReportGenerator-GitHub-Action@5.3.4
+        with:
+          license: ${{ secrets.REPORTGENERATOR_LICENSE }}
+          reports: "TestResults/*/*.xml"
+          targetdir: "TestResults/html"
+          reporttypes: "Html"
         
       - name: Upload HTML report
         uses: actions/upload-artifact@v4

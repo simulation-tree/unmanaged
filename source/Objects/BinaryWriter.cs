@@ -12,9 +12,9 @@ namespace Unmanaged
         /// <summary>
         /// Amount of bytes put into the writer.
         /// </summary>
-        public readonly uint Length
+        public readonly uint Position
         {
-            get => UnsafeBinaryWriter.SetPosition(value);
+            get => UnsafeBinaryWriter.GetPosition(value);
             set => UnsafeBinaryWriter.SetPosition(this.value, value);
         }
 
@@ -23,6 +23,16 @@ namespace Unmanaged
         public BinaryWriter()
         {
             value = UnsafeBinaryWriter.Allocate();
+        }
+
+        public BinaryWriter(uint capacity = 1)
+        {
+            value = UnsafeBinaryWriter.Allocate(capacity);
+        }
+
+        public BinaryWriter(Span<byte> span)
+        {
+            value = UnsafeBinaryWriter.Allocate(span);
         }
 
         public void WriteValue<T>(T value) where T : unmanaged
@@ -88,7 +98,7 @@ namespace Unmanaged
         /// </summary>
         public readonly Span<byte> AsSpan()
         {
-            return new((void*)Address, (int)Length);
+            return new((void*)Address, (int)Position);
         }
 
         public readonly Span<byte> AsSpan(uint position, uint length)
@@ -98,7 +108,12 @@ namespace Unmanaged
 
         public readonly ReadOnlySpan<T> AsSpan<T>() where T : unmanaged
         {
-            return new((void*)Address, (int)Length / sizeof(T));
+            return new((void*)Address, (int)Position / sizeof(T));
+        }
+
+        public readonly ReadOnlySpan<T> AsSpan<T>(uint length) where T : unmanaged
+        {
+            return AsSpan<T>()[..(int)length];
         }
 
         public readonly ReadOnlySpan<T> AsSpan<T>(uint position, uint length) where T : unmanaged

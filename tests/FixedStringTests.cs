@@ -33,6 +33,19 @@ namespace Tests
         }
 
         [Test]
+        public void RemovingAt()
+        {
+            FixedString a = "Hello World";
+            Assert.That(a.Length, Is.EqualTo(11));
+            a.RemoveAt(a.Length - 1);
+
+            Assert.That(a.Length, Is.EqualTo(10));
+
+            a.RemoveAt(4);
+            Assert.That(a.ToString(), Is.EqualTo("Hell Worl"));
+        }
+
+        [Test]
         public void Appending()
         {
             FixedString a = default;
@@ -80,6 +93,19 @@ namespace Tests
             Assert.That(a.IndexOf('e'), Is.EqualTo(1));
             Assert.That(a.IndexOf("lo"), Is.EqualTo(3));
             Assert.That(a.IndexOf(' '), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void Insert()
+        {
+            FixedString a = default;
+            a.Insert(0, "World");
+            a.Insert(0, ' ');
+            a.Insert(0, "Hello");
+            Assert.That(a.ToString(), Is.EqualTo("Hello World"));
+
+            a.Replace("World", "Pastrami");
+            Assert.That(a.ToString(), Is.EqualTo("Hello Pastrami"));
         }
 
         [Test]

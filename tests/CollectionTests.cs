@@ -206,7 +206,7 @@ namespace Tests
         public void ListFromSpan()
         {
             Span<char> word = stackalloc char[] { 'H', 'e', 'l', 'l', 'o' };
-            using UnmanagedList<char> list = new(word);
+            UnmanagedList<char> list = new(word);
             Assert.That(list.Count, Is.EqualTo(5));
             Span<char> otherSpan = list.AsSpan();
             Assert.That(otherSpan[0], Is.EqualTo('H'));
@@ -214,6 +214,7 @@ namespace Tests
             Assert.That(otherSpan[2], Is.EqualTo('l'));
             Assert.That(otherSpan[3], Is.EqualTo('l'));
             Assert.That(otherSpan[4], Is.EqualTo('o'));
+            list.Dispose();
         }
 
         [Test]

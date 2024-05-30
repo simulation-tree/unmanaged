@@ -20,7 +20,7 @@ namespace Unmanaged
 
         public readonly Span<byte> this[Range range]
         {
-            get 
+            get
             {
                 Allocations.ThrowIfNull(pointer);
                 return new Span<byte>((void*)((nint)pointer + range.Start.Value), range.End.Value - range.Start.Value);
@@ -59,16 +59,16 @@ namespace Unmanaged
 
         public readonly void Write<T>(T value) where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
-            Unsafe.Write(pointer, value);
+            Write(0, value);
         }
 
         public readonly void Write<T>(uint index, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            uint elementSize = (uint)sizeof(T);
-            uint byteStart = index * elementSize;
-            Unsafe.Write((void*)((nint)pointer + byteStart), value);
+            uint length = (uint)sizeof(T);
+            uint position = index * length;
+            void* ptr = &value;
+            Write(position, ptr, length);
         }
 
         public readonly void Write<T>(Span<T> span) where T : unmanaged
@@ -76,7 +76,7 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             fixed (T* ptr = span)
             {
-                Unsafe.CopyBlock((void*)((nint)pointer), ptr, (uint)(span.Length * sizeof(T)));
+                Write(0, ptr, (uint)(span.Length * sizeof(T)));
             }
         }
 
@@ -88,8 +88,14 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             fixed (T* ptr = span)
             {
-                Unsafe.CopyBlock((void*)((nint)pointer), ptr, (uint)(span.Length * sizeof(T)));
+                Write(0, ptr, (uint)(span.Length * sizeof(T)));
             }
+        }
+
+        public readonly void Write(uint position, void* data, uint length)
+        {
+            Allocations.ThrowIfNull(pointer);
+            Unsafe.CopyBlock((void*)((nint)pointer + position), data, length);
         }
 
         /// <returns>A span of bytes for the given slice range of memory.</returns>
@@ -106,9 +112,9 @@ namespace Unmanaged
         public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            uint elementSize = (uint)sizeof(T);
-            uint byteStart = start * elementSize;
-            return new Span<T>((void*)((nint)pointer + byteStart), (int)length);
+            uint byteLength = (uint)sizeof(T);
+            uint position = start * byteLength;
+            return new Span<T>((void*)((nint)pointer + position), (int)length);
         }
 
         public readonly ref T AsRef<T>() where T : unmanaged

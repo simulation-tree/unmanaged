@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Unmanaged;
+using Unmanaged.Collections;
 
 namespace Tests
 {
@@ -117,6 +118,39 @@ namespace Tests
             stopwatch.Stop();
             Console.WriteLine($"RandomGenerator: {stopwatch.ElapsedMilliseconds}ms");
             rng.Dispose();
+        }
+
+        [Test]
+        public void GenerateBytes()
+        {
+            using RandomGenerator rng = new(1337);
+            using UnmanagedArray<byte> data = new(2048);
+            rng.NextBytes(data.AsSpan());
+            byte min = byte.MaxValue;
+            byte max = byte.MinValue;
+            uint total = 0;
+            for (uint i = 0; i < data.Length; i++)
+            {
+                byte value = data[i];
+                min = Math.Min(min, value);
+                max = Math.Max(max, value);
+                total += value;
+            }
+
+            float avg = total / (float)data.Length;
+            Assert.That(min, Is.EqualTo(byte.MinValue).Within(2));
+            Assert.That(max, Is.EqualTo(byte.MaxValue).Within(2));
+            Assert.That(avg, Is.EqualTo(127.5f).Within(2));
+        }
+
+        [Test]
+        public void CreateWithSeed()
+        {
+            using RandomGenerator rng = new("letter");
+            ulong first = rng.NextULong();
+            using RandomGenerator g = new("letter");
+            ulong second = g.NextULong();
+            Assert.That(first, Is.EqualTo(second));
         }
     }
 }

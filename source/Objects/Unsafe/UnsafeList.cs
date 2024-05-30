@@ -48,19 +48,23 @@ namespace Unmanaged.Collections
 
         public static UnsafeList* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
-            UnsafeList* list = Allocate<T>((uint)Math.Max(1, span.Length));
+            RuntimeType type = RuntimeType.Get<T>();
+            UnsafeList* list = Allocations.Allocate<UnsafeList>();
             list->count = (uint)span.Length;
-            Span<T> items = list->items.AsSpan<T>(0, list->count);
-            span.CopyTo(items);
+            list->type = type;
+            list->capacity = list->count;
+            list->items = Allocation.Create(span);
             return list;
         }
 
         public static UnsafeList* Allocate<T>(Span<T> span) where T : unmanaged
         {
-            UnsafeList* list = Allocate<T>((uint)Math.Max(1, span.Length));
+            RuntimeType type = RuntimeType.Get<T>();
+            UnsafeList* list = Allocations.Allocate<UnsafeList>();
             list->count = (uint)span.Length;
-            Span<T> items = list->items.AsSpan<T>(0, list->count);
-            span.CopyTo(items);
+            list->type = type;
+            list->capacity = list->count;
+            list->items = Allocation.Create(span);
             return list;
         }
 

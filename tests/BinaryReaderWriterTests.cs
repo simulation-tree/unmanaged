@@ -16,9 +16,13 @@ namespace Tests
         {
             using BinaryWriter writer = new();
             writer.WriteValue(32);
+            Assert.That(writer.Position, Is.EqualTo(sizeof(int)));
             writer.WriteValue(64);
+            Assert.That(writer.Position, Is.EqualTo(sizeof(int) * 2));
             writer.WriteValue(128);
-            Assert.That(writer.Length, Is.EqualTo(sizeof(int) * 3));
+            Assert.That(writer.Position, Is.EqualTo(sizeof(int) * 3));
+
+            Assert.That(writer.Position, Is.EqualTo(sizeof(int) * 3));
             byte[] bytes = writer.AsSpan().ToArray();
             using BinaryReader reader = new(bytes);
             byte[] readerBytes = reader.AsSpan().ToArray();
@@ -86,6 +90,27 @@ namespace Tests
             ReadOnlySpan<char> result = sample.Slice(0, length);
             string resultString = new string(result);
             Assert.That(resultString, Is.EqualTo(myString));
+        }
+
+        [Test]
+        public void ReuseWriter()
+        {
+            BinaryWriter writer = new();
+            writer.WriteValue(32);
+            writer.WriteValue(64);
+            writer.WriteValue(128);
+
+            Assert.That(writer.Position, Is.EqualTo(sizeof(int) * 3));
+            int[] values = writer.AsSpan<int>().ToArray();
+            writer.Position = 0;
+            Assert.That(writer.Position, Is.EqualTo(0));
+            Assert.That(values, Has.Length.EqualTo(3));
+            Assert.That(values, Contains.Item(32));
+            Assert.That(values, Contains.Item(64));
+            Assert.That(values, Contains.Item(128));
+            Assert.That(writer.AsSpan<int>().Length, Is.EqualTo(0));
+
+            writer.Dispose();
         }
     }
 }

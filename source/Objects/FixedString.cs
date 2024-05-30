@@ -164,23 +164,26 @@ namespace Unmanaged
                 throw new InvalidOperationException($"Path length exceeds maximum length of {MaxLength}.");
             }
 
-            Span<char> buffer = stackalloc char[newLength];
-            CopyTo(buffer);
-            text.CopyTo(buffer[length..]);
-            Read(buffer);
+            Span<char> destinationBuffer = stackalloc char[newLength];
+            CopyTo(destinationBuffer);
+            text.CopyTo(destinationBuffer[length..]);
+            Read(destinationBuffer);
         }
 
-        public void Append(char value)
+        public void Append<T>(T value) where T : ISpanFormattable
         {
-            if (length + 1 > MaxLength)
+            Span<char> buffer = stackalloc char[MaxLength];
+            value.TryFormat(buffer, out int written, default, null);
+
+            if (length + written > MaxLength)
             {
                 throw new InvalidOperationException($"Path length exceeds maximum length of {MaxLength}.");
             }
 
-            Span<char> buffer = stackalloc char[length + 1];
-            CopyTo(buffer);
-            buffer[length] = value;
-            Read(buffer);
+            Span<char> destinationBuffer = stackalloc char[length + written];
+            CopyTo(destinationBuffer);
+            buffer[..written].CopyTo(destinationBuffer[length..]);
+            Read(destinationBuffer);
         }
 
         public readonly unsafe int IndexOf(char value)
@@ -267,6 +270,58 @@ namespace Unmanaged
             CopyTo(temp);
             ReadOnlySpan<char> span = temp[..length];
             return span.EndsWith(text, comparison);
+        }
+
+        public void RemoveAt(int index)
+        {
+            RemoveAt(index, 1);
+        }
+
+        public void RemoveAt(int start, int length)
+        {
+            Span<char> temp = stackalloc char[this.length];
+            CopyTo(temp);
+            Span<char> buffer = stackalloc char[this.length - length];
+            temp[..start].CopyTo(buffer[..start]);
+
+            Span<char> source = temp[(start + length)..];
+            Span<char> destination = buffer[start..];
+            source.CopyTo(destination);
+            Read(buffer);
+        }
+
+        public bool Replace(ReadOnlySpan<char> target, ReadOnlySpan<char> replacement, StringComparison comparison = StringComparison.Ordinal)
+        {
+            int index = IndexOf(target, comparison);
+            if (index != -1)
+            {
+                RemoveAt(index, target.Length);
+                Insert(index, replacement);
+                return true;
+            }
+            else return false;
+        }
+
+        public void Insert(int position, char c)
+        {
+            Insert(position, [c]);
+        }
+
+        public void Insert(int position, ReadOnlySpan<char> text)
+        {
+            if (text.Length + length > MaxLength)
+            {
+                throw new InvalidOperationException($"Path length exceeds maximum length of {MaxLength}.");
+            }
+
+            Span<char> temp = stackalloc char[this.length];
+            CopyTo(temp);
+
+            Span<char> buffer = stackalloc char[this.length + text.Length];
+            temp[..position].CopyTo(buffer[..position]);
+            text.CopyTo(buffer[position..(position + text.Length)]);
+            temp[position..].CopyTo(buffer[(position + text.Length)..]);
+            Read(buffer);
         }
 
         /// <inheritdoc/>
