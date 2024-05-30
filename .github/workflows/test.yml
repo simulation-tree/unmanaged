@@ -34,15 +34,15 @@ jobs:
         with:
           license: ${{ secrets.REPORTGENERATOR_LICENSE }}
           reports: "TestResults/*/*.xml"
-          targetdir: "TestResults/html"
-          reporttypes: "Html"
+          targetdir: "coveragereport"
+          reporttypes: "Html;Cobertura"
         
-      - name: Upload HTML report
+      - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Test Results
-          path: "*/TestResults/html"
+          name: Coverage
+          path: coveragereport
 
       - name: Upload crash dumps
         uses: actions/upload-artifact@v4
