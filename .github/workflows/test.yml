@@ -22,7 +22,10 @@ jobs:
         run: ls
 
       - name: Test project
-        run: dotnet test -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults"
+        run: dotnet tests -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults"
+
+      - name: List directory
+        run: ls
 
       - name: Generate HTML report from test results
         if: always()
