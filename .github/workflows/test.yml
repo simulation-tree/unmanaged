@@ -22,7 +22,7 @@ jobs:
         run: ls
 
       - name: Test project
-        run: dotnet tests -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults"
+        run: dotnet test "tests" -c Debug --collect:"XPlat Code Coverage" --results-directory:"TestResults"
 
       - name: List directory
         run: ls
