@@ -82,6 +82,10 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Peeks the next UTF-8 character in the stream.
+        /// </summary>
+        /// <returns>Amount of bytes read.</returns>
         public readonly byte PeekUTF8(uint position, out char low, out char high)
         {
             high = default;
@@ -139,6 +143,10 @@ namespace Unmanaged
             return additional;
         }
 
+        /// <summary>
+        /// Peeks the next UTF-8 character in the stream.
+        /// </summary>
+        /// <returns>Amount of bytes read.</returns>
         public readonly byte PeekUTF8(out char low, out char high)
         {
             return PeekUTF8(Position, out low, out high);
@@ -233,6 +241,13 @@ namespace Unmanaged
             }
 
             return t;
+        }
+
+        public readonly byte ReadUTF8(out char low, out char high)
+        {
+            byte length = PeekUTF8(out low, out high);
+            Position += length;
+            return length;
         }
 
         public readonly int ReadUTF8Span(uint length, Span<char> buffer)
