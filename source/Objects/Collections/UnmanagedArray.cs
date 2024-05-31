@@ -77,6 +77,11 @@ namespace Unmanaged.Collections
             return UnsafeArray.AsSpan<T>(value);
         }
 
+        public readonly Span<T> AsSpan(uint start, uint length)
+        {
+            return AsSpan().Slice((int)start, (int)length);
+        }
+
         public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             return UnsafeArray.TryIndexOf(this.value, value, out index);

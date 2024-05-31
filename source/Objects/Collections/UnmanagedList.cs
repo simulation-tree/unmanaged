@@ -94,6 +94,10 @@ namespace Unmanaged.Collections
             UnsafeList.Add(value, item);
         }
 
+        /// <summary>
+        /// Attempts to add the given item if its unique.
+        /// </summary>
+        /// <returns><c>true</c> if item was added.</returns>
         public readonly bool TryAdd<V>(V item) where V : unmanaged, IEquatable<V>
         {
             Span<V> span = UnsafeList.AsSpan<V>(value);

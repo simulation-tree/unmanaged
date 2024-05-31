@@ -1,59 +1,76 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using Unmanaged.Serialization.Unsafe;
 
 namespace Unmanaged
 {
     public unsafe struct BinaryReader : IDisposable
     {
-        private UnsafeBinaryReader* reader;
+        private UnsafeBinaryReader* value;
 
         /// <summary>
         /// Position of the reader in the byte stream.
         /// </summary>
         public readonly uint Position
         {
-            get => UnsafeBinaryReader.GetPositionRef(reader);
-            set => UnsafeBinaryReader.GetPositionRef(reader) = value;
+            get => UnsafeBinaryReader.GetPositionRef(value);
+            set => UnsafeBinaryReader.GetPositionRef(this.value) = value;
         }
 
         /// <summary>
         /// Length of the byte stream.
         /// </summary>
-        public readonly uint Length => UnsafeBinaryReader.GetLength(reader);
+        public readonly uint Length => UnsafeBinaryReader.GetLength(value);
 
-        public readonly bool IsDisposed => UnsafeBinaryReader.IsDisposed(reader);
+        public readonly bool IsDisposed => UnsafeBinaryReader.IsDisposed(value);
 
+        /// <summary>
+        /// Creates a new binary reader using the data inside the span.
+        /// </summary>
         public BinaryReader(ReadOnlySpan<byte> data, uint position = 0)
         {
-            reader = UnsafeBinaryReader.Allocate(data, position);
+            value = UnsafeBinaryReader.Allocate(data, position);
         }
 
+        /// <summary>
+        /// Duplicates the reader into a new instance while sharing the data.
+        /// </summary>
+        public BinaryReader(BinaryReader reader)
+        {
+            value = UnsafeBinaryReader.Allocate(reader.value);
+        }
+
+        /// <summary>
+        /// Creates a new binary reader using the data inside the stream.
+        /// </summary>
         public BinaryReader(Stream stream, uint position = 0)
         {
-            reader = UnsafeBinaryReader.Allocate(stream, position);
+            value = UnsafeBinaryReader.Allocate(stream, position);
         }
 
+        /// <summary>
+        /// Creates a new empty reader.
+        /// </summary>
         public BinaryReader()
         {
-            reader = UnsafeBinaryReader.Allocate([]);
+            value = UnsafeBinaryReader.Allocate([]);
         }
 
         public void Dispose()
         {
             ThrowIfDisposed();
-            UnsafeBinaryReader.Free(ref reader);
+            UnsafeBinaryReader.Free(ref value);
         }
 
         /// <summary>
-        /// Returns the data of the reader as a span.
+        /// Returns all bytes in the reader.
         /// </summary>
         public readonly ReadOnlySpan<byte> AsSpan()
         {
             ThrowIfDisposed();
-            return new(reader + 1, (int)Length);
+            Allocation allocation = UnsafeBinaryReader.GetData(value);
+            return allocation.AsSpan(0, Length);
         }
 
         /// <summary>
@@ -165,7 +182,7 @@ namespace Unmanaged
                 return default;
             }
 
-            nint address = (nint)(((nint)(reader + 1)) + position);
+            nint address = UnsafeBinaryReader.GetData(value).Address + (nint)position;
             return *(T*)address;
         }
 
@@ -178,7 +195,7 @@ namespace Unmanaged
 
         public readonly void Advance(uint size)
         {
-            ref uint position = ref UnsafeBinaryReader.GetPositionRef(reader);
+            ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
             ThrowIfReadingPastLength(position + size);
             position += size;
         }
@@ -193,7 +210,7 @@ namespace Unmanaged
         /// </summary>
         public readonly ReadOnlySpan<T> ReadSpan<T>(uint length) where T : unmanaged
         {
-            ref uint position = ref UnsafeBinaryReader.GetPositionRef(reader);
+            ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
             ReadOnlySpan<T> span = PeekSpan<T>(Position, length);
             position += (uint)(sizeof(T) * length);
             return span;
@@ -210,7 +227,7 @@ namespace Unmanaged
         public readonly ReadOnlySpan<T> PeekSpan<T>(uint position, uint length) where T : unmanaged
         {
             ThrowIfReadingPastLength(position + (uint)(sizeof(T) * length));
-            nint address = (nint)(((nint)(reader + 1)) + position);
+            nint address = UnsafeBinaryReader.GetData(value).Address + (nint)position;
             Span<T> span = new((T*)address, (int)length);
             return span;
         }
@@ -267,9 +284,9 @@ namespace Unmanaged
 
         public static BinaryReader CreateFromUTF8(ReadOnlySpan<char> text)
         {
-            Span<byte> buffer = stackalloc byte[text.Length * sizeof(char)];
-            int written = Encoding.UTF8.GetBytes(text, buffer);
-            return new BinaryReader(buffer[..written]);
+            using BinaryWriter writer = new();
+            writer.WriteUTF8Span(text);
+            return new BinaryReader(writer.AsSpan());
         }
     }
 }

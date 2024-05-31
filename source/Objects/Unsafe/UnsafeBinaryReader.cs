@@ -1,46 +1,50 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
+using Unmanaged.Collections;
 
 namespace Unmanaged.Serialization.Unsafe
 {
     public unsafe struct UnsafeBinaryReader
     {
         private uint position;
+        private readonly bool clone;
+        private readonly Allocation data;
         private readonly uint length;
 
-        private UnsafeBinaryReader(uint position, uint length)
+        private UnsafeBinaryReader(uint position, Allocation data, uint length, bool clone)
         {
             this.position = position;
+            this.data = data;
             this.length = length;
+            this.clone = clone;
+        }
+
+        public static Allocation GetData(UnsafeBinaryReader* reader)
+        {
+            return reader->data;
+        }
+
+        public static UnsafeBinaryReader* Allocate(UnsafeBinaryReader* reader, uint position = 0)
+        {
+            UnsafeBinaryReader* copy = Allocations.Allocate<UnsafeBinaryReader>();
+            copy[0] = new(position, reader->data, reader->length, true);
+            return copy;
         }
 
         public static UnsafeBinaryReader* Allocate(ReadOnlySpan<byte> bytes, uint position = 0)
         {
-            void* ptr = Allocations.Allocate((uint)(sizeof(UnsafeBinaryReader) + bytes.Length));
-            UnsafeBinaryReader* ptrTyped = (UnsafeBinaryReader*)ptr;
-            uint length = (uint)bytes.Length;
-            ptrTyped[0] = new(position, length);
-            fixed (byte* ptrBytes = bytes)
-            {
-                nint destination = ((nint)ptr + sizeof(UnsafeBinaryReader));
-                System.Runtime.CompilerServices.Unsafe.CopyBlock((void*)destination, ptrBytes, length);
-            }
-
-            return ptrTyped;
+            UnsafeBinaryReader* reader = Allocations.Allocate<UnsafeBinaryReader>();
+            reader[0] = new(position, Allocation.Create(bytes), (uint)bytes.Length, false);
+            return reader;
         }
 
         public static UnsafeBinaryReader* Allocate(Stream stream, uint position = 0)
         {
-            uint length = (uint)stream.Length;
-            void* ptr = Allocations.Allocate((uint)(sizeof(UnsafeBinaryReader) + length));
-            UnsafeBinaryReader* ptrTyped = (UnsafeBinaryReader*)ptr;
-            ptrTyped[0] = new(position, length);
-            nint destination = ((nint)ptr + sizeof(UnsafeBinaryReader));
-            Span<byte> streamSpan = new((byte*)destination, (int)length);
-            int read = stream.Read(streamSpan);
-            Debug.Assert(read == length, "Failed to read the entire stream.");
-            return ptrTyped;
+            using UnmanagedArray<byte> buffer = new((uint)stream.Length + 4);
+            Span<byte> span = buffer.AsSpan();
+            int length = stream.Read(span);
+            Span<byte> bytes = span[..length];
+            return Allocate(bytes, position);
         }
 
         public static bool IsDisposed(UnsafeBinaryReader* reader)
@@ -61,6 +65,11 @@ namespace Unmanaged.Serialization.Unsafe
         public static void Free(ref UnsafeBinaryReader* reader)
         {
             Allocations.ThrowIfNull(reader);
+            if (!reader->clone)
+            {
+                reader->data.Dispose();
+            }
+
             Allocations.Free(ref reader);
         }
     }

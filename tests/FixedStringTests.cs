@@ -12,6 +12,7 @@ namespace Tests
             string b = "Hello World!";
             Assert.That(a.ToString(), Is.EqualTo(b));
             Assert.That(a, Is.EqualTo(new FixedString(b)));
+            Assert.That(a.Equals(b), Is.True);
         }
 
         [Test]

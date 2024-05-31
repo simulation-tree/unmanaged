@@ -124,6 +124,10 @@ namespace Unmanaged
             return (T*)newPointer;
         }
 
+        /// <summary>
+        /// Returns <c>true</c> if the pointer is null, or isn't known
+        /// to be a tracked allocation.
+        /// </summary>
         public static bool IsNull(void* pointer)
         {
             if (pointer is null)

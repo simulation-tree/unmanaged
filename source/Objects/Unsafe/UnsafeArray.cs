@@ -93,7 +93,7 @@ namespace Unmanaged.Collections
             int i = span.IndexOf(value);
             if (i == -1)
             {
-                index = 0;
+                index = uint.MaxValue;
                 return false;
             }
             else

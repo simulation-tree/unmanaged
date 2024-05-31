@@ -410,35 +410,36 @@ namespace Unmanaged
                 return length == 0;
             }
 
-            if (other.Length != length)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < length; i++)
-            {
-                if (this[i] != other[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return Equals(other.AsSpan());
         }
 
         /// <inheritdoc/>
         public readonly bool Equals(ReadOnlySpan<char> other)
         {
-            if (other.Length != length)
+            int outputIndex = 0;
+            ulong temp = 0;
+            int bitsCollected = 0;
+            for (int i = 0; i < length; i++)
             {
-                return false;
-            }
+                byte b = data[i];
+                temp |= (ulong)b << bitsCollected;
+                bitsCollected += 8;
 
-            for (var i = 0; i < length; i++)
-            {
-                if (this[i] != other[i])
+                while (bitsCollected >= 7)
                 {
-                    return false;
+                    char c = (char)(temp & 0x7F);
+                    if (c != other[outputIndex])
+                    {
+                        return false;
+                    }
+
+                    temp >>= 7;
+                    bitsCollected -= 7;
+                    outputIndex++;
+                    if (outputIndex == other.Length)
+                    {
+                        return true;
+                    }
                 }
             }
 
