@@ -96,7 +96,7 @@ namespace Tests
             list.Add(1);
             list.Add(2);
             list.Add(4);
-            list.Insert(2, 3);
+            list.InsertAt(2, 3);
             Assert.That(list[0], Is.EqualTo(1));
             Assert.That(list[1], Is.EqualTo(2));
             Assert.That(list[2], Is.EqualTo(3));

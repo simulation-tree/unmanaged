@@ -250,10 +250,10 @@ namespace Unmanaged
             return length;
         }
 
-        public readonly int ReadUTF8Span(uint length, Span<char> buffer)
+        public readonly int ReadUTF8Span(Span<char> buffer)
         {
             uint start = Position;
-            int read = PeekUTF8Span(start, length, buffer);
+            int read = PeekUTF8Span(start, (uint)buffer.Length, buffer);
             Advance((uint)read);
             return read;
         }

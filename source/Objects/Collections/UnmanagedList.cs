@@ -84,9 +84,9 @@ namespace Unmanaged.Collections
             return UnsafeList.AsSpan<T>(value, start, length);
         }
 
-        public readonly void Insert(uint index, T item)
+        public readonly void InsertAt(uint index, T item)
         {
-            UnsafeList.Insert(value, index, item);
+            UnsafeList.InsertAt(value, index, item);
         }
 
         public readonly void Add(T item)

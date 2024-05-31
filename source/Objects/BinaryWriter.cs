@@ -83,7 +83,7 @@ namespace Unmanaged
             }
         }
 
-        public readonly void WriteObject<T>(T value) where T : unmanaged, ISerializable
+        public void WriteObject<T>(T value) where T : unmanaged, ISerializable
         {
             value.Write(this);
         }
