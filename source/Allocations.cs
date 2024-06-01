@@ -39,28 +39,49 @@ namespace Unmanaged
         /// <summary>
         /// Throws an <see cref="Exception"/> if there are any memory leaks.
         /// </summary>
-        public static void ThrowIfAnyAllocation()
+        public static void ThrowIfAnyAllocation(bool clear = true)
         {
 #if TRACK_ALLOCATIONS
             if (addresses.Count > 0)
             {
                 StringBuilder exceptionBuilder = new();
+                exceptionBuilder.AppendLine($"Leaked {addresses.Count} allocation(s):\n");
                 foreach (nint address in addresses)
                 {
                     if (allocations.TryGetValue(address, out StackTrace? allocation))
                     {
-                        exceptionBuilder.AppendLine($"Leaked memory at {address:X} allocated from:\n{allocation}");
+                        exceptionBuilder.AppendLine($"    {address:X} from {allocation}");
                     }
                     else
                     {
-                        exceptionBuilder.AppendLine($"Leaked memory at {address:X}.");
+                        exceptionBuilder.AppendLine($"    {address:X}");
                     }
                 }
 
                 string exceptionMessage = exceptionBuilder.ToString();
+                if (clear)
+                {
+                    Clear();
+                }
+
                 throw new Exception(exceptionMessage);
             }
 #endif
+        }
+
+        /// <summary>
+        /// Frees all allocations made by this class.
+        /// </summary>
+        public static void Clear()
+        {
+            foreach (nint address in addresses)
+            {
+                NativeMemory.AlignedFree((void*)address);
+            }
+
+            addresses.Clear();
+            allocations.Clear();
+            disposals.Clear();
         }
 
         public static void* Allocate(uint size)

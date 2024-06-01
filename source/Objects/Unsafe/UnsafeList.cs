@@ -24,8 +24,18 @@ namespace Unmanaged.Collections
             }
         }
 
+        [Conditional("DEBUG")]
+        private static void ThrowIfDisposed(UnsafeList* list)
+        {
+            if (IsDisposed(list))
+            {
+                throw new ObjectDisposedException("UnsafeList");
+            }
+        }
+
         public static void Free(ref UnsafeList* list)
         {
+            ThrowIfDisposed(list);
             list->items.Dispose();
             Allocations.Free(ref list);
         }
@@ -70,6 +80,7 @@ namespace Unmanaged.Collections
 
         public static ref T GetRef<T>(UnsafeList* list, uint index) where T : unmanaged
         {
+            ThrowIfDisposed(list);
             if (index >= list->count)
             {
                 throw new IndexOutOfRangeException();
@@ -81,6 +92,7 @@ namespace Unmanaged.Collections
 
         public static T Get<T>(UnsafeList* list, uint index) where T : unmanaged
         {
+            ThrowIfDisposed(list);
             if (index >= list->count)
             {
                 throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
@@ -92,6 +104,7 @@ namespace Unmanaged.Collections
 
         public static void Set<T>(UnsafeList* list, uint index, T value) where T : unmanaged
         {
+            ThrowIfDisposed(list);
             if (index >= list->count)
             {
                 throw new IndexOutOfRangeException();
@@ -106,6 +119,7 @@ namespace Unmanaged.Collections
         /// </summary>
         public static Span<byte> GetBytes(UnsafeList* list, uint index)
         {
+            ThrowIfDisposed(list);
             if (index >= list->count)
             {
                 throw new IndexOutOfRangeException();
@@ -117,6 +131,7 @@ namespace Unmanaged.Collections
 
         public static void InsertAt<T>(UnsafeList* list, uint index, T item) where T : unmanaged
         {
+            ThrowIfDisposed(list);
             if (index > list->count)
             {
                 throw new IndexOutOfRangeException();
@@ -143,6 +158,7 @@ namespace Unmanaged.Collections
 
         public static void Add<T>(UnsafeList* list, T item) where T : unmanaged
         {
+            ThrowIfDisposed(list);
             uint elementSize = list->type.size;
             uint capacity = GetCapacity(list);
             if (list->count == capacity)
@@ -161,6 +177,7 @@ namespace Unmanaged.Collections
 
         public static void AddDefault(UnsafeList* list, uint count = 1)
         {
+            ThrowIfDisposed(list);
             uint elementSize = list->type.size;
             uint newCount = list->count + count;
             if (newCount >= GetCapacity(list))
@@ -179,6 +196,7 @@ namespace Unmanaged.Collections
 
         public static void AddRange<T>(UnsafeList* list, ReadOnlySpan<T> items) where T : unmanaged
         {
+            ThrowIfDisposed(list);
             uint capacity = GetCapacity(list);
             uint addLength = (uint)items.Length;
             uint newCount = list->count + addLength;
@@ -199,6 +217,7 @@ namespace Unmanaged.Collections
 
         public static uint IndexOf<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
         {
+            ThrowIfDisposed(list);
             Span<T> span = AsSpan<T>(list);
             int result = span.IndexOf(item);
             if (result == -1)
@@ -210,6 +229,7 @@ namespace Unmanaged.Collections
 
         public static bool TryIndexOf<T>(UnsafeList* list, T item, out uint index) where T : unmanaged, IEquatable<T>
         {
+            ThrowIfDisposed(list);
             Span<T> span = AsSpan<T>(list);
             int result = span.IndexOf(item);
             if (result == -1)
@@ -226,12 +246,14 @@ namespace Unmanaged.Collections
 
         public static bool Contains<T>(UnsafeList* list, T item) where T : unmanaged, IEquatable<T>
         {
+            ThrowIfDisposed(list);
             Span<T> span = AsSpan<T>(list);
             return span.Contains(item);
         }
 
         public static void RemoveAt(UnsafeList* list, uint index)
         {
+            ThrowIfDisposed(list);
             uint count = list->count;
             if (index >= count)
             {
@@ -252,6 +274,7 @@ namespace Unmanaged.Collections
 
         public static void RemoveAtBySwapping(UnsafeList* list, uint index)
         {
+            ThrowIfDisposed(list);
             uint count = list->count;
             if (index >= count)
             {
@@ -267,6 +290,7 @@ namespace Unmanaged.Collections
 
         public static void RemoveAt<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
         {
+            ThrowIfDisposed(list);
             if (index >= list->count)
             {
                 throw new IndexOutOfRangeException();
@@ -279,6 +303,7 @@ namespace Unmanaged.Collections
 
         public static void RemoveAtBySwapping<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
         {
+            ThrowIfDisposed(list);
             if (index >= list->count)
             {
                 throw new IndexOutOfRangeException();
@@ -340,7 +365,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeList* list)
         {
-            return Allocations.IsNull(list) || list->items.IsDisposed;
+            return Allocations.IsNull(list);
         }
 
         public static ref uint GetCountRef(UnsafeList* list)
