@@ -38,7 +38,7 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         private readonly void ThrowIfSizeMismatch(int size)
         {
-            if (size != type.size)
+            if (size != type.Size)
             {
                 throw new ArgumentException("Size mismatch.", nameof(size));
             }
@@ -47,7 +47,7 @@ namespace Unmanaged
         public unsafe readonly Span<byte> AsSpan()
         {
             Allocations.ThrowIfNull(pointer);
-            return new Span<byte>(pointer, type.size);
+            return new Span<byte>(pointer, type.Size);
         }
 
         public unsafe readonly ref T AsRef<T>() where T : unmanaged
@@ -88,7 +88,7 @@ namespace Unmanaged
         public unsafe static Container Create<T>(T value) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
-            Container container = new(Allocations.Allocate(type.size), type);
+            Container container = new(Allocations.Allocate(type.Size), type);
             Unsafe.Write(container.pointer, value);
             return container;
         }

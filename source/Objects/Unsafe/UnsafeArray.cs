@@ -43,11 +43,12 @@ namespace Unmanaged.Collections
 
         public static UnsafeArray* Allocate(RuntimeType type, uint length)
         {
+            uint size = type.Size;
             UnsafeArray* array = Allocations.Allocate<UnsafeArray>();
             array->type = type;
             array->length = length;
-            array->items = new(type.size * length);
-            array->items.Clear(type.size * length);
+            array->items = new(size * length);
+            array->items.Clear(size * length);
             return array;
         }
 
@@ -105,7 +106,7 @@ namespace Unmanaged.Collections
 
         public static void CopyTo(UnsafeArray* source, uint sourceIndex, UnsafeArray* destination, uint destinationIndex)
         {
-            uint elementSize = source->type.size;
+            uint elementSize = source->type.Size;
             Span<byte> sourceSpan = source->items.AsSpan<byte>(sourceIndex * elementSize, elementSize);
             Span<byte> destinationSpan = destination->items.AsSpan<byte>(destinationIndex * elementSize, elementSize);
             sourceSpan.CopyTo(destinationSpan);
@@ -115,7 +116,7 @@ namespace Unmanaged.Collections
         {
             Allocation oldItems = array->items;
             uint oldLength = array->length;
-            array->items = new(array->type.size * newLength);
+            array->items = new(array->type.Size * newLength);
             array->length = newLength;
             oldItems.CopyTo(array->items, 0, 0, Math.Min(oldLength, newLength));
             oldItems.Dispose();
@@ -123,7 +124,7 @@ namespace Unmanaged.Collections
 
         public static void Clear(UnsafeArray* array)
         {
-            array->items.Clear(array->length * array->type.size);
+            array->items.Clear(array->length * array->type.Size);
         }
     }
 }

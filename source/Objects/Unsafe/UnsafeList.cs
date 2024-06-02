@@ -52,7 +52,7 @@ namespace Unmanaged.Collections
             list->type = type;
             list->count = 0;
             list->capacity = initialCapacity;
-            list->items = new(type.size * initialCapacity);
+            list->items = new(type.Size * initialCapacity);
             return list;
         }
 
@@ -125,7 +125,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            uint elementSize = list->type.size;
+            uint elementSize = list->type.Size;
             return list->items.AsSpan<byte>(index * elementSize, elementSize);
         }
 
@@ -137,7 +137,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            uint elementSize = list->type.size;
+            uint elementSize = list->type.Size;
             uint capacity = GetCapacity(list);
             if (list->count == capacity)
             {
@@ -159,7 +159,7 @@ namespace Unmanaged.Collections
         public static void Add<T>(UnsafeList* list, T item) where T : unmanaged
         {
             ThrowIfDisposed(list);
-            uint elementSize = list->type.size;
+            uint elementSize = list->type.Size;
             uint capacity = GetCapacity(list);
             if (list->count == capacity)
             {
@@ -178,7 +178,7 @@ namespace Unmanaged.Collections
         public static void AddDefault(UnsafeList* list, uint count = 1)
         {
             ThrowIfDisposed(list);
-            uint elementSize = list->type.size;
+            uint elementSize = list->type.Size;
             uint newCount = list->count + count;
             if (newCount >= GetCapacity(list))
             {
@@ -202,7 +202,7 @@ namespace Unmanaged.Collections
             uint newCount = list->count + addLength;
             if (newCount >= capacity)
             {
-                uint elementSize = list->type.size;
+                uint elementSize = list->type.Size;
                 Allocation newItems = new(elementSize * newCount);
                 list->capacity = newCount;
                 list->items.CopyTo(newItems, 0, 0, elementSize * list->count);
@@ -260,11 +260,11 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            uint elementSize = list->type.size;
+            uint size = list->type.Size;
             while (index < count - 1)
             {
-                Span<byte> thisElement = list->items.AsSpan<byte>(index * elementSize, elementSize);
-                Span<byte> nextElement = list->items.AsSpan<byte>((index + 1) * elementSize, elementSize);
+                Span<byte> thisElement = list->items.AsSpan<byte>(index * size, size);
+                Span<byte> nextElement = list->items.AsSpan<byte>((index + 1) * size, size);
                 nextElement.CopyTo(thisElement);
                 index++;
             }
@@ -282,8 +282,9 @@ namespace Unmanaged.Collections
             }
 
             uint lastIndex = count - 1;
-            Span<byte> lastElement = list->items.AsSpan<byte>(lastIndex * list->type.size, list->type.size);
-            Span<byte> indexElement = list->items.AsSpan<byte>(index * list->type.size, list->type.size);
+            uint size = list->type.Size;
+            Span<byte> lastElement = list->items.AsSpan<byte>(lastIndex * size, size);
+            Span<byte> indexElement = list->items.AsSpan<byte>(index * size, size);
             lastElement.CopyTo(indexElement);
             list->count = lastIndex;
         }
@@ -319,7 +320,7 @@ namespace Unmanaged.Collections
             unchecked
             {
                 int hash = 17;
-                uint byteCount = list->type.size * list->count;
+                uint byteCount = list->type.Size * list->count;
                 hash = hash * 23 + list->type.GetHashCode();
                 hash = hash * 23 + list->count.GetHashCode();
                 hash = hash * 23 + Djb2Hash.GetDjb2HashCode(list->items.AsSpan<byte>(0, byteCount));
@@ -334,14 +335,14 @@ namespace Unmanaged.Collections
 
         public static Span<T> AsSpan<T>(UnsafeList* list) where T : unmanaged
         {
-            uint size = list->type.size;
+            uint size = list->type.Size;
             uint count = size / (uint)sizeof(T) * list->count;
             return list->items.AsSpan<T>(0, count);
         }
 
         public static Span<T> AsSpan<T>(UnsafeList* list, uint start) where T : unmanaged
         {
-            uint size = list->type.size;
+            uint size = list->type.Size;
             uint count = size / (uint)sizeof(T) * list->count;
             if (start >= count)
             {
@@ -353,7 +354,7 @@ namespace Unmanaged.Collections
 
         public static Span<T> AsSpan<T>(UnsafeList* list, uint start, uint length) where T : unmanaged
         {
-            uint size = list->type.size;
+            uint size = list->type.Size;
             uint count = size / (uint)sizeof(T) * list->count;
             if (start + length > count)
             {
@@ -380,7 +381,7 @@ namespace Unmanaged.Collections
 
         public static void SetCapacity(UnsafeList* list, uint newCapacity)
         {
-            uint elementSize = list->type.size;
+            uint elementSize = list->type.Size;
             Allocation newItems = new(elementSize * newCapacity);
             list->capacity = newCapacity;
             list->items.CopyTo(newItems, 0, 0, list->count * elementSize);
@@ -405,7 +406,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            uint elementSize = source->type.size;
+            uint elementSize = source->type.Size;
             Span<byte> sourceElement = source->items.AsSpan<byte>(sourceIndex * elementSize, elementSize);
             Span<byte> destinationElement = destination->items.AsSpan<byte>((destinationIndex) * elementSize, elementSize);
             sourceElement.CopyTo(destinationElement);

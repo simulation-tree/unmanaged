@@ -15,34 +15,32 @@ namespace Unmanaged
     public readonly struct RuntimeType : IEquatable<RuntimeType>
     {
         /// <summary>
+        /// The maximum allowed size of the type.
+        /// </summary>
+        public const ushort MaxSize = 4095;
+
+        public readonly uint value;
+
+        /// <summary>
         /// Size of the type.
         /// </summary>
-        public readonly ushort size;
-
-        private readonly ushort hash;
+        public readonly ushort Size
+        {
+            get
+            {
+                //last 12 bits
+                return (ushort)(value & 0xFFF);
+            }
+        }
 
         /// <summary>
         /// The <see cref="System.Type"/> that this instance was created from.
         /// </summary>
-        public readonly Type Type => TypeTable.types[hash];
+        public readonly Type Type => TypeTable.types[value];
 
-        private RuntimeType(ushort id, ushort size)
+        public RuntimeType(uint value)
         {
-            this.hash = id;
-            this.size = size;
-        }
-
-        /// <summary>
-        /// Creates an instance from a raw number value that was
-        /// retrieved using <see cref="AsRawValue"/>
-        /// </summary>
-        public RuntimeType(uint rawValue)
-        {
-            unchecked
-            {
-                hash = (ushort)rawValue;
-                size = (ushort)(rawValue >> 16);
-            }
+            this.value = value;
         }
 
         /// <returns>The <see cref="Type.ToString"/> result.</returns>
@@ -51,21 +49,9 @@ namespace Unmanaged
             return Type.ToString();
         }
 
-        /// <returns>A number value that can represent this instance.</returns>
-        public readonly uint AsRawValue()
-        {
-            unchecked
-            {
-                uint rawValue = default;
-                rawValue |= hash;
-                rawValue |= (uint)size << 16;
-                return rawValue;
-            }
-        }
-
         public readonly override int GetHashCode()
         {
-            return AsRawValue().GetHashCode();
+            return value.GetHashCode();
         }
 
         public readonly override bool Equals(object? obj)
@@ -75,12 +61,12 @@ namespace Unmanaged
 
         public readonly bool Equals(RuntimeType other)
         {
-            return hash == other.hash;
+            return value == other.value;
         }
 
         public readonly bool Is<T>() where T : unmanaged
         {
-            return RuntimeTypeHash<T>.value == hash;
+            return RuntimeTypeHash<T>.value == value;
         }
 
         /// <summary>
@@ -89,19 +75,24 @@ namespace Unmanaged
         /// </summary>
         public unsafe static RuntimeType Get<T>() where T : unmanaged
         {
-            ushort id = RuntimeTypeHash<T>.value;
-            return new(id, (ushort)sizeof(T));
+            if (sizeof(T) > MaxSize)
+            {
+                throw new InvalidOperationException($"The type {typeof(T)} is too large to be used as a RuntimeType.");
+            }
+
+            uint value = RuntimeTypeHash<T>.value;
+            return new(value);
         }
 
         /// <summary>
-        /// Returns a hash that represents the set of types given (regardless of order).
+        /// Retrieves a hash of the given types regardless of order.
         /// </summary>
-        public static int CalculateHash(ReadOnlySpan<RuntimeType> types)
+        public static uint CalculateHash(ReadOnlySpan<RuntimeType> types)
         {
             int typeCount = types.Length;
             Span<RuntimeType> typesSpan = stackalloc RuntimeType[typeCount];
             types.CopyTo(typesSpan);
-            int hash = 0;
+            uint hash = 0;
             while (typeCount > 0)
             {
                 uint max = 0;
@@ -109,17 +100,16 @@ namespace Unmanaged
                 for (int i = 0; i < typeCount; i++)
                 {
                     RuntimeType type = typesSpan[i];
-                    uint typeHash = type.AsRawValue() * (uint)types.Length;
-                    if (typeHash > max)
+                    if (type.value > max)
                     {
-                        max = typeHash;
+                        max = type.value;
                         index = i;
                     }
                 }
 
                 unchecked
                 {
-                    hash += (int)max * 174440041;
+                    hash += max * 174440041u;
                 }
 
                 RuntimeType last = typesSpan[typeCount - 1];
@@ -138,50 +128,64 @@ namespace Unmanaged
         public static bool operator !=(Type left, RuntimeType right) => left != right.Type;
         public static implicit operator Type(RuntimeType type) => type.Type;
 
-        private static class RuntimeTypeHash<T>
+        private static class RuntimeTypeHash<T> where T : unmanaged
         {
-            internal static readonly ushort value;
+            internal static readonly uint value;
 
             unsafe static RuntimeTypeHash()
             {
                 unchecked
                 {
                     Type type = typeof(T);
-                    int hash = GetHashCode(type);
-                    while (TypeTable.typeIds.Contains((ushort)hash))
+                    uint size = (uint)sizeof(T);
+                    byte attempt = 1;
+                    while (true)
                     {
+                        value = CalculateHash(type, attempt);
+                        attempt++;
+
+                        //replace last 12 bits with type length
+                        value &= 0xFFFFF000;
+                        value |= (size & 0xFFF);
+
+                        if (!TypeTable.typeHashes.Contains(value))
+                        {
+                            break;
+                        }
 #if TEST
-                        Console.WriteLine($"Collision hash detected between {type} and {TypeTable.types[(ushort)hash]}");
+                        Console.WriteLine($"Collision hash detected between {type} and {TypeTable.types[value]}");
 #else
-                        Debug.WriteLine($"Collision hash detected between {type} and {TypeTable.types[(ushort)hash]}");
+                        Debug.WriteLine($"Collision hash detected between {type} and {TypeTable.types[value]}");
 #endif
-                        hash += 174440041;
                     }
 
-                    value = (ushort)hash;
-                    TypeTable.typeIds.Add(value);
+                    TypeTable.typeHashes.Add(value);
                     TypeTable.types.Add(value, type);
                 }
             }
 
-            private static int GetHashCode(Type type)
+            private static uint CalculateHash(Type type, byte attempt)
             {
-                ReadOnlySpan<char> aqn = type.AssemblyQualifiedName.AsSpan();
-                int hash = 0;
-                for (int i = 0; i < aqn.Length; i++)
+                unchecked
                 {
-                    char c = aqn[i];
-                    hash = (hash << 5) - hash + (c * 174440041);
-                }
+                    ReadOnlySpan<char> aqn = type.AssemblyQualifiedName.AsSpan();
+                    uint salt = 174440041u * attempt;
+                    uint hash = 0;
+                    for (int i = 0; i < aqn.Length; i++)
+                    {
+                        char c = aqn[i];
+                        hash = (hash << 5) - hash + (c * salt);
+                    }
 
-                return hash;
+                    return hash;
+                }
             }
         }
 
         private static class TypeTable
         {
-            internal static readonly List<ushort> typeIds = [];
-            internal static readonly Dictionary<ushort, Type> types = [];
+            internal static readonly List<uint> typeHashes = [];
+            internal static readonly Dictionary<uint, Type> types = [];
         }
     }
 }

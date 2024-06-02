@@ -19,12 +19,12 @@ namespace Unmanaged.Collections
         [Conditional("DEBUG")]
         private static void ThrowIfSizeMismatch<K, V>(UnsafeDictionary* dictionary) where K : unmanaged where V : unmanaged
         {
-            if (dictionary->keyType.size != sizeof(K))
+            if (dictionary->keyType.Size != sizeof(K))
             {
                 throw new InvalidOperationException("Key size mismatch.");
             }
 
-            if (dictionary->valueType.size != sizeof(V))
+            if (dictionary->valueType.Size != sizeof(V))
             {
                 throw new InvalidOperationException("Value size mismatch.");
             }

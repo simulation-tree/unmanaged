@@ -20,6 +20,30 @@ namespace Tests
         }
 
         [Test]
+        public unsafe void TypeIsTooBig()
+        {
+            RuntimeType a = RuntimeType.Get<BigType>();
+            Console.WriteLine(a);
+            Assert.That(a.Size, Is.EqualTo(sizeof(BigType)));
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                RuntimeType b = RuntimeType.Get<TooBigType>();
+                Console.WriteLine(b);
+                Assert.That(a.Size, Is.EqualTo(sizeof(TooBigType)));
+            });
+        }
+
+        public unsafe struct BigType
+        {
+            private fixed byte data[RuntimeType.MaxSize];
+        }
+
+        public unsafe struct TooBigType
+        {
+            private fixed byte data[RuntimeType.MaxSize + 1];
+        }
+
+        [Test]
         public void CheckPrimitives()
         {
             RuntimeType byteType = RuntimeType.Get<byte>();
@@ -35,33 +59,33 @@ namespace Tests
             RuntimeType boolType = RuntimeType.Get<bool>();
             RuntimeType charType = RuntimeType.Get<char>();
             StringBuilder s = new();
-            s.AppendLine(byteType.AsRawValue().ToString());
-            s.AppendLine(sbyteType.AsRawValue().ToString());
-            s.AppendLine(shortType.AsRawValue().ToString());
-            s.AppendLine(ushortType.AsRawValue().ToString());
-            s.AppendLine(intType.AsRawValue().ToString());
-            s.AppendLine(uintType.AsRawValue().ToString());
-            s.AppendLine(longType.AsRawValue().ToString());
-            s.AppendLine(ulongType.AsRawValue().ToString());
-            s.AppendLine(floatType.AsRawValue().ToString());
-            s.AppendLine(doubleType.AsRawValue().ToString());
-            s.AppendLine(boolType.AsRawValue().ToString());
-            s.AppendLine(charType.AsRawValue().ToString());
+            s.AppendLine(byteType.value.ToString());
+            s.AppendLine(sbyteType.value.ToString());
+            s.AppendLine(shortType.value.ToString());
+            s.AppendLine(ushortType.value.ToString());
+            s.AppendLine(intType.value.ToString());
+            s.AppendLine(uintType.value.ToString());
+            s.AppendLine(longType.value.ToString());
+            s.AppendLine(ulongType.value.ToString());
+            s.AppendLine(floatType.value.ToString());
+            s.AppendLine(doubleType.value.ToString());
+            s.AppendLine(boolType.value.ToString());
+            s.AppendLine(charType.value.ToString());
             string result = s.ToString();
 
             List<uint> values = new();
-            values.Add(118635);
-            values.Add(77710);
-            values.Add(144269); //short
-            values.Add(195740);
-            values.Add(283011); //int
-            values.Add(268946);
-            values.Add(589356); //long
-            values.Add(575291);
-            values.Add(265195);
-            values.Add(534554); //double
-            values.Add(111961);
-            values.Add(158381);
+            values.Add(3784163329);
+            values.Add(3114868737);
+            values.Add(3476041730); //short
+            values.Add(751104002);
+            values.Add(1980387332); //int
+            values.Add(3550416900);
+            values.Add(1307832328); //long
+            values.Add(2877865992);
+            values.Add(589824004);
+            values.Add(589307912); //double
+            values.Add(300920833);
+            values.Add(2853986306);
 
             StringBuilder s2 = new();
             foreach (var value in values)
@@ -100,9 +124,10 @@ namespace Tests
                 }
             }
 
-            int collisions = output.ToString().Count(c => c == '\n') - 1;
+            string outputStr = output.ToString();
+            int collisions = outputStr.Count(c => c == '\n') - 1;
             float percentage = collisions / (float)types.Count;
-            if (collisions == 0)
+            if (collisions == 0 || outputStr.Length == 0)
             {
                 percentage = 0f;
             }
@@ -163,7 +188,7 @@ namespace Tests
         public void TypeAsNumValue()
         {
             RuntimeType a = RuntimeType.Get<bool>();
-            uint aRaw = a.AsRawValue();
+            uint aRaw = a.value;
             RuntimeType b = new(aRaw);
             Assert.That(a.Is<bool>(), Is.True);
             Assert.That(a, Is.EqualTo(b));
