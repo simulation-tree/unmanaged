@@ -46,14 +46,12 @@ namespace Unmanaged.Collections
 
         public UnmanagedArray(Span<T> span)
         {
-            value = UnsafeArray.Allocate<T>((uint)span.Length);
-            span.CopyTo(AsSpan());
+            value = UnsafeArray.Allocate<T>(span);
         }
 
         public UnmanagedArray(ReadOnlySpan<T> span)
         {
-            value = UnsafeArray.Allocate<T>((uint)span.Length);
-            span.CopyTo(AsSpan());
+            value = UnsafeArray.Allocate(span);
         }
 
         public void Dispose()

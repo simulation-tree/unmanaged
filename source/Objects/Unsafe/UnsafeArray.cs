@@ -59,33 +59,15 @@ namespace Unmanaged.Collections
             return array;
         }
 
-        public static UnsafeArray* Allocate<T>(IReadOnlyCollection<T> values) where T : unmanaged
-        {
-            UnsafeArray* array = Allocate<T>((uint)values.Count);
-            Span<T> span = AsSpan<T>(array);
-            int i = 0;
-            foreach (T value in values)
-            {
-                span[i++] = value;
-            }
-
-            return array;
-        }
-
         public static ref T GetRef<T>(UnsafeArray* array, uint index) where T : unmanaged
         {
-            Span<T> span = AsSpan<T>(array);
-            return ref span[(int)index];
+            T* ptr = (T*)GetAddress(array);
+            return ref ptr[index];
         }
 
         public static Span<T> AsSpan<T>(UnsafeArray* array) where T : unmanaged
         {
             return array->items.AsSpan<T>(0, array->length);
-        }
-
-        public static Span<T> AsSpan<T>(UnsafeArray* array, uint start, uint length) where T : unmanaged
-        {
-            return array->items.AsSpan<T>(start, length);
         }
 
         public static bool TryIndexOf<T>(UnsafeArray* array, T value, out uint index) where T : unmanaged, IEquatable<T>
@@ -102,14 +84,6 @@ namespace Unmanaged.Collections
                 index = (uint)i;
                 return true;
             }
-        }
-
-        public static void CopyTo(UnsafeArray* source, uint sourceIndex, UnsafeArray* destination, uint destinationIndex)
-        {
-            uint elementSize = source->type.Size;
-            Span<byte> sourceSpan = source->items.AsSpan<byte>(sourceIndex * elementSize, elementSize);
-            Span<byte> destinationSpan = destination->items.AsSpan<byte>(destinationIndex * elementSize, elementSize);
-            sourceSpan.CopyTo(destinationSpan);
         }
 
         public static void Resize(UnsafeArray* array, uint newLength)

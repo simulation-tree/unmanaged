@@ -83,11 +83,11 @@ namespace Unmanaged.Collections
             ThrowIfDisposed(list);
             if (index >= list->count)
             {
-                throw new IndexOutOfRangeException();
+                throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
             }
 
-            Span<T> span = list->items.AsSpan<T>(0, list->count);
-            return ref span[(int)index];
+            T* ptr = (T*)GetAddress(list);
+            return ref ptr[index];
         }
 
         public static T Get<T>(UnsafeList* list, uint index) where T : unmanaged
@@ -98,8 +98,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
             }
 
-            Span<T> span = list->items.AsSpan<T>(0, list->count);
-            return span[(int)index];
+            return GetRef<T>(list, index);
         }
 
         public static void Set<T>(UnsafeList* list, uint index, T value) where T : unmanaged
