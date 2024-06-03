@@ -84,6 +84,10 @@ namespace Unmanaged.Collections
             return UnsafeList.AsSpan<T>(value, start, length);
         }
 
+        /// <summary>
+        /// Inserts the given item at the specified index by shifting 
+        /// succeeding elements over.
+        /// </summary>
         public readonly void InsertAt(uint index, T item)
         {
             UnsafeList.InsertAt(value, index, item);

@@ -31,6 +31,14 @@ namespace Unmanaged.Serialization.Unsafe
             return copy;
         }
 
+        public static UnsafeBinaryReader* Allocate(UnsafeBinaryWriter* writer, uint position = 0)
+        {
+            UnsafeBinaryReader* copy = Allocations.Allocate<UnsafeBinaryReader>();
+            Allocation data = new((Allocation*)UnsafeBinaryWriter.GetAddress(writer));
+            copy[0] = new(position, data, UnsafeBinaryWriter.GetPosition(writer), true);
+            return copy;
+        }
+
         public static UnsafeBinaryReader* Allocate(ReadOnlySpan<byte> bytes, uint position = 0)
         {
             UnsafeBinaryReader* reader = Allocations.Allocate<UnsafeBinaryReader>();

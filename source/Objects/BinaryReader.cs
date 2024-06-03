@@ -26,11 +26,19 @@ namespace Unmanaged
         public readonly bool IsDisposed => UnsafeBinaryReader.IsDisposed(value);
 
         /// <summary>
-        /// Creates a new binary reader using the data inside the span.
+        /// Creates a new binary reader from the data in the span.
         /// </summary>
         public BinaryReader(ReadOnlySpan<byte> data, uint position = 0)
         {
             value = UnsafeBinaryReader.Allocate(data, position);
+        }
+
+        /// <summary>
+        /// Creates a new binary reader using/sharing the data from the writer.
+        /// </summary>
+        public BinaryReader(BinaryWriter writer)
+        {
+            value = UnsafeBinaryReader.Allocate(writer.AsSpan());
         }
 
         /// <summary>
