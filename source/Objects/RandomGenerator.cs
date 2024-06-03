@@ -151,6 +151,9 @@ namespace Unmanaged
             return value + min;
         }
 
+        /// <summary>
+        /// Generates a 0-1 unit value.
+        /// </summary>
         public readonly float NextFloat()
         {
             uint value = NextUInt();

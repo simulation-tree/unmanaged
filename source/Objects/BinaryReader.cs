@@ -63,6 +63,11 @@ namespace Unmanaged
             UnsafeBinaryReader.Free(ref value);
         }
 
+        public override string ToString()
+        {
+            return $"Position: {Position}, Length: {Length}";
+        }
+
         /// <summary>
         /// Returns all bytes in the reader.
         /// </summary>

@@ -148,7 +148,7 @@ namespace Unmanaged.Collections
         /// <summary>
         /// Removes the given item from the list by swapping it with the removed element.
         /// </summary>
-        public readonly bool Remove<V>(V item) where V : unmanaged, IEquatable<V>
+        public readonly bool TryRemove<V>(V item) where V : unmanaged, IEquatable<V>
         {
             if (TryIndexOf(item, out uint index))
             {

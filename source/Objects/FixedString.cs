@@ -343,7 +343,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Copies the contents into the destination buffer.
+        /// Copies the text content into the destination <see cref="char"/> buffer.
         /// </summary>
         public readonly unsafe int CopyTo(Span<char> buffer)
         {
