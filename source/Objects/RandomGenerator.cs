@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Unmanaged.Collections;
 
 namespace Unmanaged
 {
     public unsafe struct RandomGenerator : IDisposable
     {
         private void* pointer;
+
+        public readonly ulong State => *(ulong*)pointer;
 
         /// <summary>
         /// Creates a new disposable randomness generator.
@@ -70,6 +73,20 @@ namespace Unmanaged
             Allocations.Free(ref pointer);
         }
 
+        public readonly byte NextByte()
+        {
+            uint* t = (uint*)pointer;
+            *t ^= *t << 13;
+            *t ^= *t >> 7;
+            *t ^= *t << 17;
+            return (byte)*t;
+        }
+
+        public readonly sbyte NextSByte()
+        {
+            return (sbyte)NextByte();
+        }
+
         public readonly ulong NextULong()
         {
             ulong* t = (ulong*)pointer;
@@ -81,16 +98,20 @@ namespace Unmanaged
 
         public readonly uint NextUInt()
         {
-            ulong* t = (ulong*)pointer;
+            uint* t = (uint*)pointer;
             *t ^= *t << 13;
             *t ^= *t >> 17;
             *t ^= *t << 5;
-            return (uint)*t;
+            return *t;
         }
 
         public readonly bool NextBool()
         {
-            return NextUInt() == 1;
+            uint* t = (uint*)pointer;
+            *t ^= *t << 13;
+            *t ^= *t >> 17;
+            *t ^= *t << 5;
+            return (*t & 0x8000) != 0;
         }
 
         public readonly ulong NextULong(ulong max)
@@ -190,6 +211,10 @@ namespace Unmanaged
             return value + min;
         }
 
+        /// <summary>
+        /// Fills the given span with random bytes.
+        /// </summary>
+        /// <param name="bytes"></param>
         public readonly void NextBytes(Span<byte> bytes)
         {
             ulong* t = (ulong*)pointer;
@@ -203,6 +228,13 @@ namespace Unmanaged
             }
 
             *t = value;
+        }
+
+        public readonly UnmanagedArray<byte> GetBytes(uint length)
+        {
+            UnmanagedArray<byte> list = new(length);
+            NextBytes(list.AsSpan());
+            return list;
         }
     }
 }
