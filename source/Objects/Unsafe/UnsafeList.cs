@@ -181,7 +181,7 @@ namespace Unmanaged.Collections
             uint newCount = list->count + count;
             if (newCount >= GetCapacity(list))
             {
-                Allocation newItems = new(elementSize * newCount);
+                Allocation newItems = new(elementSize * (newCount * 2));
                 list->capacity = newCount;
                 list->items.CopyTo(newItems, 0, 0, elementSize * list->count);
                 list->items.Dispose();
@@ -202,7 +202,7 @@ namespace Unmanaged.Collections
             if (newCount >= capacity)
             {
                 uint elementSize = list->type.Size;
-                Allocation newItems = new(elementSize * newCount);
+                Allocation newItems = new(elementSize * (newCount * 2));
                 list->capacity = newCount;
                 list->items.CopyTo(newItems, 0, 0, elementSize * list->count);
                 list->items.Dispose();
@@ -211,6 +211,27 @@ namespace Unmanaged.Collections
 
             Span<T> destination = list->items.AsSpan<T>(list->count, addLength);
             items.CopyTo(destination);
+            list->count = newCount;
+        }
+
+        public static void AddRange(UnsafeList* list, void* pointer, uint count)
+        {
+            ThrowIfDisposed(list);
+            uint capacity = GetCapacity(list);
+            uint elementSize = list->type.Size;
+            uint newCount = list->count + count;
+            if (newCount >= capacity)
+            {
+                Allocation newItems = new(elementSize * (newCount * 2));
+                list->capacity = newCount;
+                list->items.CopyTo(newItems, 0, 0, elementSize * list->count);
+                list->items.Dispose();
+                list->items = newItems;
+            }
+
+            Span<byte> destination = list->items.AsSpan<byte>(list->count * elementSize, count * elementSize);
+            Span<byte> source = new(pointer, (int)(count * elementSize));
+            source.CopyTo(destination);
             list->count = newCount;
         }
 

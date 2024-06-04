@@ -127,6 +127,11 @@ namespace Unmanaged.Collections
             UnsafeList.AddRange(value, items);
         }
 
+        public readonly void AddRange(UnmanagedList<T> list)
+        {
+            UnsafeList.AddRange(value, (UnsafeList*)list.Address, list.Count);
+        }
+
         /// <summary>
         /// Returns the index of the given item in the list, otherwise
         /// throws an <see cref="Exception"/> if none found.

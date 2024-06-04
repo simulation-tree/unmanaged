@@ -258,5 +258,20 @@ namespace Tests
 
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
+
+        [Test]
+        public unsafe void AddAnotherUnsafeList()
+        {
+            UnsafeList* a = UnsafeList.Allocate<int>();
+            UnsafeList* b = UnsafeList.Allocate<int>();
+            UnsafeList.AddRange(a, [1, 3]);
+            UnsafeList.AddRange(b, [3, 7, 7]);
+            Assert.That(UnsafeList.AsSpan<int>(a).ToArray(), Is.EqualTo(new[] { 1, 3 }));
+            Assert.That(UnsafeList.AsSpan<int>(b).ToArray(), Is.EqualTo(new[] { 3, 7, 7 }));
+            UnsafeList.AddRange(a, (void*)UnsafeList.GetAddress(b), UnsafeList.GetCountRef(b));
+            Assert.That(UnsafeList.AsSpan<int>(a).ToArray(), Is.EqualTo(new[] { 1, 3, 3, 7, 7 }));
+            UnsafeList.Free(ref a);
+            UnsafeList.Free(ref b);
+        }
     }
 }
