@@ -172,12 +172,21 @@ namespace Unmanaged
                 nint address = (nint)pointer;
                 if (allocations.TryGetValue(address, out StackTrace? stackTrace))
                 {
-                    throw new NullReferenceException($"Null pointer that was previously allocated at:\n{stackTrace}");
+                    if (disposals.TryGetValue(address, out StackTrace? disposedStackTrace))
+                    {
+                        throw new NullReferenceException($"Null pointer that was previously allocated at:\n{stackTrace}\nAnd then disposed at:\n{disposedStackTrace}");
+                    }
+                    else
+                    {
+                        throw new NullReferenceException($"Null pointer that was previously allocated at:\n{stackTrace}");
+                    }
                 }
-
-                if (disposals.TryGetValue(address, out stackTrace))
+                else
                 {
-                    throw new NullReferenceException($"Null pointer that was previously disposed at:\n{stackTrace}");
+                    if (disposals.TryGetValue(address, out stackTrace))
+                    {
+                        throw new NullReferenceException($"Null pointer that was previously disposed at:\n{stackTrace}");
+                    }
                 }
 #endif
                 throw new NullReferenceException("Null pointer.");

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Unmanaged.Collections
 {
-    public unsafe struct UnmanagedList<T> : IDisposable, IReadOnlyList<T>, IEquatable<UnmanagedList<T>> where T : unmanaged
+    public unsafe struct UnmanagedList<T> : IDisposable, IReadOnlyList<T>, IList<T>, IEquatable<UnmanagedList<T>> where T : unmanaged
     {
         private UnsafeList* value;
 
@@ -16,6 +16,9 @@ namespace Unmanaged.Collections
             set => UnsafeList.SetCapacity(this.value, value);
         }
 
+        /// <summary>
+        /// Address that points to all elements in the list.
+        /// </summary>
         public readonly nint Address => UnsafeList.GetAddress(value);
 
         public readonly T this[uint index]
@@ -24,8 +27,15 @@ namespace Unmanaged.Collections
             set => UnsafeList.Set<T>(this.value, index, value);
         }
 
-        T IReadOnlyList<T>.this[int index] => UnsafeList.Get<T>(value, (uint)index);
-        int IReadOnlyCollection<T>.Count => (int)Count;
+        readonly T IReadOnlyList<T>.this[int index] => UnsafeList.Get<T>(value, (uint)index);
+        readonly int IReadOnlyCollection<T>.Count => (int)Count;
+        readonly int ICollection<T>.Count => (int)Count;
+        readonly bool ICollection<T>.IsReadOnly => false;
+        readonly T IList<T>.this[int index]
+        {
+            get => UnsafeList.Get<T>(value, (uint)index);
+            set => UnsafeList.Set(this.value, (uint)index, value);
+        }
 
         public UnmanagedList()
         {
@@ -66,12 +76,26 @@ namespace Unmanaged.Collections
             UnsafeList.Free(ref value);
         }
 
+        public readonly void* AsPointer()
+        {
+            return value;
+        }
+
         /// <summary>
         /// Returns the span for the contents of the list.
         /// </summary>
         public readonly Span<T> AsSpan()
         {
             return UnsafeList.AsSpan<T>(value);
+        }
+
+        /// <summary>
+        /// Returns the list as a span of a different type <typeparamref name="V"/>.
+        /// Assuming its size is equal to <typeparamref name="T"/>.
+        /// </summary>
+        public readonly Span<V> AsSpan<V>() where V : unmanaged
+        {
+            return UnsafeList.AsSpan<V>(value);
         }
 
         public readonly Span<T> AsSpan(uint start)
@@ -88,9 +112,9 @@ namespace Unmanaged.Collections
         /// Inserts the given item at the specified index by shifting 
         /// succeeding elements over.
         /// </summary>
-        public readonly void InsertAt(uint index, T item)
+        public readonly void Insert(uint index, T item)
         {
-            UnsafeList.InsertAt(value, index, item);
+            UnsafeList.Insert(value, index, item);
         }
 
         public readonly void Add(T item)
@@ -122,7 +146,19 @@ namespace Unmanaged.Collections
             UnsafeList.AddDefault(value, count);
         }
 
+        /// <summary>
+        /// Adds the given span to the list.
+        /// </summary>
         public readonly void AddRange(ReadOnlySpan<T> items)
+        {
+            UnsafeList.AddRange(value, items);
+        }
+
+        /// <summary>
+        /// Adds the given span of different type <typeparamref name="V"/> into
+        /// the list, assuming its size equals to <typeparamref name="T"/>.
+        /// </summary>
+        public readonly void AddRange<V>(ReadOnlySpan<V> items) where V : unmanaged
         {
             UnsafeList.AddRange(value, items);
         }
@@ -227,17 +263,22 @@ namespace Unmanaged.Collections
             AsSpan().CopyTo(destination);
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        public readonly Enumerator GetEnumerator()
         {
-            return new Enumerator(value);
+            return new(value);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return new Enumerator(value);
+            return GetEnumerator();
         }
 
-        public bool Equals(UnmanagedList<T> other)
+        readonly IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public readonly bool Equals(UnmanagedList<T> other)
         {
             if (IsDisposed && other.IsDisposed)
             {
@@ -247,9 +288,69 @@ namespace Unmanaged.Collections
             return value == other.value;
         }
 
-        public override bool Equals(object? obj)
+        public readonly override bool Equals(object? obj)
         {
             return obj is UnmanagedList<T> list && Equals(list);
+        }
+
+        readonly int IList<T>.IndexOf(T item)
+        {
+            Span<T> values = AsSpan();
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (values[i].Equals(item))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        readonly void IList<T>.Insert(int index, T item)
+        {
+            Insert((uint)index, item);
+        }
+
+        readonly void IList<T>.RemoveAt(int index)
+        {
+            RemoveAt((uint)index);
+        }
+
+        readonly bool ICollection<T>.Contains(T item)
+        {
+            Span<T> values = AsSpan();
+            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (comparer.Equals(values[i], item))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        readonly void ICollection<T>.CopyTo(T[] array, int arrayIndex)
+        {
+            AsSpan().CopyTo(array.AsSpan(arrayIndex));
+        }
+
+        readonly bool ICollection<T>.Remove(T item)
+        {
+            Span<T> values = AsSpan();
+            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (comparer.Equals(values[i], item))
+                {
+                    RemoveAt((uint)i);
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public struct Enumerator(UnsafeList* list) : IEnumerator<T>

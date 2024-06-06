@@ -124,12 +124,22 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Resets the memory to zero.
+        /// Resets the memory to <c>default</c> state.
         /// </summary>
         public readonly void Clear(uint length)
         {
             Allocations.ThrowIfNull(pointer);
             NativeMemory.Clear(pointer, length);
+        }
+
+        /// <summary>
+        /// Resets a range of memory to <c>default</c> state.
+        /// </summary>
+        public readonly void Clear(uint start, uint length)
+        {
+            Allocations.ThrowIfNull(pointer);
+            nint address = (nint)((nint)pointer + start);
+            NativeMemory.Clear((void*)address, length);
         }
 
         /// <summary>

@@ -86,19 +86,37 @@ namespace Unmanaged.Collections
             }
         }
 
-        public static void Resize(UnsafeArray* array, uint newLength)
+        /// <summary>
+        /// Resizes the array and optionally initializes new elements.
+        /// </summary>
+        public static void Resize(UnsafeArray* array, uint newLength, bool initialize = false)
         {
-            Allocation oldItems = array->items;
+            uint size = array->type.Size;
             uint oldLength = array->length;
-            array->items = new(array->type.Size * newLength);
+            array->items.Resize(size * newLength);
             array->length = newLength;
-            oldItems.CopyTo(array->items, 0, 0, Math.Min(oldLength, newLength));
-            oldItems.Dispose();
+
+            if (initialize && newLength > oldLength)
+            {
+                array->items.Clear(size * oldLength, size * (newLength - oldLength));
+            }
         }
 
+        /// <summary>
+        /// Clears the entire array to <c>default</c> state.
+        /// </summary>
         public static void Clear(UnsafeArray* array)
         {
             array->items.Clear(array->length * array->type.Size);
+        }
+
+        /// <summary>
+        /// Clears a range of elements in the array to <c>default</c> state.
+        /// </summary>
+        public static void Clear(UnsafeArray* array, uint start, uint length)
+        {
+            uint size = array->type.Size;
+            array->items.Clear(start * size, length * size);
         }
     }
 }

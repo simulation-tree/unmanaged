@@ -128,7 +128,7 @@ namespace Unmanaged.Collections
             return list->items.AsSpan<byte>(index * elementSize, elementSize);
         }
 
-        public static void InsertAt<T>(UnsafeList* list, uint index, T item) where T : unmanaged
+        public static void Insert<T>(UnsafeList* list, uint index, T item) where T : unmanaged
         {
             ThrowIfDisposed(list);
             if (index > list->count)

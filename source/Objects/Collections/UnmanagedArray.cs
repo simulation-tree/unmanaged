@@ -31,7 +31,7 @@ namespace Unmanaged.Collections
             value = UnsafeArray.Allocate<T>(0);
         }
 
-        internal UnmanagedArray(UnsafeArray* array)
+        public UnmanagedArray(UnsafeArray* array)
         {
             this.value = array;
         }
@@ -60,11 +60,19 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Resets all elements in the array to 0.
+        /// Resets all elements in the array back to <c>default</c> state.
         /// </summary>
         public readonly void Clear()
         {
             UnsafeArray.Clear(value);
+        }
+
+        /// <summary>
+        /// Clears the array from the specified start index to the end.
+        /// </summary>
+        public readonly void Clear(uint start, uint length)
+        {
+            UnsafeArray.Clear(value, start, length);
         }
 
         /// <summary>
@@ -100,9 +108,13 @@ namespace Unmanaged.Collections
             return TryIndexOf(value, out _);
         }
 
-        public readonly void Resize(uint length)
+        /// <summary>
+        /// Resizes the array to match the given length and
+        /// optionally initializes new elements to <c>default</c> state.
+        /// </summary>
+        public readonly void Resize(uint length, bool initialize = false)
         {
-            UnsafeArray.Resize(value, length);
+            UnsafeArray.Resize(value, length, initialize);
         }
 
         public readonly ref T GetRef(uint index)
@@ -123,6 +135,11 @@ namespace Unmanaged.Collections
         public readonly void CopyTo(Span<T> span)
         {
             AsSpan().CopyTo(span);
+        }
+
+        public readonly Enumerator GetEnumerator()
+        {
+            return new Enumerator(value);
         }
 
         readonly IEnumerator<T> IEnumerable<T>.GetEnumerator()
