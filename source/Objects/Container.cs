@@ -44,6 +44,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Retrieves a span of all bytes in the container.
+        /// </summary>
         public unsafe readonly Span<byte> AsSpan()
         {
             Allocations.ThrowIfNull(pointer);
@@ -60,6 +63,12 @@ namespace Unmanaged
         public readonly bool Is<T>() where T : unmanaged
         {
             return type == RuntimeType.Get<T>();
+        }
+
+        public readonly Container Clone()
+        {
+            Allocations.ThrowIfNull(pointer);
+            return Create(type, AsSpan());
         }
 
         public readonly override bool Equals(object? obj)
@@ -85,11 +94,18 @@ namespace Unmanaged
         /// <summary>
         /// Allocates unmanaged memory to contain the given value.
         /// </summary>
-        public unsafe static Container Create<T>(T value) where T : unmanaged
+        public static Container Create<T>(T value) where T : unmanaged
         {
             RuntimeType type = RuntimeType.Get<T>();
             Container container = new(Allocations.Allocate(type.Size), type);
             Unsafe.Write(container.pointer, value);
+            return container;
+        }
+
+        public static Container Create(RuntimeType type, ReadOnlySpan<byte> bytes)
+        {
+            Container container = new(Allocations.Allocate(type.Size), type);
+            bytes.CopyTo(container.AsSpan());
             return container;
         }
 

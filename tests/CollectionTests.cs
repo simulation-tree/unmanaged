@@ -9,7 +9,7 @@ namespace Tests
         [TearDown]
         public void CleanUp()
         {
-            Allocations.ThrowIfAnyAllocation();
+            Allocations.ThrowIfAny();
         }
 
         [Test]

@@ -156,6 +156,14 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Clears the text.
+        /// </summary>
+        public void Clear()
+        {
+            length = 0;
+        }
+
         public void Append(ReadOnlySpan<char> text)
         {
             ushort newLength = (ushort)(text.Length + length);
@@ -347,6 +355,17 @@ namespace Unmanaged
         /// </summary>
         public readonly unsafe int CopyTo(Span<char> buffer)
         {
+            fixed (char* bufferPtr = buffer)
+            {
+                return CopyTo(bufferPtr, buffer.Length);
+            }
+        }
+
+        /// <summary>
+        /// Copies the text content into the destination <see cref="char"/> buffer.
+        /// </summary>
+        public readonly unsafe int CopyTo(char* buffer, int bufferLength)
+        {
             int outputIndex = 0;
             ulong temp = 0;
             int bitsCollected = 0;
@@ -362,7 +381,7 @@ namespace Unmanaged
                     temp >>= 7;
                     bitsCollected -= 7;
                     outputIndex++;
-                    if (outputIndex >= buffer.Length)
+                    if (outputIndex >= bufferLength)
                     {
                         return length;
                     }
@@ -396,13 +415,19 @@ namespace Unmanaged
             return obj is FixedString address && Equals(address);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Compares the given text.
+        /// </summary>
+        /// <returns><c>true</c> if equal to given text.</returns>
         public readonly bool Equals(FixedString other)
         {
             return GetHashCode() == other.GetHashCode();
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Compares the given text.
+        /// </summary>
+        /// <returns><c>true</c> if equal to given text.</returns>
         public readonly bool Equals(string? other)
         {
             if (other is null)
@@ -413,7 +438,10 @@ namespace Unmanaged
             return Equals(other.AsSpan());
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Compares the given text.
+        /// </summary>
+        /// <returns><c>true</c> if equal to given text.</returns>
         public readonly bool Equals(ReadOnlySpan<char> other)
         {
             int outputIndex = 0;
@@ -446,14 +474,19 @@ namespace Unmanaged
             return true;
         }
 
-        IEnumerator<char> IEnumerable<char>.GetEnumerator()
+        public readonly Enumerator GetEnumerator()
         {
             return new Enumerator(this);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator<char> IEnumerable<char>.GetEnumerator()
         {
-            return new Enumerator(this);
+            return GetEnumerator();
+        }
+
+        readonly IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         public static FixedString CreateFromUTF8Bytes(ReadOnlySpan<byte> bytes)
@@ -535,22 +568,14 @@ namespace Unmanaged
             return new FixedString(temp);
         }
 
-        /// <inheritdoc/>
-        public static implicit operator FixedString(string path)
+        public static implicit operator FixedString(string value)
         {
-            return new(path);
+            return new FixedString(value);
         }
 
-        /// <inheritdoc/>
-        public static implicit operator FixedString(ReadOnlySpan<char> path)
+        public static implicit operator FixedString(ReadOnlySpan<char> value)
         {
-            return new(path);
-        }
-
-        /// <inheritdoc/>
-        public static implicit operator FixedString(Span<char> path)
-        {
-            return new(path);
+            return new FixedString(value);
         }
 
         public struct Enumerator : IEnumerator<char>
@@ -572,39 +597,6 @@ namespace Unmanaged
             {
                 index++;
                 return index < address.length;
-            }
-
-            public void Reset()
-            {
-                index = -1;
-            }
-
-            public readonly void Dispose()
-            {
-            }
-        }
-
-        public struct DoubleEnumerator : IEnumerator<(char, char)>
-        {
-            private readonly FixedString a;
-            private readonly FixedString b;
-            private int index;
-
-            public readonly (char, char) Current => (a[index], b[index]);
-
-            readonly object? IEnumerator.Current => Current;
-
-            public DoubleEnumerator(FixedString a, FixedString b)
-            {
-                this.a = a;
-                this.b = b;
-                index = -1;
-            }
-
-            public bool MoveNext()
-            {
-                index++;
-                return index < a.length && index < b.length;
             }
 
             public void Reset()

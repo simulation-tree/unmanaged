@@ -32,14 +32,14 @@ namespace Unmanaged
         {
             AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
             {
-                ThrowIfAnyAllocation();
+                ThrowIfAny();
             };
         }
 
         /// <summary>
         /// Throws an <see cref="Exception"/> if there are any memory leaks.
         /// </summary>
-        public static void ThrowIfAnyAllocation(bool clear = true)
+        public static void ThrowIfAny(bool clear = true)
         {
 #if TRACK_ALLOCATIONS
             if (addresses.Count > 0)
@@ -164,6 +164,7 @@ namespace Unmanaged
 #endif
         }
 
+        [Conditional("DEBUG")]
         public static void ThrowIfNull(void* pointer)
         {
             if (IsNull(pointer))

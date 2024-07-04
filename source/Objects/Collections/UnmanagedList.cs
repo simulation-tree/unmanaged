@@ -154,6 +154,11 @@ namespace Unmanaged.Collections
             UnsafeList.AddRange(value, items);
         }
 
+        public readonly void AddRange(void* pointer, uint count)
+        {
+            UnsafeList.AddRange(value, pointer, count);
+        }
+
         /// <summary>
         /// Adds the given span of different type <typeparamref name="V"/> into
         /// the list, assuming its size equals to <typeparamref name="T"/>.

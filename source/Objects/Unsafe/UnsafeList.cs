@@ -409,6 +409,9 @@ namespace Unmanaged.Collections
             list->items = newItems;
         }
 
+        /// <summary>
+        /// Returns the address of the first element in the list.
+        /// </summary>
         public static nint GetAddress(UnsafeList* list)
         {
             return list->items.Address;

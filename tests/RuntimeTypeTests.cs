@@ -205,7 +205,7 @@ namespace Tests
         public void CompareToString()
         {
             RuntimeType a = RuntimeType.Get<ushort>();
-            Assert.That(a.ToString(), Is.EqualTo(typeof(ushort).ToString()));
+            Assert.That(a.ToString(), Is.EqualTo(typeof(ushort).Name));
         }
     }
 }

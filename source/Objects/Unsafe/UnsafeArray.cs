@@ -91,14 +91,17 @@ namespace Unmanaged.Collections
         /// </summary>
         public static void Resize(UnsafeArray* array, uint newLength, bool initialize = false)
         {
-            uint size = array->type.Size;
-            uint oldLength = array->length;
-            array->items.Resize(size * newLength);
-            array->length = newLength;
-
-            if (initialize && newLength > oldLength)
+            if (array->length != newLength)
             {
-                array->items.Clear(size * oldLength, size * (newLength - oldLength));
+                uint size = array->type.Size;
+                uint oldLength = array->length;
+                array->items.Resize(size * newLength);
+                array->length = newLength;
+
+                if (initialize && newLength > oldLength)
+                {
+                    array->items.Clear(size * oldLength, size * (newLength - oldLength));
+                }
             }
         }
 

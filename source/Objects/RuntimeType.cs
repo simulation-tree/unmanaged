@@ -43,10 +43,17 @@ namespace Unmanaged
             this.value = value;
         }
 
-        /// <returns>The <see cref="Type.ToString"/> result.</returns>
+        /// <returns>Name of the type.</returns>
         public readonly override string ToString()
         {
-            return Type.ToString();
+            return Type.Name;
+        }
+
+        public readonly int ToString(Span<char> buffer)
+        {
+            string typeName = Type.Name;
+            typeName.AsSpan().CopyTo(buffer);
+            return typeName.Length;
         }
 
         public readonly override int GetHashCode()
