@@ -175,22 +175,23 @@ namespace Unmanaged
                 {
                     if (disposals.TryGetValue(address, out StackTrace? disposedStackTrace))
                     {
-                        throw new NullReferenceException($"Null pointer that was previously allocated at:\n{stackTrace}\nAnd then disposed at:\n{disposedStackTrace}");
+                        throw new NullReferenceException($"Invalid pointer {address:X}\nAllocated at:{stackTrace}\nDisposed at:\n{disposedStackTrace}");
                     }
                     else
                     {
-                        throw new NullReferenceException($"Null pointer that was previously allocated at:\n{stackTrace}");
+                        throw new NullReferenceException($"Invalid pointer {address:X} that no longer exists, was previously allocated at:\n{stackTrace}");
                     }
                 }
                 else
                 {
                     if (disposals.TryGetValue(address, out stackTrace))
                     {
-                        throw new NullReferenceException($"Null pointer that was previously disposed at:\n{stackTrace}");
+                        throw new NullReferenceException($"Invalid pointer {address:X} that isn't known to be allocated, but has been disposed at:\n{stackTrace}");
                     }
                 }
-#endif
+
                 throw new NullReferenceException("Null pointer.");
+#endif
             }
         }
 
