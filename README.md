@@ -1,47 +1,5 @@
 # Unmanaged
-Library containing useful definitions implemented using unmanaged code, for unmanaged code.
-
-### Allocations
-The `Allocation` type acts as a common root definition that other types use:
-```cs
-Allocation allocation = new(sizeof(uint) * 4);
-Span<uint> span = allocation.AsSpan<uint>();
-Span<byte> allocationBytes = allocation.AsSpan<byte>();
-allocation.Dispose();
-```
-These can also originate from `Allocations` static class, in the form of pointers:
-```cs
-public struct Player 
-{
-    public int health;
-    public Allocation inventory;
-}
-
-Player* player = Allocations.Allocate<Player>();
-player->health = 100;
-player->inventory = new(sizeof(uint) * 10);
-Span<uint> inventorySpan = player->inventory.AsSpan<uint>();
-
-player->inventory.Dispose();
-Allocations.Free(player);
-```
-
-### Safety
-When compiling with a debug profile, all allocations originating from the `Allocations`
-class or the `Allocation` type have their addresses tracked. And exceptions can
-be thrown when attempting to access addresses belonging to freed/unallocated memory.
-
-These thrown exceptions will also contain stack traces, at the cost of runtime efficiency.
-Use the `#IGNORE_STACKTRACES` flag to disable this.
-
-When compiling with a release profile, these checks are dropped. The executing program
-is instead expected to perfectly maintain the arguments written with its C# code. Allocation
-tracking can be reenabled with the `#TRACK_ALLOCATIONS` flag.
-
-### Final leak guard
-In your bootstrap code, `Allocations.ThrowIfAnyAllocation()` can be called to purposefully
-throw an exception if any allocations are still present. Though only if compiling with a debug
-profile, or if the `#TRACK_ALLOCATIONS` flag is set.
+Library containing primitive programming patterns.
 
 ### Collections
 A few collection types are available:
@@ -72,7 +30,8 @@ float floatValue = myFloat.As<float>();
 ```
 
 The equality operation between two containers, compare the bytes of the two values rather than the
-address of the pointer like with `Allocation` types.
+address of the pointer like with `Allocation` types. That is value equality, to instead perform reference
+equality, the address behind the container should be manually compared.
 
 ### Fixed String
 A common scenario in C# with having types meant for unsafe code, is the inability to contain a `string`.
@@ -93,9 +52,51 @@ using RandomGenerator random = new();
 int value = random.NextInt();
 ```
 
-### Contributing and Direction
-This library is developed to provide the fundamental pieces that a `System` namespace would
-for other projects, but using unmanaged code. Commonly putting the user in a position where they
-need to excerise more manual control over their data, at the benefit of efficiency.
+### Allocations
+The `Allocation` type acts as a pointer to memory, that must be disposed:
+```cs
+Allocation allocation = new(sizeof(uint) * 4);
+Span<uint> span = allocation.AsSpan<uint>();
+Span<byte> allocationBytes = allocation.AsSpan<byte>();
+allocation.Dispose();
+```
+These can be created with the `Allocations` static class as well, in the form of unsafe pointers:
+```cs
+public struct Player 
+{
+    public int health;
+    public Allocation inventory;
+}
+
+Player* player = Allocations.Allocate<Player>();
+player->health = 100;
+player->inventory = new(sizeof(uint) * 10);
+Span<uint> inventorySpan = player->inventory.AsSpan<uint>();
+
+player->inventory.Dispose();
+Allocations.Free(player);
+```
+
+### Safety
+When compiling with a debug profile, all allocations originating from the `Allocations`
+class or the `Allocation` type have their addresses tracked. And exceptions can
+be thrown when attempting to access addresses belonging to freed/unallocated memory.
+
+These thrown exceptions will also contain stack traces, at the cost of runtime efficiency.
+Use the `#IGNORE_STACKTRACES` flag to disable this (is already disabled for non debug builds).
+
+When compiling with a release profile, these checks are dropped. The executing program
+is instead, expected to be able to perfectly maintain its state indefineitly. Allocation
+tracking can be reenabled with the `#TRACK_ALLOCATIONS` flag (only in release builds).
+
+### Final leak guard
+`Allocations.ThrowIfAnyAllocation()` can be called to purposefully throw an exception if any allocations
+are still present. Though only if compiling with a debug profile, or if the `#TRACK_ALLOCATIONS` flag is set.
+Test runs being torn down is a useful scenario to use this.
+
+### Contributing and direction
+This library is developed to provide fundamental pieces that a `System` namespace would
+for other projects, but using unmanaged code to minimize runtime cost. Commonly putting the user in a position
+where they need to excerise more manual control over their data, at the benefit of efficiency.
 
 Contributions to this are welcome.
