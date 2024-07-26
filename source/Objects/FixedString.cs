@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Unmanaged
 {
@@ -13,8 +12,11 @@ namespace Unmanaged
     [StructLayout(LayoutKind.Sequential, Size = 256)]
     public unsafe struct FixedString : IEquatable<FixedString>, IEnumerable<char>
     {
+        //todo: find a better name, something else other than FixedString,
+        //maybe ASCIIText? since each character is 7 bits
+
         public const int MaxCharValue = 128;
-        public const char Terminator = '\0';
+        public const char Terminator = default;
 
         /// <summary>
         /// Maximum amount of <see cref="char"/> that can be contained.
@@ -156,14 +158,8 @@ namespace Unmanaged
             Build(path);
         }
 
-        public FixedString(sbyte* value)
+        public FixedString(void* value) : this(new ReadOnlySpan<byte>(value, sizeof(FixedString)))
         {
-            this = CreateFromUTF8Bytes(new ReadOnlySpan<byte>(value, sizeof(FixedString)));
-        }
-
-        public FixedString(byte* value)
-        {
-            this = CreateFromUTF8Bytes(new ReadOnlySpan<byte>(value, sizeof(FixedString)));
         }
 
         /// <summary>
@@ -177,7 +173,7 @@ namespace Unmanaged
             }
 
             Span<char> buffer = stackalloc char[bytes.Length];
-            var length = (ushort)Encoding.UTF8.GetChars(bytes, buffer);
+            int length = bytes.PeekUTF8Span(0, (uint)bytes.Length, buffer);
             Build(buffer[..length]);
         }
 
@@ -354,7 +350,7 @@ namespace Unmanaged
             return buffer[..length].LastIndexOf(value);
         }
 
-        public readonly unsafe FixedString Substring(int start)
+        public readonly unsafe FixedString Slice(int start)
         {
             Span<char> temp = stackalloc char[MaxLength];
             int thisLength = CopyTo(temp);
@@ -369,7 +365,7 @@ namespace Unmanaged
             return new FixedString(buffer);
         }
 
-        public readonly unsafe FixedString Substring(int start, int length)
+        public readonly unsafe FixedString Slice(int start, int length)
         {
             Span<char> temp = stackalloc char[MaxLength];
             int thisLength = CopyTo(temp);
@@ -682,19 +678,6 @@ namespace Unmanaged
         readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
-        }
-
-        public static FixedString CreateFromUTF8Bytes(ReadOnlySpan<byte> bytes)
-        {
-            Span<char> buffer = stackalloc char[bytes.Length];
-            //todo: manually iterate through utf8 stream
-            ushort length = (ushort)Encoding.UTF8.GetChars(bytes, buffer);
-            if (length > MaxLength)
-            {
-                throw new ArgumentException($"Path length exceeds maximum length of {MaxLength}.", nameof(length));
-            }
-
-            return new FixedString(buffer[..length]);
         }
 
         public static FixedString ToString<T>(T value) where T : notnull

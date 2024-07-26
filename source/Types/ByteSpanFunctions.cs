@@ -60,12 +60,13 @@ public static class ByteSpanFunctions
             low = (char)((codePoint & 0x3FF) + 0xDC00);
         }
 
-        additional++;
-        return additional;
+        return (byte)(additional + 1);
     }
 
     /// <summary>
-    /// Reads a UTF-8 span of characters into the provided buffer.
+    /// Reads the bytes formatted as UTF8 into the given character buffer.
+    /// <para>Reads <paramref name="length"/> amount of characters, or
+    /// until a <c>default</c> character is found (included in the buffer).</para>
     /// </summary>
     /// <returns>Amount of character values copied.</returns>
     public static int PeekUTF8Span(this ReadOnlySpan<byte> bytes, uint start, uint length, Span<char> buffer)
@@ -82,7 +83,8 @@ public static class ByteSpanFunctions
             uint cLength = PeekUTF8(bytes, start + i, out char low, out char high);
             if (low == default)
             {
-                break;
+                buffer[t++] = default;
+                return t;
             }
 
             if (high != default)
@@ -99,5 +101,26 @@ public static class ByteSpanFunctions
         }
 
         return t;
+    }
+
+    /// <summary>
+    /// Reads how long the UTF-8 text is by counting characters
+    /// until the terminator.
+    /// </summary>
+    public static int GetUTF8Length(this ReadOnlySpan<byte> bytes)
+    {
+        int position = 0;
+        while (position < bytes.Length)
+        {
+            byte next = bytes[position];
+            if (next == default)
+            {
+                break;
+            }
+
+            position += PeekUTF8(bytes, (uint)position, out _, out _);
+        }
+
+        return position;
     }
 }

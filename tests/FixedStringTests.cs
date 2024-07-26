@@ -146,7 +146,7 @@ namespace Tests
         public void Substring()
         {
             FixedString a = "Hello World!";
-            FixedString b = a.Substring(6);
+            FixedString b = a.Slice(6);
             Assert.That(b.ToString(), Is.EqualTo("World!"));
         }
 
@@ -167,7 +167,7 @@ namespace Tests
         {
             string a = "Hello World!";
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(a);
-            FixedString b = FixedString.CreateFromUTF8Bytes(bytes);
+            FixedString b = new(bytes);
             Assert.That(b.ToString(), Is.EqualTo(a));
         }
     }

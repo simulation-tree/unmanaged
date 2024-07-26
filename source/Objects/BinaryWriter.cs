@@ -81,12 +81,25 @@ namespace Unmanaged
             }
         }
 
-        public void WriteUTF8Span(ReadOnlySpan<char> span)
+        /// <summary>
+        /// Writes only the content of this text, without a terminator.
+        /// </summary>
+        public void WriteUTF8Span(ReadOnlySpan<char> text)
         {
-            foreach (char c in span)
+            foreach (char c in text)
             {
                 WriteUTF8(c);
             }
+        }
+
+        /// <summary>
+        /// Writes only the content of this text, without a terminator.
+        /// </summary>
+        public void WriteUTF8Span(FixedString text)
+        {
+            Span<char> buffer = stackalloc char[FixedString.MaxLength];
+            int length = text.CopyTo(buffer);
+            WriteUTF8Span(buffer[..length]);
         }
 
         public void WriteObject<T>(T value) where T : unmanaged, ISerializable

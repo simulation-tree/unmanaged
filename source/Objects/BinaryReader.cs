@@ -35,6 +35,7 @@ namespace Unmanaged
 
         /// <summary>
         /// Creates a new binary reader using/sharing the data from the writer.
+        /// <para>Disposal of the reader instance is still required.</para>
         /// </summary>
         public BinaryReader(BinaryWriter writer)
         {
@@ -138,6 +139,9 @@ namespace Unmanaged
             return PeekUTF8(Position, out low, out high);
         }
 
+        /// <summary>
+        /// Peeks the next <typeparamref name="T"/> value.
+        /// </summary>
         public readonly T PeekValue<T>() where T : unmanaged
         {
             return PeekValue<T>(Position);
@@ -210,15 +214,20 @@ namespace Unmanaged
         public readonly byte ReadUTF8(out char low, out char high)
         {
             byte length = PeekUTF8(out low, out high);
-            Position += length;
+            Advance(length);
             return length;
         }
 
+        /// <summary>
+        /// Reads UTF8 bytes as characters into the given buffer
+        /// until a terminator is found, or no bytes are left.
+        /// </summary>
         public readonly int ReadUTF8Span(Span<char> buffer)
         {
-            uint start = Position;
+            ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
+            uint start = position;
             int read = PeekUTF8Span(start, (uint)buffer.Length, buffer);
-            Advance((uint)read);
+            position += (uint)read;
             return read;
         }
 

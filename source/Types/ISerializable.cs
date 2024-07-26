@@ -3,13 +3,13 @@
 public interface ISerializable
 {
     /// <summary>
-    /// Serializes the object into the writer.
+    /// Writes the state of the object into the given writer.
     /// </summary>
     void Write(BinaryWriter writer);
 
     /// <summary>
-    /// Deserializes the object from it's <c>default</c> state, with
-    /// the data in the reader.
+    /// Reads the data from the reader into the object, updating
+    /// it's internal state to match.
     /// </summary>
     void Read(BinaryReader reader);
 }

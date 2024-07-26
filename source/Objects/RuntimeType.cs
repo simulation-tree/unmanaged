@@ -59,6 +59,12 @@ namespace Unmanaged
 
         public override string ToString()
         {
+#if DEBUG
+            if (TypeTable.types.TryGetValue(value, out Type? systemType))
+            {
+                return systemType?.FullName ?? value.ToString();
+            }
+#endif
             return value.ToString();
         }
 
@@ -79,7 +85,7 @@ namespace Unmanaged
 
         public readonly bool Is<T>() where T : unmanaged
         {
-            return RuntimeTypeHash<T>.value == value;
+            return GenericHasher<T>.value == value;
         }
 
         /// <summary>
@@ -93,7 +99,7 @@ namespace Unmanaged
                 throw new InvalidOperationException($"The type {typeof(T)} is too large to be used as a RuntimeType.");
             }
 
-            uint value = RuntimeTypeHash<T>.value;
+            uint value = GenericHasher<T>.value;
             return new(value);
         }
 
@@ -285,11 +291,11 @@ namespace Unmanaged
         public static bool operator ==(RuntimeType left, RuntimeType right) => left.Equals(right);
         public static bool operator !=(RuntimeType left, RuntimeType right) => !left.Equals(right);
 
-        private static class RuntimeTypeHash<T> where T : unmanaged
+        private static class GenericHasher<T> where T : unmanaged
         {
             internal static readonly uint value;
 
-            unsafe static RuntimeTypeHash()
+            unsafe static GenericHasher()
             {
                 unchecked
                 {
