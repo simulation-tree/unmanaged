@@ -41,11 +41,6 @@ namespace Unmanaged.Collections
             }
         }
 
-        public UnmanagedDictionary()
-        {
-            value = UnsafeDictionary.Allocate<K, V>();
-        }
-
         public UnmanagedDictionary(UnsafeDictionary* dictionary)
         {
             value = dictionary;
@@ -56,6 +51,12 @@ namespace Unmanaged.Collections
             value = UnsafeDictionary.Allocate<K, V>(initialCapacity);
         }
 
+#if NET5_0_OR_GREATER
+        public UnmanagedDictionary()
+        {
+            value = UnsafeDictionary.Allocate<K, V>();
+        }
+#endif
         public void Dispose()
         {
             UnsafeDictionary.Free(ref value);
@@ -148,6 +149,12 @@ namespace Unmanaged.Collections
         public readonly void Clear()
         {
             UnsafeDictionary.Clear(value);
+        }
+
+        public static UnmanagedDictionary<K, V> Create(uint capacity = 1)
+        {
+            UnsafeDictionary* value = UnsafeDictionary.Allocate<K, V>(capacity);
+            return new UnmanagedDictionary<K, V>(value);
         }
     }
 }

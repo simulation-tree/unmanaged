@@ -66,7 +66,7 @@ namespace Tests
             float avg = 0f;
             for (int i = 0; i < iterations; i++)
             {
-                using RandomGenerator rng = new();
+                using RandomGenerator rng = RandomGenerator.Create();
                 float value = rng.NextFloat();
                 min = Math.Min(min, value);
                 max = Math.Max(max, value);

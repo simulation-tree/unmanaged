@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unmanaged.Collections;
 
@@ -10,37 +11,14 @@ namespace Unmanaged
 
         public readonly ulong State => *(ulong*)pointer;
 
-        /// <summary>
-        /// Creates a new disposable randomness generator.
-        /// <para>
-        /// Initialized state is based on current state of the environment.
-        /// </para>
-        /// </summary>
+#if NET5_0_OR_GREATER
         public RandomGenerator()
         {
-            unchecked
-            {
-                long ticks = Environment.TickCount64;
-                int pid = Environment.ProcessId;
-                int tid = Environment.CurrentManagedThreadId;
-                ulong seed = (ulong)ticks ^ (ulong)pid ^ (ulong)tid;
-                int hash = seed.GetHashCode();
-                hash ^= hash >> 13;
-                hash ^= hash << 3;
-                hash ^= hash >> 27;
-                void* tempAlloc = NativeMemory.Alloc((uint)((pid + ticks) % 3 + 1));
-                nint tempAddress = (nint)tempAlloc;
-                NativeMemory.Free(tempAlloc);
-                tempAddress *= Environment.TickCount;
-                seed *= (ulong)(tempAddress - hash);
-
-                pointer = Allocations.Allocate(sizeof(ulong));
-                seed += (ulong)pointer;
-                ulong* t = (ulong*)pointer;
-                *t = seed;
-            }
+            pointer = Allocations.Allocate(sizeof(ulong));
+            ulong* t = (ulong*)pointer;
+            *t = GetRandomSeed();
         }
-
+#endif
         /// <summary>
         /// Creates a new disposable randomness generator.
         /// </summary>
@@ -55,7 +33,7 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given byte
         /// sequence as the initialization seed.
         /// </summary>
-        public RandomGenerator(ReadOnlySpan<byte> seed) : this((ulong)Djb2Hash.GetDjb2HashCode(seed))
+        public RandomGenerator(ReadOnlySpan<byte> seed) : this((ulong)Djb2Hash.Get(seed))
         {
         }
 
@@ -63,7 +41,7 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
-        public RandomGenerator(ReadOnlySpan<char> seed) : this((ulong)Djb2Hash.GetDjb2HashCode(seed))
+        public RandomGenerator(ReadOnlySpan<char> seed) : this((ulong)Djb2Hash.Get(seed))
         {
         }
 
@@ -235,6 +213,36 @@ namespace Unmanaged
             UnmanagedArray<byte> list = new(length);
             NextBytes(list.AsSpan());
             return list;
+        }
+
+        /// <summary>
+        /// Generates a random seed based on the current time and
+        /// some machine specific data (process ID, memory addresses).
+        /// </summary>
+        public static ulong GetRandomSeed()
+        {
+            unchecked
+            {
+                DateTime now = DateTime.UtcNow;
+                long ticks = now.Ticks;
+                int pid = Process.GetCurrentProcess().Id;
+                ulong baseSeed = (ulong)pid * (ulong)ticks;
+                baseSeed ^= baseSeed >> 13;
+                baseSeed ^= baseSeed << 3;
+                baseSeed ^= baseSeed >> 27;
+                void* tempAlloc = NativeMemory.Alloc((uint)((pid + ticks) % 3 + 1));
+                ulong tempAddress = (ulong)tempAlloc;
+                NativeMemory.Free(tempAlloc);
+                tempAddress *= (ulong)Environment.TickCount;
+                baseSeed *= tempAddress - baseSeed * 2;
+                return baseSeed;
+            }
+        }
+
+        public static RandomGenerator Create()
+        {
+            ulong seed = GetRandomSeed();
+            return new RandomGenerator(seed);
         }
     }
 }

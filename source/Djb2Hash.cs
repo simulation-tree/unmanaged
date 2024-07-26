@@ -6,15 +6,15 @@ namespace Unmanaged
 {
     public static class Djb2Hash
     {
-        public static int GetDjb2HashCode(string? str)
+        public static int Get(string? str)
         {
-            return GetDjb2HashCode((str ?? string.Empty).AsSpan());
+            return Get((str ?? string.Empty).AsSpan());
         }
 
-        public static int GetDjb2HashCode<T>(ReadOnlySpan<T> span) where T : notnull
+        public static int Get<T>(ReadOnlySpan<T> span) where T : notnull
         {
             //djb2 implementation from CommunityToolkit.HighPerformance/SpanHelper.Hash.cs
-            //todo: this could be xor hash instead, and shorter
+            //todo: this could be xor hash instead, and shorter?????
             ref T first = ref MemoryMarshal.GetReference(span);
             nint length = (nint)(uint)span.Length;
             int hash = 5381;
@@ -56,7 +56,7 @@ namespace Unmanaged
             return hash;
         }
 
-        public static int GetDjb2HashCode<T>(Span<T> span) where T : notnull
+        public static int Get<T>(Span<T> span) where T : notnull
         {
             ref T first = ref MemoryMarshal.GetReference(span);
             nint length = (nint)(uint)span.Length;

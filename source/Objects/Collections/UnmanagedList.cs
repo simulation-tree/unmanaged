@@ -37,17 +37,12 @@ namespace Unmanaged.Collections
             set => UnsafeList.Set(this.value, (uint)index, value);
         }
 
-        public UnmanagedList()
-        {
-            value = UnsafeList.Allocate<T>();
-        }
-
         public UnmanagedList(UnsafeList* list)
         {
             this.value = list;
         }
 
-        public UnmanagedList(uint initialCapacity)
+        public UnmanagedList(uint initialCapacity = 1)
         {
             value = UnsafeList.Allocate<T>(initialCapacity);
         }
@@ -70,6 +65,13 @@ namespace Unmanaged.Collections
                 Add(item);
             }
         }
+
+#if NET5_0_OR_GREATER
+        public UnmanagedList()
+        {
+            value = UnsafeList.Allocate<T>();
+        }
+#endif
 
         public void Dispose()
         {
@@ -98,6 +100,9 @@ namespace Unmanaged.Collections
             return UnsafeList.AsSpan<V>(value);
         }
 
+        /// <summary>
+        /// Returns the remaining span starting from the given index.
+        /// </summary>
         public readonly Span<T> AsSpan(uint start)
         {
             return UnsafeList.AsSpan<T>(value, start);
@@ -144,6 +149,20 @@ namespace Unmanaged.Collections
         public readonly void AddDefault(uint count = 1)
         {
             UnsafeList.AddDefault(value, count);
+        }
+
+        /// <summary>
+        /// Adds a range of the specified default value to the list.
+        /// </summary>
+        public readonly void AddRepeat(T defaultValue, uint count)
+        {
+            uint start = Count;
+            AddDefault(count);
+            Span<T> span = AsSpan(start);
+            for (int i = 0; i < count; i++)
+            {
+                span[i] = defaultValue;
+            }
         }
 
         /// <summary>
@@ -219,6 +238,16 @@ namespace Unmanaged.Collections
         public readonly void RemoveAtBySwapping(uint index)
         {
             UnsafeList.RemoveAtBySwapping(value, index);
+        }
+
+        public readonly V RemoveAt<V>(uint index) where V : unmanaged, IEquatable<V>
+        {
+            return UnsafeList.RemoveAt<V>(value, index);
+        }
+
+        public readonly V RemoveAtBySwapping<V>(uint index) where V : unmanaged, IEquatable<V>
+        {
+            return UnsafeList.RemoveAtBySwapping<V>(value, index);
         }
 
         /// <summary>
@@ -358,14 +387,25 @@ namespace Unmanaged.Collections
             return false;
         }
 
-        public struct Enumerator(UnsafeList* list) : IEnumerator<T>
+        public static UnmanagedList<T> Create(uint initialCapacity = 1)
         {
-            private readonly UnsafeList* list = list;
-            private int index = -1;
+            return new(initialCapacity);
+        }
+
+        public struct Enumerator : IEnumerator<T>
+        {
+            private readonly UnsafeList* list;
+            private int index;
 
             public readonly T Current => UnsafeList.Get<T>(list, (uint)index);
 
             readonly object IEnumerator.Current => UnsafeList.Get<T>(list, (uint)index);
+
+            public Enumerator(UnsafeList* list)
+            {
+                this.list = list;
+                index = -1;
+            }
 
             public bool MoveNext()
             {

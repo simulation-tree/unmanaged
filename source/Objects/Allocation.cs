@@ -27,14 +27,6 @@ namespace Unmanaged
             }
         }
 
-        /// <summary>
-        /// Creates an empty allocation.
-        /// </summary>
-        public Allocation()
-        {
-            pointer = Allocations.Allocate(0);
-        }
-
         public Allocation(void* pointer)
         {
             this.pointer = pointer;
@@ -43,11 +35,17 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new uninitialized allocation.
         /// </summary>
-        public Allocation(uint length)
+        public Allocation(uint size)
         {
-            pointer = Allocations.Allocate(length);
+            pointer = Allocations.Allocate(size);
         }
 
+#if NET5_0_OR_GREATER
+        public Allocation()
+        {
+            pointer = Allocations.Allocate(0);
+        }
+#endif
         /// <summary>
         /// Frees the allocation.
         /// </summary>
@@ -182,6 +180,14 @@ namespace Unmanaged
             return HashCode.Combine((nint)pointer);
         }
 
+        public static Allocation Create()
+        {
+            return new(0);
+        }
+
+        /// <summary>
+        /// Creates an allocation that contains the data of the given value.
+        /// </summary>
         public static Allocation Create<T>(T value) where T : unmanaged
         {
             Allocation allocation = new((uint)sizeof(T));

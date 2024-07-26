@@ -44,7 +44,7 @@ namespace Tests
         [Test]
         public void ExpandingList()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2);
             list.Add(3);
@@ -60,7 +60,7 @@ namespace Tests
         [Test]
         public void RemoveAtIndex()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2); //removed
             list.Add(3);
@@ -76,7 +76,7 @@ namespace Tests
         [Test]
         public void RemoveAtIndexWithSwapback()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2); //removed
             list.Add(3);
@@ -92,7 +92,7 @@ namespace Tests
         [Test]
         public void InsertIntoList()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2);
             list.Add(4);
@@ -106,7 +106,7 @@ namespace Tests
         [Test]
         public void AddRange()
         {
-            using UnmanagedList<uint> list = new();
+            using UnmanagedList<uint> list = UnmanagedList<uint>.Create();
             list.AddRange(new[] { 1u, 2u, 3u, 4u });
             Assert.That(list.Count, Is.EqualTo(4));
             Assert.That(list[0], Is.EqualTo(1u));
@@ -124,9 +124,23 @@ namespace Tests
         }
 
         [Test]
+        public void AddRepeat()
+        {
+            using UnmanagedList<byte> list = UnmanagedList<byte>.Create();
+            list.AddRepeat(5, 33);
+            Assert.That(list.Count, Is.EqualTo(33));
+            Assert.That(list[0], Is.EqualTo(5));
+
+            list.AddRepeat(9, 44);
+            Assert.That(list[32], Is.EqualTo(5));
+            Assert.That(list[33], Is.EqualTo(9));
+            Assert.That(list.Count, Is.EqualTo(77));
+        }
+
+        [Test]
         public void ListContains()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2);
             list.Add(3);
@@ -138,7 +152,7 @@ namespace Tests
         [Test]
         public void ClearWithMinimumCapacity()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2);
             list.Add(3);
@@ -152,7 +166,7 @@ namespace Tests
         [Test]
         public void ClearListThenAdd()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2);
             list.Add(3);
@@ -167,7 +181,7 @@ namespace Tests
         [Test]
         public void BuildListThenCopyToSpan()
         {
-            using UnmanagedList<int> list = new();
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
             list.Add(1);
             list.Add(2);
             list.Add(3);
@@ -224,7 +238,7 @@ namespace Tests
             for (uint i = 0; i < 8; i++)
             {
                 ref UnmanagedList<byte> list = ref nestedData.GetRef(i);
-                list = new();
+                list = UnmanagedList<byte>.Create();
                 list.Add((byte)i);
             }
 
@@ -243,7 +257,7 @@ namespace Tests
         [Test]
         public void CreatingAndDisposingDictionary()
         {
-            UnmanagedDictionary<byte, uint> map = new();
+            UnmanagedDictionary<byte, uint> map = UnmanagedDictionary<byte, uint>.Create();
             map.Add(0, 23);
             map.Add(1, 42);
             map.Add(2, 69);

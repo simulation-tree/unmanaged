@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using Unmanaged;
@@ -58,6 +59,7 @@ namespace Tests
             RuntimeType doubleType = RuntimeType.Get<double>();
             RuntimeType boolType = RuntimeType.Get<bool>();
             RuntimeType charType = RuntimeType.Get<char>();
+            RuntimeType type = RuntimeType.Get<RuntimeType>();
             StringBuilder s = new();
             s.AppendLine(byteType.value.ToString());
             s.AppendLine(sbyteType.value.ToString());
@@ -71,21 +73,23 @@ namespace Tests
             s.AppendLine(doubleType.value.ToString());
             s.AppendLine(boolType.value.ToString());
             s.AppendLine(charType.value.ToString());
+            s.AppendLine(type.value.ToString());
             string result = s.ToString();
 
             List<uint> values = new();
-            values.Add(3784163329);
-            values.Add(3114868737);
-            values.Add(3476041730); //short
-            values.Add(751104002);
-            values.Add(1980387332); //int
-            values.Add(3550416900);
-            values.Add(1307832328); //long
-            values.Add(2877865992);
-            values.Add(589824004);
-            values.Add(589307912); //double
-            values.Add(300920833);
-            values.Add(2853986306);
+            values.Add(RuntimeType.Byte);
+            values.Add(RuntimeType.SByte);
+            values.Add(RuntimeType.Short); //short
+            values.Add(RuntimeType.UShort);
+            values.Add(RuntimeType.Int); //int
+            values.Add(RuntimeType.UInt);
+            values.Add(RuntimeType.Long); //long
+            values.Add(RuntimeType.ULong);
+            values.Add(RuntimeType.Float);
+            values.Add(RuntimeType.Double); //double
+            values.Add(RuntimeType.Bool);
+            values.Add(RuntimeType.Char);
+            values.Add(RuntimeType.Identity);
 
             StringBuilder s2 = new();
             foreach (var value in values)
@@ -177,14 +181,6 @@ namespace Tests
         }
 
         [Test]
-        public void ReadSystemType()
-        {
-            RuntimeType a = RuntimeType.Get<uint>();
-            Type b = typeof(uint);
-            Assert.That(a.Type, Is.EqualTo(b));
-        }
-
-        [Test]
         public void TypeAsNumValue()
         {
             RuntimeType a = RuntimeType.Get<bool>();
@@ -198,14 +194,59 @@ namespace Tests
         public void CompareAgainstSystemType()
         {
             RuntimeType a = RuntimeType.Get<Guid>();
-            Assert.That(a == typeof(Guid), Is.True);
+            Assert.That(a.value == RuntimeType.CalculateHash(typeof(Guid)), Is.True);
         }
 
         [Test]
-        public void CompareToString()
+        public void CheckIfTypeIsUnmanaged()
         {
-            RuntimeType a = RuntimeType.Get<ushort>();
-            Assert.That(a.ToString(), Is.EqualTo(typeof(ushort).Name));
+            Assert.That(RuntimeType.IsUnmanaged(typeof(DateTime), out uint size), Is.True);
+            Assert.That(size, Is.EqualTo(8));
+
+            Assert.That(RuntimeType.IsUnmanaged(typeof(DeepType), out uint deepSize), Is.True);
+            Assert.That(deepSize, Is.EqualTo(40));
+        }
+
+        [Test]
+        public void CalculateTypeSize()
+        {
+            RuntimeType first = new(RuntimeType.CalculateHash(typeof(DateTime)));
+            Assert.That(first.Size, Is.EqualTo(8));
+
+            RuntimeType second = new(RuntimeType.CalculateHash(typeof(Guid)));
+            Assert.That(second.Size, Is.EqualTo(16));
+
+            RuntimeType third = new(RuntimeType.CalculateHash(typeof(Vector3)));
+            Assert.That(third.Size, Is.EqualTo(12));
+        }
+
+        [Test]
+        public void ManagedType()
+        {
+            Assert.That(RuntimeType.IsUnmanaged(typeof(string), out uint size), Is.False);
+
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                RuntimeType bad = new(RuntimeType.CalculateHash(typeof(string)));
+                Assert.That(bad.Size, Is.EqualTo(0));
+            });
+        }
+
+        public readonly struct DeepType
+        {
+            public readonly Container type;
+        }
+
+        public readonly struct Container
+        {
+            public readonly Identifier identifier;
+            public readonly Guid guid;
+            public readonly Vector3 position;
+        }
+
+        public readonly struct Identifier
+        {
+            public readonly Vector3 position;
         }
     }
 }

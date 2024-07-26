@@ -14,7 +14,7 @@ namespace Tests
         [Test]
         public void WriteValues()
         {
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteValue(32);
             Assert.That(writer.Position, Is.EqualTo(sizeof(int)));
             writer.WriteValue(64);
@@ -34,7 +34,7 @@ namespace Tests
         [Test]
         public void WriteSpan()
         {
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteSpan("Hello there".AsSpan());
 
             using BinaryReader reader = new(writer.AsSpan());
@@ -82,7 +82,7 @@ namespace Tests
         public void WriteUTF8Text()
         {
             string myString = "Hello, 你好, 🌍";
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteUTF8Span(myString.AsSpan());
             using BinaryReader reader = new(writer.AsSpan());
             Span<char> sample = stackalloc char[32];
@@ -95,7 +95,7 @@ namespace Tests
         [Test]
         public void ReuseWriter()
         {
-            BinaryWriter writer = new();
+            BinaryWriter writer = BinaryWriter.Create();
             writer.WriteValue(32);
             writer.WriteValue(64);
             writer.WriteValue(128);

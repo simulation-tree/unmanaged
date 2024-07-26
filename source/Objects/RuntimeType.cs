@@ -1,6 +1,11 @@
-﻿using System;
+﻿#pragma warning disable IL2075
+#pragma warning disable IL2070
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
@@ -14,6 +19,20 @@ namespace Unmanaged
     [StructLayout(LayoutKind.Sequential, Size = 4)]
     public readonly struct RuntimeType : IEquatable<RuntimeType>
     {
+        public const uint Byte = 946434049;
+        public const uint SByte = 1894944769;
+        public const uint Short = 123904002;
+        public const uint UShort = 214994946;
+        public const uint Int = 3127869444;
+        public const uint UInt = 2816307204;
+        public const uint Long = 1580060680;
+        public const uint ULong = 1535361032;
+        public const uint Float = 26202116;
+        public const uint Double = 2900860936;
+        public const uint Bool = 2893246465;
+        public const uint Char = 582934530;
+        public const uint Identity = 4199456772;
+
         /// <summary>
         /// The maximum allowed size of the type.
         /// </summary>
@@ -33,27 +52,14 @@ namespace Unmanaged
             }
         }
 
-        /// <summary>
-        /// The <see cref="System.Type"/> that this instance was created from.
-        /// </summary>
-        public readonly Type Type => TypeTable.types[value];
-
         public RuntimeType(uint value)
         {
             this.value = value;
         }
 
-        /// <returns>Name of the type.</returns>
-        public readonly override string ToString()
+        public override string ToString()
         {
-            return Type.Name;
-        }
-
-        public readonly int ToString(Span<char> buffer)
-        {
-            string typeName = Type.Name;
-            typeName.AsSpan().CopyTo(buffer);
-            return typeName.Length;
+            return value.ToString();
         }
 
         public readonly override int GetHashCode()
@@ -91,10 +97,102 @@ namespace Unmanaged
             return new(value);
         }
 
+        public static bool IsUnmanaged(Type type, out uint size)
+        {
+            if (type.IsClass)
+            {
+                size = default;
+                return false;
+            }
+            else if (type == typeof(RuntimeType))
+            {
+                size = sizeof(uint);
+                return true;
+            }
+            else if (type == typeof(byte))
+            {
+                size = sizeof(byte);
+                return true;
+            }
+            else if (type == typeof(sbyte))
+            {
+                size = sizeof(sbyte);
+                return true;
+            }
+            else if (type == typeof(short))
+            {
+                size = sizeof(short);
+                return true;
+            }
+            else if (type == typeof(ushort))
+            {
+                size = sizeof(ushort);
+                return true;
+            }
+            else if (type == typeof(int))
+            {
+                size = sizeof(int);
+                return true;
+            }
+            else if (type == typeof(uint))
+            {
+                size = sizeof(uint);
+                return true;
+            }
+            else if (type == typeof(long))
+            {
+                size = sizeof(long);
+                return true;
+            }
+            else if (type == typeof(ulong))
+            {
+                size = sizeof(ulong);
+                return true;
+            }
+            else if (type == typeof(float))
+            {
+                size = sizeof(float);
+                return true;
+            }
+            else if (type == typeof(double))
+            {
+                size = sizeof(double);
+                return true;
+            }
+            else if (type == typeof(bool))
+            {
+                size = sizeof(bool);
+                return true;
+            }
+            else if (type == typeof(char))
+            {
+                size = sizeof(char);
+                return true;
+            }
+            else
+            {
+                size = 0;
+                FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException($"The type {type} has no fields.");
+                foreach (FieldInfo field in fields)
+                {
+                    Type fieldType = field.FieldType;
+                    if (!IsUnmanaged(fieldType, out uint fieldSize))
+                    {
+                        size = 0;
+                        return false;
+                    }
+
+                    size += fieldSize;
+                }
+
+                return true;
+            }
+        }
+
         /// <summary>
         /// Retrieves a hash of the given types regardless of order.
         /// </summary>
-        public static uint CalculateHash(ReadOnlySpan<RuntimeType> types)
+        public static uint CombineHash(ReadOnlySpan<RuntimeType> types)
         {
             int typeCount = types.Length;
             Span<RuntimeType> typesSpan = stackalloc RuntimeType[typeCount];
@@ -127,13 +225,65 @@ namespace Unmanaged
             return hash;
         }
 
+        public static uint CalculateHash(ReadOnlySpan<char> fullTypeName, ReadOnlySpan<char> assemblyName, uint size, byte attempt = 1)
+        {
+            uint fullNameHash = CalculateHash(fullTypeName, attempt);
+            uint assemblyNameHash = CalculateHash(assemblyName, attempt);
+            uint value = fullNameHash ^ assemblyNameHash;
+
+            //replace last 12 bits with type length
+            value &= 0xFFFFF000;
+            value |= (size & 0xFFF);
+            return value;
+        }
+
+        public static uint CalculateHash(Type type, byte attempt = 1)
+        {
+            uint size = 0;
+            Stack<Type> types = new();
+            types.Push(type);
+            while (types.Count > 0)
+            {
+                Type current = types.Pop();
+                if (current.IsClass)
+                {
+                    throw new InvalidOperationException($"The type {type} is not unmanaged.");
+                }
+
+                FieldInfo[] fields = current.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException($"The type {type} has no fields.");
+                foreach (FieldInfo field in fields)
+                {
+                    Type fieldType = field.FieldType;
+                    if (!IsUnmanaged(fieldType, out uint fieldSize))
+                    {
+                        throw new InvalidOperationException($"The type {fieldType} is not unmanaged.");
+                    }
+
+                    size += fieldSize;
+                }
+            }
+
+            return CalculateHash(type.FullName.AsSpan(), type.Assembly.GetName().Name.AsSpan(), size, attempt);
+        }
+
+        private static uint CalculateHash(ReadOnlySpan<char> text, byte attempt)
+        {
+            unchecked
+            {
+                uint salt = 174440041u * attempt;
+                uint hash = 0;
+                for (int i = 0; i < text.Length; i++)
+                {
+                    char c = text[i];
+                    hash = (hash << 5) - hash + (c * salt);
+                }
+
+                return hash;
+            }
+        }
+
         public static bool operator ==(RuntimeType left, RuntimeType right) => left.Equals(right);
         public static bool operator !=(RuntimeType left, RuntimeType right) => !left.Equals(right);
-        public static bool operator ==(RuntimeType left, Type right) => left.Type == right;
-        public static bool operator !=(RuntimeType left, Type right) => left.Type != right;
-        public static bool operator ==(Type left, RuntimeType right) => left == right.Type;
-        public static bool operator !=(Type left, RuntimeType right) => left != right.Type;
-        public static implicit operator Type(RuntimeType type) => type.Type;
 
         private static class RuntimeTypeHash<T> where T : unmanaged
         {
@@ -148,7 +298,8 @@ namespace Unmanaged
                     byte attempt = 1;
                     while (true)
                     {
-                        value = CalculateHash(type, attempt);
+                        value = CalculateHash(type.FullName.AsSpan(), attempt);
+                        value ^= CalculateHash(type.Assembly.GetName().Name.AsSpan(), attempt);
                         attempt++;
 
                         //replace last 12 bits with type length
@@ -159,7 +310,7 @@ namespace Unmanaged
                         {
                             break;
                         }
-#if TEST
+#if !DEBUG
                         Console.WriteLine($"Collision hash detected between {type} and {TypeTable.types[value]}");
 #else
                         Debug.WriteLine($"Collision hash detected between {type} and {TypeTable.types[value]}");
@@ -170,29 +321,12 @@ namespace Unmanaged
                     TypeTable.types.Add(value, type);
                 }
             }
-
-            private static uint CalculateHash(Type type, byte attempt)
-            {
-                unchecked
-                {
-                    ReadOnlySpan<char> aqn = type.AssemblyQualifiedName.AsSpan();
-                    uint salt = 174440041u * attempt;
-                    uint hash = 0;
-                    for (int i = 0; i < aqn.Length; i++)
-                    {
-                        char c = aqn[i];
-                        hash = (hash << 5) - hash + (c * salt);
-                    }
-
-                    return hash;
-                }
-            }
         }
 
         private static class TypeTable
         {
-            internal static readonly List<uint> typeHashes = [];
-            internal static readonly Dictionary<uint, Type> types = [];
+            internal static readonly List<uint> typeHashes = new();
+            internal static readonly Dictionary<uint, Type> types = new();
         }
     }
 }

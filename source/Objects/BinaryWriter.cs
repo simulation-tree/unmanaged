@@ -10,7 +10,7 @@ namespace Unmanaged
         public readonly bool IsDisposed => UnsafeBinaryWriter.IsDisposed(value);
 
         /// <summary>
-        /// Amount of bytes put into the writer.
+        /// Read position of the writer.
         /// </summary>
         public readonly uint Position
         {
@@ -19,11 +19,6 @@ namespace Unmanaged
         }
 
         public readonly nint Address => UnsafeBinaryWriter.GetAddress(value);
-
-        public BinaryWriter()
-        {
-            value = UnsafeBinaryWriter.Allocate();
-        }
 
         public BinaryWriter(uint capacity = 1)
         {
@@ -35,6 +30,17 @@ namespace Unmanaged
             value = UnsafeBinaryWriter.Allocate(span);
         }
 
+        private BinaryWriter(UnsafeBinaryWriter* value)
+        {
+            this.value = value;
+        }
+
+#if NET5_0_OR_GREATER
+        public BinaryWriter()
+        {
+            value = UnsafeBinaryWriter.Allocate();
+        }
+#endif
         public void WriteValue<T>(T value) where T : unmanaged
         {
             T* ptr = &value;
@@ -94,6 +100,14 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Resets the position of the reader back to start.
+        /// </summary>
+        public readonly void Reset()
+        {
+            UnsafeBinaryWriter.SetPosition(value, 0);
+        }
+
+        /// <summary>
         /// All bytes written into the writer.
         /// </summary>
         public readonly Span<byte> AsSpan()
@@ -119,6 +133,12 @@ namespace Unmanaged
         public readonly ReadOnlySpan<T> AsSpan<T>(uint position, uint length) where T : unmanaged
         {
             return AsSpan<T>().Slice((int)position, (int)length);
+        }
+
+        public static BinaryWriter Create()
+        {
+            UnsafeBinaryWriter* value = UnsafeBinaryWriter.Allocate();
+            return new BinaryWriter(value);
         }
     }
 }

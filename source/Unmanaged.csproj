@@ -8,6 +8,8 @@
 		<ErrorReport>none</ErrorReport>
 		<PublishAot>true</PublishAot>
 		<IsAotCompatible>true</IsAotCompatible>
+		<BaseOutputPath>..\..\bin</BaseOutputPath>
+		<BaseIntermediateOutputPath>..\..\obj</BaseIntermediateOutputPath>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

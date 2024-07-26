@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Unmanaged.Collections
 {
@@ -9,13 +9,27 @@ namespace Unmanaged.Collections
         private uint length;
         private Allocation items;
 
-        public UnsafeArray()
+        [Conditional("DEBUG")]
+        public static void ThrowIfOutOfRange(UnsafeArray* array, uint index)
         {
-            throw new InvalidOperationException("Use UnsafeArray.Create() instead.");
+            if (index >= array->length)
+            {
+                throw new IndexOutOfRangeException($"Index {index} is out of range for array of length {array->length}.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        public static void ThrowIfDisposed(UnsafeArray* array)
+        {
+            if (IsDisposed(array))
+            {
+                throw new ObjectDisposedException("Array is disposed.");
+            }
         }
 
         public static void Free(ref UnsafeArray* array)
         {
+            ThrowIfDisposed(array);
             array->items.Dispose();
             Allocations.Free(ref array);
             array = null;
@@ -28,11 +42,13 @@ namespace Unmanaged.Collections
 
         public static uint GetLength(UnsafeArray* array)
         {
+            ThrowIfDisposed(array);
             return array->length;
         }
 
         public static nint GetAddress(UnsafeArray* array)
         {
+            ThrowIfDisposed(array);
             return array->items.Address;
         }
 
@@ -61,17 +77,21 @@ namespace Unmanaged.Collections
 
         public static ref T GetRef<T>(UnsafeArray* array, uint index) where T : unmanaged
         {
+            ThrowIfDisposed(array);
+            ThrowIfOutOfRange(array, index);
             T* ptr = (T*)GetAddress(array);
             return ref ptr[index];
         }
 
         public static Span<T> AsSpan<T>(UnsafeArray* array) where T : unmanaged
         {
+            ThrowIfDisposed(array);
             return array->items.AsSpan<T>(0, array->length);
         }
 
         public static bool TryIndexOf<T>(UnsafeArray* array, T value, out uint index) where T : unmanaged, IEquatable<T>
         {
+            ThrowIfDisposed(array);
             Span<T> span = AsSpan<T>(array);
             int i = span.IndexOf(value);
             if (i == -1)
@@ -91,6 +111,7 @@ namespace Unmanaged.Collections
         /// </summary>
         public static void Resize(UnsafeArray* array, uint newLength, bool initialize = false)
         {
+            ThrowIfDisposed(array);
             if (array->length != newLength)
             {
                 uint size = array->type.Size;
@@ -110,6 +131,7 @@ namespace Unmanaged.Collections
         /// </summary>
         public static void Clear(UnsafeArray* array)
         {
+            ThrowIfDisposed(array);
             array->items.Clear(array->length * array->type.Size);
         }
 
@@ -118,6 +140,7 @@ namespace Unmanaged.Collections
         /// </summary>
         public static void Clear(UnsafeArray* array, uint start, uint length)
         {
+            ThrowIfDisposed(array);
             uint size = array->type.Size;
             array->items.Clear(start * size, length * size);
         }

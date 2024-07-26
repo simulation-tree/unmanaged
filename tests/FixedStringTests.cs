@@ -20,7 +20,7 @@ namespace Tests
         {
             FixedString a = "Hello World!";
             string b = "Hello World!";
-            Assert.That(a.GetHashCode(), Is.EqualTo(Djb2Hash.GetDjb2HashCode(b)));
+            Assert.That(a.GetHashCode(), Is.EqualTo(Djb2Hash.Get(b)));
         }
 
         [Test]
@@ -34,12 +34,23 @@ namespace Tests
         }
 
         [Test]
+        public void Clearing()
+        {
+            FixedString a = "once upon a time";
+            a.Clear();
+
+            Assert.That(a.Length, Is.EqualTo(0));
+            Assert.That(a.ToString(), Is.EqualTo(string.Empty));
+        }
+
+        [Test]
         public void RemovingAt()
         {
             FixedString a = "Hello World";
             Assert.That(a.Length, Is.EqualTo(11));
             a.RemoveAt(a.Length - 1);
 
+            Assert.That(a.Contains('d'), Is.False);
             Assert.That(a.Length, Is.EqualTo(10));
 
             a.RemoveAt(4);
@@ -61,6 +72,16 @@ namespace Tests
         {
             FixedString a = "abcd";
             Assert.Throws<IndexOutOfRangeException>(() => { a[5] = 'e'; });
+        }
+
+        [Test]
+        public void ModifyingTextLength()
+        {
+            FixedString a = "abacus";
+            a.Length = 4;
+            Assert.That(a.ToString(), Is.EqualTo("abac"));
+            a.Length = 8;
+            Assert.That(a.ToString(), Is.EqualTo("abac    "));
         }
 
         [Test]
@@ -88,11 +109,13 @@ namespace Tests
         [Test]
         public void Indexing()
         {
-            FixedString a = default;
-            a.Append("Hello");
+            FixedString a = new("Hello");
 
             Assert.That(a.IndexOf('e'), Is.EqualTo(1));
+            Assert.That(a.IndexOf('l'), Is.EqualTo(2));
+            Assert.That(a.LastIndexOf('l'), Is.EqualTo(3));
             Assert.That(a.IndexOf("lo"), Is.EqualTo(3));
+            Assert.That(a.IndexOf("ll"), Is.EqualTo(2));
             Assert.That(a.IndexOf(' '), Is.EqualTo(-1));
         }
 

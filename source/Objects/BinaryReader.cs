@@ -61,14 +61,17 @@ namespace Unmanaged
             value = UnsafeBinaryReader.Allocate(stream, position);
         }
 
-        /// <summary>
-        /// Creates a new empty reader.
-        /// </summary>
-        public BinaryReader()
+        private BinaryReader(UnsafeBinaryReader* value)
         {
-            value = UnsafeBinaryReader.Allocate([]);
+            this.value = value;
         }
 
+#if NET5_0_OR_GREATER
+        public BinaryReader()
+        {
+            this.value = UnsafeBinaryReader.Allocate(Array.Empty<byte>());
+        }
+#endif
         public void Dispose()
         {
             ThrowIfDisposed();
@@ -98,7 +101,7 @@ namespace Unmanaged
             return AsSpan()[(int)Position..];
         }
 
-        [Conditional("TRACK_ALLOCATIONS")]
+        [Conditional("DEBUG")]
         private readonly void ThrowIfDisposed()
         {
             if (IsDisposed)
@@ -122,59 +125,8 @@ namespace Unmanaged
         /// <returns>Amount of bytes read.</returns>
         public readonly byte PeekUTF8(uint position, out char low, out char high)
         {
-            high = default;
-            byte firstByte = PeekValue<byte>(position);
-            int codePoint;
-            byte additional;
-            if ((firstByte & 0x80) == 0)
-            {
-                additional = 0;
-                codePoint = firstByte;
-            }
-            else if ((firstByte & 0xE0) == 0xC0)
-            {
-                additional = 1;
-                codePoint = firstByte & 0x1F;
-            }
-            else if ((firstByte & 0xF0) == 0xE0)
-            {
-                additional = 2;
-                codePoint = firstByte & 0x0F;
-            }
-            else if ((firstByte & 0xF8) == 0xF0)
-            {
-                additional = 3;
-                codePoint = firstByte & 0x07;
-            }
-            else
-            {
-                throw new InvalidDataException("Invalid UTF-8 byte sequence");
-            }
-
-            for (uint j = 1; j <= additional; j++)
-            {
-                byte next = PeekValue<byte>(position + j);
-                if ((next & 0xC0) != 0x80)
-                {
-                    throw new InvalidDataException("Invalid UTF-8 continuation byte");
-                }
-
-                codePoint = (codePoint << 6) | (next & 0x3F);
-            }
-
-            if (codePoint <= 0xFFFF)
-            {
-                low = (char)codePoint;
-            }
-            else
-            {
-                codePoint -= 0x10000;
-                high = (char)((codePoint >> 10) + 0xD800);
-                low = (char)((codePoint & 0x3FF) + 0xDC00);
-            }
-
-            additional++;
-            return additional;
+            ReadOnlySpan<byte> bytes = AsSpan();
+            return bytes.PeekUTF8(position, out low, out high);
         }
 
         /// <summary>
@@ -251,30 +203,8 @@ namespace Unmanaged
 
         public readonly int PeekUTF8Span(uint position, uint length, Span<char> buffer)
         {
-            uint start = position;
-            int t = 0;
-            for (int i = 0; i < length; i++)
-            {
-                uint cLength = PeekUTF8(position, out char low, out char high);
-                if (low == default)
-                {
-                    break;
-                }
-
-                if (high != default)
-                {
-                    buffer[t++] = high;
-                    buffer[t++] = low;
-                }
-                else
-                {
-                    buffer[t++] = low;
-                }
-
-                position += cLength;
-            }
-
-            return t;
+            ReadOnlySpan<byte> bytes = AsSpan();
+            return bytes.PeekUTF8Span(position, length, buffer);
         }
 
         public readonly byte ReadUTF8(out char low, out char high)
@@ -301,9 +231,15 @@ namespace Unmanaged
 
         public static BinaryReader CreateFromUTF8(ReadOnlySpan<char> text)
         {
-            using BinaryWriter writer = new();
+            using BinaryWriter writer = BinaryWriter.Create();
             writer.WriteUTF8Span(text);
             return new BinaryReader(writer.AsSpan());
+        }
+
+        public static BinaryReader Create()
+        {
+            UnsafeBinaryReader* value = UnsafeBinaryReader.Allocate(Array.Empty<byte>());
+            return new BinaryReader(value);
         }
     }
 }

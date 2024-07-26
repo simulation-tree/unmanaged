@@ -18,16 +18,19 @@ namespace Unmanaged
 
         public readonly bool IsDisposed => Allocations.IsNull(pointer);
 
-        public Container()
-        {
-            throw new NotImplementedException("Empty container is not supported.");
-        }
-
         private Container(void* pointer, RuntimeType type)
         {
             this.pointer = pointer;
             this.type = type;
         }
+
+#if NET5_0_OR_GREATER
+        [Obsolete("Use Create() method", true)]
+        public Container()
+        {
+            throw new NotImplementedException();
+        }
+#endif
 
         public void Dispose()
         {
@@ -42,6 +45,16 @@ namespace Unmanaged
             {
                 throw new ArgumentException("Size mismatch.", nameof(size));
             }
+        }
+
+        public readonly int CopyTo(Span<byte> destinationBuffer)
+        {
+            Allocations.ThrowIfNull(pointer);
+
+            Span<byte> sourceBuffer = AsSpan();
+            int length = Math.Min(sourceBuffer.Length, destinationBuffer.Length);
+            sourceBuffer.Slice(0, length).CopyTo(destinationBuffer);
+            return length;
         }
 
         /// <summary>

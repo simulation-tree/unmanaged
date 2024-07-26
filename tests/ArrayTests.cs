@@ -15,7 +15,7 @@ namespace Tests
         [Test]
         public void EmptyArray()
         {
-            UnmanagedArray<int> array = new();
+            UnmanagedArray<int> array = UnmanagedArray<int>.Create();
             Assert.That(array.Length, Is.EqualTo(0));
             array.Dispose();
             Assert.That(array.IsDisposed, Is.True);

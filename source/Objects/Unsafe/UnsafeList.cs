@@ -10,11 +10,6 @@ namespace Unmanaged.Collections
         private uint capacity;
         private Allocation items;
 
-        public UnsafeList()
-        {
-            throw new InvalidOperationException("Use UnsafeList.Allocate() to create an UnsafeList.");
-        }
-
         [Conditional("DEBUG")]
         private static void ThrowIfLengthIsZero(uint value)
         {
@@ -116,7 +111,7 @@ namespace Unmanaged.Collections
         /// <summary>
         /// Returns the bytes for the element at the given index.
         /// </summary>
-        public static Span<byte> GetBytes(UnsafeList* list, uint index)
+        public static Span<byte> GetElementBytes(UnsafeList* list, uint index)
         {
             ThrowIfDisposed(list);
             if (index >= list->count)
@@ -129,6 +124,13 @@ namespace Unmanaged.Collections
         }
 
         public static void Insert<T>(UnsafeList* list, uint index, T item) where T : unmanaged
+        {
+            T* ptr = &item;
+            Span<byte> bytes = new(ptr, list->type.Size);
+            Insert(list, index, bytes);
+        }
+
+        public static void Insert(UnsafeList* list, uint index, ReadOnlySpan<byte> elementBytes)
         {
             ThrowIfDisposed(list);
             if (index > list->count)
@@ -151,11 +153,18 @@ namespace Unmanaged.Collections
             Span<byte> destination = list->items.AsSpan<byte>((index + 1) * elementSize, (list->count - index) * elementSize);
             Span<byte> source = list->items.AsSpan<byte>(index * elementSize, (list->count - index) * elementSize);
             source.CopyTo(destination);
-            list->items.Write(index, item);
+            elementBytes.CopyTo(list->items.AsSpan<byte>(index * elementSize, elementSize));
             list->count++;
         }
 
         public static void Add<T>(UnsafeList* list, T item) where T : unmanaged
+        {
+            T* ptr = &item;
+            Span<byte> bytes = new(ptr, list->type.Size);
+            Add(list, bytes);
+        }
+
+        public static void Add(UnsafeList* list, ReadOnlySpan<byte> elementBytes)
         {
             ThrowIfDisposed(list);
             uint elementSize = list->type.Size;
@@ -170,7 +179,7 @@ namespace Unmanaged.Collections
                 list->items = newItems;
             }
 
-            list->items.Write(list->count, item);
+            elementBytes.CopyTo(list->items.AsSpan<byte>(list->count * elementSize, elementSize));
             list->count++;
         }
 
@@ -309,7 +318,7 @@ namespace Unmanaged.Collections
             list->count = lastIndex;
         }
 
-        public static void RemoveAt<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
+        public static T RemoveAt<T>(UnsafeList* list, uint index) where T : unmanaged, IEquatable<T>
         {
             ThrowIfDisposed(list);
             if (index >= list->count)
@@ -318,11 +327,12 @@ namespace Unmanaged.Collections
             }
 
             Span<T> span = list->items.AsSpan<T>(0, list->count);
-            removed = span[(int)index];
+            T removed = span[(int)index];
             RemoveAt(list, index);
+            return removed;
         }
 
-        public static void RemoveAtBySwapping<T>(UnsafeList* list, uint index, out T removed) where T : unmanaged, IEquatable<T>
+        public static T RemoveAtBySwapping<T>(UnsafeList* list, uint index) where T : unmanaged, IEquatable<T>
         {
             ThrowIfDisposed(list);
             if (index >= list->count)
@@ -331,8 +341,9 @@ namespace Unmanaged.Collections
             }
 
             Span<T> span = list->items.AsSpan<T>(0, list->count);
-            removed = span[(int)index];
+            T removed = span[(int)index];
             RemoveAtBySwapping(list, index);
+            return removed;
         }
 
         public static int GetContentHashCode(UnsafeList* list)
@@ -343,7 +354,7 @@ namespace Unmanaged.Collections
                 uint byteCount = list->type.Size * list->count;
                 hash = hash * 23 + list->type.GetHashCode();
                 hash = hash * 23 + list->count.GetHashCode();
-                hash = hash * 23 + Djb2Hash.GetDjb2HashCode(list->items.AsSpan<byte>(0, byteCount));
+                hash = hash * 23 + Djb2Hash.Get(list->items.AsSpan<byte>(0, byteCount));
                 return hash;
             }
         }

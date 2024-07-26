@@ -8,7 +8,7 @@ namespace Tests
         [Test]
         public void DefaultSizelessAllocation()
         {
-            Allocation allocation = new();
+            Allocation allocation = Allocation.Create();
             Assert.That(allocation.IsDisposed, Is.False);
             Assert.That(Allocations.Count, Is.EqualTo(1));
             allocation.Dispose();

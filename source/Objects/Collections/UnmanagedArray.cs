@@ -23,14 +23,6 @@ namespace Unmanaged.Collections
         readonly int IReadOnlyCollection<T>.Count => (int)Length;
         readonly T IReadOnlyList<T>.this[int index] => UnsafeArray.GetRef<T>(value, (uint)index);
 
-        /// <summary>
-        /// Creates a new empty array
-        /// </summary>
-        public UnmanagedArray()
-        {
-            value = UnsafeArray.Allocate<T>(0);
-        }
-
         public UnmanagedArray(UnsafeArray* array)
         {
             this.value = array;
@@ -54,7 +46,31 @@ namespace Unmanaged.Collections
             value = UnsafeArray.Allocate(span);
         }
 
-        public void Dispose()
+        public UnmanagedArray(IEnumerable<T> items)
+        {
+            uint count = 0;
+            foreach (T item in items)
+            {
+                count++;
+            }
+
+            value = UnsafeArray.Allocate<T>(count);
+            uint index = 0;
+            foreach (T item in items)
+            {
+                UnsafeArray.GetRef<T>(value, index) = item;
+                index++;
+            }
+        }
+
+#if NET5_0_OR_GREATER
+        [Obsolete("Use Create() method", true)]
+        public UnmanagedArray()
+        {
+            throw new NotImplementedException();
+        }
+#endif
+            public void Dispose()
         {
             UnsafeArray.Free(ref value);
         }
@@ -117,16 +133,25 @@ namespace Unmanaged.Collections
             UnsafeArray.Resize(value, length, initialize);
         }
 
+        /// <summary>
+        /// Retrieves a reference to the value at the specified index.
+        /// </summary>
         public readonly ref T GetRef(uint index)
         {
             return ref UnsafeArray.GetRef<T>(value, index);
         }
 
+        /// <summary>
+        /// Retrieves the value at the specified index.
+        /// </summary>
         public readonly T Get(uint index)
         {
             return UnsafeArray.GetRef<T>(value, index);
         }
 
+        /// <summary>
+        /// Assigns a value to the specified index.
+        /// </summary>
         public readonly void Set(uint index, T value)
         {
             UnsafeArray.GetRef<T>(this.value, index) = value;
@@ -173,14 +198,25 @@ namespace Unmanaged.Collections
             return HashCode.Combine(ptr, 7);
         }
 
-        public struct Enumerator(UnsafeArray* array) : IEnumerator<T>
+        public static UnmanagedArray<T> Create(uint length = 0)
         {
-            private readonly UnsafeArray* array = array;
-            private int index = -1;
+            return new UnmanagedArray<T>(length);
+        }
+
+        public struct Enumerator : IEnumerator<T>
+        {
+            private readonly UnsafeArray* array;
+            private int index;
 
             public readonly T Current => UnsafeArray.GetRef<T>(array, (uint)index);
 
             readonly object IEnumerator.Current => Current;
+
+            public Enumerator(UnsafeArray* array)
+            {
+                this.array = array;
+                index = -1;
+            }
 
             public bool MoveNext()
             {

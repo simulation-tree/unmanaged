@@ -14,9 +14,9 @@ namespace Unmanaged
 {
     public static unsafe class Allocations
     {
-        private static readonly HashSet<nint> addresses = [];
-        private static readonly Dictionary<nint, StackTrace> allocations = [];
-        private static readonly Dictionary<nint, StackTrace> disposals = [];
+        private static readonly HashSet<nint> addresses = new();
+        private static readonly Dictionary<nint, StackTrace> allocations = new();
+        private static readonly Dictionary<nint, StackTrace> disposals = new();
 
 #if TRACK_ALLOCATIONS
         /// <summary>
@@ -76,7 +76,11 @@ namespace Unmanaged
         {
             foreach (nint address in addresses)
             {
+#if ALIGNED
                 NativeMemory.AlignedFree((void*)address);
+#else
+                NativeMemory.Free((void*)address);
+#endif
             }
 
             addresses.Clear();
@@ -86,8 +90,11 @@ namespace Unmanaged
 
         public static void* Allocate(uint size)
         {
-            //void* pointer = NativeMemory.Alloc(size);
+#if ALIGNED
             void* pointer = NativeMemory.AlignedAlloc(size, GetAlignment(size));
+#else
+            void* pointer = NativeMemory.Alloc(size);
+#endif
             nint address = (nint)pointer;
 #if TRACK_ALLOCATIONS
             addresses.Add(address);
@@ -99,6 +106,12 @@ namespace Unmanaged
             return pointer;
         }
 
+        /// <summary>
+        /// Allocates unmanaged memory for a single instance of the given type.
+        /// <para>
+        /// Requires to be disposed with <see cref="Free(ref void*)"/>
+        /// </para>
+        /// </summary>
         public static T* Allocate<T>() where T : unmanaged
         {
             return (T*)Allocate((uint)sizeof(T));
@@ -106,8 +119,12 @@ namespace Unmanaged
 
         public static void Free(ref void* pointer)
         {
-            nint address = (nint)pointer;
+#if ALIGNED
             NativeMemory.AlignedFree(pointer);
+#else
+            NativeMemory.Free(pointer);
+#endif
+            nint address = (nint)pointer;
 #if TRACK_ALLOCATIONS
             addresses.Remove(address);
 #if !IGNORE_STACKTRACES
@@ -130,7 +147,11 @@ namespace Unmanaged
 #if TRACK_ALLOCATIONS
             addresses.Remove(oldAddress);
 #endif
+#if ALIGNED
             void* newPointer = NativeMemory.AlignedRealloc(pointer, newSize, GetAlignment(newSize));
+#else
+            void* newPointer = NativeMemory.Realloc(pointer, newSize);
+#endif
             nint newAddress = (nint)newPointer;
 #if TRACK_ALLOCATIONS
             addresses.Add(newAddress);
@@ -188,9 +209,11 @@ namespace Unmanaged
                     {
                         throw new NullReferenceException($"Invalid pointer {address:X} that isn't known to be allocated, but has been disposed at:\n{stackTrace}");
                     }
+                    else
+                    {
+                        throw new NullReferenceException($"Invalid pointer {address:X} that hasn't ever been allocated or disposed.");
+                    }
                 }
-
-                throw new NullReferenceException("Null pointer.");
 #endif
             }
         }
@@ -200,8 +223,12 @@ namespace Unmanaged
             return GetAlignment((uint)sizeof(T));
         }
 
+        /// <summary>
+        /// Returns an alignment that is able to contain the size.
+        /// </summary>
         public static uint GetAlignment(uint size)
         {
+            //todo: cases for 16, 32 and 64 is a bit too aggressive for absolutely all invokes
             if (size % 8 == 0)
             {
                 return 8;

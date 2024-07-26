@@ -11,11 +11,6 @@ namespace Unmanaged.Collections
         private UnsafeList* keys;
         private UnsafeList* values;
 
-        public UnsafeDictionary()
-        {
-            throw new InvalidOperationException("Use UnsafeDictionary.Allocate() to create an UnsafeDictionary.");
-        }
-
         [Conditional("DEBUG")]
         private static void ThrowIfSizeMismatch<K, V>(UnsafeDictionary* dictionary) where K : unmanaged where V : unmanaged
         {
@@ -130,7 +125,7 @@ namespace Unmanaged.Collections
             Allocations.ThrowIfNull(dictionary);
             ThrowIfSizeMismatch<K, V>(dictionary);
             uint index = UnsafeList.IndexOf(dictionary->keys, key);
-            UnsafeList.RemoveAtBySwapping<K>(dictionary->keys, index, out _);
+            UnsafeList.RemoveAtBySwapping<K>(dictionary->keys, index);
             UnsafeList.RemoveAtBySwapping(dictionary->values, index);
             dictionary->count--;
         }
