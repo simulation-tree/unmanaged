@@ -178,6 +178,29 @@ namespace Unmanaged.Collections
             UnsafeList.AddRange(value, pointer, count);
         }
 
+        public readonly void InsertRange(uint index, ReadOnlySpan<T> items)
+        {
+            uint count = Count;
+            if (index > count)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            uint length = (uint)items.Length;
+            if (index == count)
+            {
+                AddRange(items);
+            }
+            else
+            {
+                Capacity = count + length;
+                foreach (T item in items)
+                {
+                    Insert(index++, item);
+                }
+            }
+        }
+
         /// <summary>
         /// Adds the given span of different type <typeparamref name="V"/> into
         /// the list, assuming its size equals to <typeparamref name="T"/>.

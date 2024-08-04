@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Unmanaged.Collections
 {
-    public unsafe struct UnmanagedDictionary<K, V> : IDisposable where K : unmanaged, IEquatable<K> where V : unmanaged
+    public unsafe struct UnmanagedDictionary<K, V> : IDisposable, IEquatable<UnmanagedDictionary<K, V>> where K : unmanaged, IEquatable<K> where V : unmanaged
     {
         private UnsafeDictionary* value;
 
@@ -111,6 +111,12 @@ namespace Unmanaged.Collections
             return ref GetRef(key);
         }
 
+        public readonly ref V AddRef(K key)
+        {
+            UnsafeDictionary.Add<K, V>(this.value, key, default);
+            return ref GetRef(key);
+        }
+
         public readonly bool TryAdd(K key, V value)
         {
             if (ContainsKey(key))
@@ -155,6 +161,49 @@ namespace Unmanaged.Collections
         {
             UnsafeDictionary* value = UnsafeDictionary.Allocate<K, V>(capacity);
             return new UnmanagedDictionary<K, V>(value);
+        }
+
+        public readonly override bool Equals(object? obj)
+        {
+            return obj is UnmanagedDictionary<K, V> dictionary && Equals(dictionary);
+        }
+
+        public readonly bool Equals(UnmanagedDictionary<K, V> other)
+        {
+            int hash = GetHashCode();
+            int otherHash = other.GetHashCode();
+            return hash == otherHash;
+        }
+
+        public readonly override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                ReadOnlySpan<K> keys = Keys;
+                foreach (K key in keys)
+                {
+                    hash = hash * 31 + key.GetHashCode();
+                }
+
+                ReadOnlySpan<V> values = Values;
+                foreach (V value in values)
+                {
+                    hash = hash * 31 + value.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+
+        public static bool operator ==(UnmanagedDictionary<K, V> left, UnmanagedDictionary<K, V> right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(UnmanagedDictionary<K, V> left, UnmanagedDictionary<K, V> right)
+        {
+            return !(left == right);
         }
     }
 }

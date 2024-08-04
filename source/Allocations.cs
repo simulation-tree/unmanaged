@@ -18,6 +18,12 @@ namespace Unmanaged
         private static readonly Dictionary<nint, StackTrace> allocations = new();
         private static readonly Dictionary<nint, StackTrace> disposals = new();
 
+        /// <summary>
+        /// Invoked before <see cref="AppDomain.ProcessExit"/> is, and
+        /// before an exception is thrown if there are any memory leaks.
+        /// </summary>
+        public static event Action? Finish;
+
 #if TRACK_ALLOCATIONS
         /// <summary>
         /// Amount of allocations made that have not been freed.
@@ -30,6 +36,7 @@ namespace Unmanaged
 
         static Allocations()
         {
+            Finish?.Invoke();
             AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
             {
                 ThrowIfAny();

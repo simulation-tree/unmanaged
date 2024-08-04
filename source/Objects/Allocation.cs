@@ -149,6 +149,14 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Resizes the allocation to fit the given type.
+        /// </summary>
+        public void Resize<T>() where T : unmanaged
+        {
+            Resize((uint)sizeof(T));
+        }
+
+        /// <summary>
         /// Copies contents of this allocation into the destination.
         /// </summary>
         public readonly void CopyTo(Allocation destination, uint sourceIndex, uint destinationIndex, uint size)
@@ -180,6 +188,9 @@ namespace Unmanaged
             return HashCode.Combine((nint)pointer);
         }
 
+        /// <summary>
+        /// Creates an empty allocation of size 0.
+        /// </summary>
         public static Allocation Create()
         {
             return new(0);
@@ -192,6 +203,15 @@ namespace Unmanaged
         {
             Allocation allocation = new((uint)sizeof(T));
             allocation.Write(value);
+            return allocation;
+        }
+
+        /// <summary>
+        /// Creates an uninitialized allocation that fits the given type.
+        /// </summary>
+        public static Allocation Create<T>() where T : unmanaged
+        {
+            Allocation allocation = new((uint)sizeof(T));
             return allocation;
         }
 

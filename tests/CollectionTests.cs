@@ -138,6 +138,22 @@ namespace Tests
         }
 
         [Test]
+        public void InsertRange()
+        {
+            using UnmanagedList<int> list = UnmanagedList<int>.Create();
+            list.Add(1);
+            list.Add(2);
+            list.Add(6);
+            list.InsertRange(2, new[] { 3, 4, 5 });
+            Assert.That(list[0], Is.EqualTo(1));
+            Assert.That(list[1], Is.EqualTo(2));
+            Assert.That(list[2], Is.EqualTo(3));
+            Assert.That(list[3], Is.EqualTo(4));
+            Assert.That(list[4], Is.EqualTo(5));
+            Assert.That(list[5], Is.EqualTo(6));
+        }
+
+        [Test]
         public void ListContains()
         {
             using UnmanagedList<int> list = UnmanagedList<int>.Create();
