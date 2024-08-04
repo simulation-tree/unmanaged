@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Unmanaged;
 
 namespace Tests
@@ -55,6 +56,16 @@ namespace Tests
 
             a.RemoveAt(4);
             Assert.That(a.ToString(), Is.EqualTo("Hell Worl"));
+        }
+
+        [Test]
+        public void CopyToUTF8Bytes()
+        {
+            FixedString a = "abacus123+•◘○♠♣♦☺☻♥☺☻";
+            Span<byte> bytes = stackalloc byte[32];
+            int byteLength = a.CopyTo(bytes);
+            byte[] realBytes = Encoding.UTF8.GetBytes(a.ToString());
+            Assert.That(byteLength, Is.EqualTo(realBytes.Length));
         }
 
         [Test]
