@@ -67,9 +67,12 @@ namespace Unmanaged.Collections
         }
 
 #if NET5_0_OR_GREATER
+        /// <summary>
+        /// Creates a new empty list.
+        /// </summary>
         public UnmanagedList()
         {
-            value = UnsafeList.Allocate<T>();
+            this = Create();
         }
 #endif
 

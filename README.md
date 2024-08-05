@@ -60,7 +60,7 @@ Span<uint> span = allocation.AsSpan<uint>();
 Span<byte> allocationBytes = allocation.AsSpan<byte>();
 allocation.Dispose();
 ```
-These can be created with the `Allocations` static class as well, in the form of unsafe pointers:
+These can also be created with the `Allocations` static class as well, in the form of unsafe pointers:
 ```cs
 public struct Player 
 {
@@ -90,9 +90,10 @@ is instead, expected to be able to perfectly maintain its state indefineitly. Al
 tracking can be reenabled with the `#TRACK_ALLOCATIONS` flag (only in release builds).
 
 ### Final leak guard
-`Allocations.ThrowIfAnyAllocation()` can be called to purposefully throw an exception if any allocations
-are still present. Though only if compiling with a debug profile, or if the `#TRACK_ALLOCATIONS` flag is set.
-Test runs being torn down is a useful scenario to use this.
+`Allocations.ThrowIfAny()` will be called when the current AppDomain exits (when program ends).
+This will check if there are any allocations that have not been freed, and throw an exception if so.
+
+The `Allocations.Finish` delegate can be subscribed to insert clean up code before the program ends.
 
 ### Contributing and direction
 This library is developed to provide fundamental pieces that a `System` namespace would

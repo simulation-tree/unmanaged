@@ -36,9 +36,9 @@ namespace Unmanaged
 
         static Allocations()
         {
-            Finish?.Invoke();
             AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
             {
+                Finish?.Invoke();
                 ThrowIfAny();
             };
         }

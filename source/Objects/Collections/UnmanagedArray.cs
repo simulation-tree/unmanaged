@@ -64,13 +64,13 @@ namespace Unmanaged.Collections
         }
 
 #if NET5_0_OR_GREATER
-        [Obsolete("Use Create() method", true)]
         public UnmanagedArray()
         {
-            throw new NotImplementedException();
+            this = Create();
         }
 #endif
-            public void Dispose()
+
+        public void Dispose()
         {
             UnsafeArray.Free(ref value);
         }
