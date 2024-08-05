@@ -1,5 +1,5 @@
 # Unmanaged
-Library containing primitive programming patterns.
+Library containing primitive programming patterns for C# implemented exclusively with unmanaged code.
 
 ### Collections
 A few collection types are available:
