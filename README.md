@@ -1,49 +1,46 @@
 # Unmanaged
 Library containing primitive programming patterns for C# implemented exclusively with unmanaged code.
 
-### Collections
-A few collection types are available:
-- Lists
-- Arrays
-- Dictionaries (wip)
+### Types
+- Lists - `UnmanagedList<T>`
+- Arrays - `UnmanagedArray<T>`
+- Dictionaries (wip) - `UnmanagedDictionary<K, V>`
 - Hash sets (wip)
 - Linked lists (wip)
-```cs
-using UnmanagedList<int> list = new();
-list.Add(5);
-Span<int> listSpan = list.AsSpan();
-```
 
 ### Runtime Type
-A type that replaces `System.Type`, and only for unmanaged type definitions:
+A type that replaces `System.Type`. Only for unmanaged type definitions:
 ```cs
 RuntimeType type = RuntimeType.Get<uint>();
-Type systemType = type.Type;
+int hash = type.GetHashCode();
 ```
 
 ### Containers
-These are for containing a value, together with the type that it is:
+Containers contain the bytes of the value, and the type that it is:
 ```cs
 using Container myFloat = Container.Create(5f);
 RuntimeType type = myFloat.type;
 float floatValue = myFloat.As<float>();
+Assert.Throws(myFloat.As<int>());
 ```
 
 The equality operation between two containers, compare the bytes of the two values rather than the
-address of the pointer like with `Allocation` types. That is value equality, to instead perform reference
-equality, the address behind the container should be manually compared.
+address of the pointer like with `Allocation` types. This achieves value equality. To perform reference
+equality instead, compare the addresses manually or use the `Allocation` type if possible.
 
 ### Fixed String
-A common scenario in C# with having types meant for unsafe code, is the inability to contain a `string`.
-The `FixedString` type mimics a string, but of fixed length and it can only contain up to 290 characters, each 7-bit (ASCII):
+The `FixedString` type mimics a `string`. It can store up to 291 characters, where each character is 7 bits and terminated
+by a terminator character. It replaces the need to use `Encoding.UTF8` to achieve text<->utf8 bytes serialization:
 ```cs
-FixedString str = new("Hello World");
-Span<char> strSpan = stackalloc char[str.Length];
-str.CopyTo(strSpan);
-```
+FixedString text = new("Hello World");
+Span<char> text = stackalloc char[text.Length];
+text.CopyTo(strSpan);
 
-These can't be marshalled or treated as UTF8 strings, so they must be copied into span buffers when
-the more common `string` type is needed.
+Span<byte> utf8bytes = stackalloc char[16];
+int bytesCopied = text.CopyTo(utf8bytes);
+
+FixedString textFromBytes = new(utf8bytes[..bytesCopied]);
+```
 
 ### Random Generator
 An object that can generate random data using the XORshift technique:
@@ -90,10 +87,11 @@ is instead, expected to be able to perfectly maintain its state indefineitly. Al
 tracking can be reenabled with the `#TRACK_ALLOCATIONS` flag (only in release builds).
 
 ### Final leak guard
-`Allocations.ThrowIfAny()` will be called when the current AppDomain exits (when program ends).
-This will check if there are any allocations that have not been freed, and throw an exception if so.
+`Allocations.ThrowIfAny()` will be called when the AppDomain exits. This will check if there are
+any allocations remaining that haven't been freed, to throw an exception if so.
 
-The `Allocations.Finish` delegate can be subscribed to insert clean up code before the program ends.
+The `Allocations.Finish` delegate is called before this check is performed, allowing the user to
+insert automatic clean up code.
 
 ### Contributing and direction
 This library is developed to provide fundamental pieces that a `System` namespace would
