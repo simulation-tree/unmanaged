@@ -19,8 +19,8 @@ namespace Unmanaged
         private static readonly Dictionary<nint, StackTrace> disposals = new();
 
         /// <summary>
-        /// Invoked before <see cref="AppDomain.ProcessExit"/> is, and
-        /// before an exception is thrown if there are any memory leaks.
+        /// Invoked just once before <see cref="ThrowIfAny"/> is used,
+        /// allowing to perform any automatic necessary cleanup.
         /// </summary>
         public static event Action? Finish;
 
