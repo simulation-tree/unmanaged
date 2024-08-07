@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unmanaged.Collections;
 
@@ -92,16 +91,16 @@ namespace Unmanaged
             return (*t & 0x8000) != 0;
         }
 
-        public readonly ulong NextULong(ulong max)
+        public readonly ulong NextULong(ulong maxExclusive)
         {
-            return NextULong() % max;
+            return NextULong() % maxExclusive;
         }
 
-        public readonly ulong NextULong(ulong min, ulong max)
+        public readonly ulong NextULong(ulong minInclusive, ulong maxExclusive)
         {
-            ulong range = max - min;
+            ulong range = maxExclusive - minInclusive;
             ulong value = NextULong() % range;
-            return value + min;
+            return value + minInclusive;
         }
 
         public readonly long NextLong()
@@ -109,16 +108,16 @@ namespace Unmanaged
             return (long)NextULong();
         }
 
-        public readonly long NextLong(long max)
+        public readonly long NextLong(long maxExclusive)
         {
-            return (long)(NextULong() % (ulong)max);
+            return (long)(NextULong() % (ulong)maxExclusive);
         }
 
-        public readonly long NextLong(long min, long max)
+        public readonly long NextLong(long minInclusive, long maxExclusive)
         {
-            long range = max - min;
+            long range = maxExclusive - minInclusive;
             long value = (long)(NextULong() % (ulong)range);
-            return value + min;
+            return value + minInclusive;
         }
 
         public readonly int NextInt()
@@ -126,28 +125,28 @@ namespace Unmanaged
             return (int)NextUInt();
         }
 
-        public readonly int NextInt(int max)
+        public readonly int NextInt(int maxExclusive)
         {
-            return (int)(NextULong() % (ulong)max);
+            return (int)(NextULong() % (ulong)maxExclusive);
         }
 
-        public readonly int NextInt(int min, int max)
+        public readonly int NextInt(int minInclusive, int maxExclusive)
         {
-            int range = max - min;
+            int range = maxExclusive - minInclusive;
             int value = (int)(NextULong() % (uint)range);
-            return value + min;
+            return value + minInclusive;
         }
 
-        public readonly uint NextUInt(uint max)
+        public readonly uint NextUInt(uint maxExclusive)
         {
-            return NextUInt() % max;
+            return NextUInt() % maxExclusive;
         }
 
-        public readonly uint NextUInt(uint min, uint max)
+        public readonly uint NextUInt(uint minInclusive, uint maxExclusive)
         {
-            uint range = max - min;
+            uint range = maxExclusive - minInclusive;
             uint value = (NextUInt() % range);
-            return value + min;
+            return value + minInclusive;
         }
 
         /// <summary>
@@ -159,16 +158,16 @@ namespace Unmanaged
             return value / (float)uint.MaxValue;
         }
 
-        public readonly float NextFloat(float max)
+        public readonly float NextFloat(float maxExclusive)
         {
-            return NextFloat() * max;
+            return NextFloat() * maxExclusive;
         }
 
-        public readonly float NextFloat(float min, float max)
+        public readonly float NextFloat(float minInclusive, float maxExclusive)
         {
-            float range = max - min;
+            float range = maxExclusive - minInclusive;
             float value = NextFloat() * range;
-            return value + min;
+            return value + minInclusive;
         }
 
         public readonly double NextDouble()
@@ -177,16 +176,16 @@ namespace Unmanaged
             return value / (double)ulong.MaxValue;
         }
 
-        public readonly double NextDouble(double max)
+        public readonly double NextDouble(double maxExclusive)
         {
-            return NextDouble() * max;
+            return NextDouble() * maxExclusive;
         }
 
-        public readonly double NextDouble(double min, double max)
+        public readonly double NextDouble(double minInclusive, double maxExclusive)
         {
-            double range = max - min;
+            double range = maxExclusive - minInclusive;
             double value = NextDouble() * range;
-            return value + min;
+            return value + minInclusive;
         }
 
         /// <summary>
@@ -225,7 +224,7 @@ namespace Unmanaged
             {
                 DateTime now = DateTime.UtcNow;
                 long ticks = now.Ticks;
-                int pid = Process.GetCurrentProcess().Id;
+                int pid = Environment.ProcessId;
                 ulong baseSeed = (ulong)pid * (ulong)ticks;
                 baseSeed ^= baseSeed >> 13;
                 baseSeed ^= baseSeed << 3;

@@ -1,17 +1,17 @@
 ﻿#pragma warning disable IL2075
 #pragma warning disable IL2070
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
+#if DEBUG
+using System.Diagnostics;
+#endif
 
 namespace Unmanaged
 {
     /// <summary>
-    /// Represents a <see cref="System.Type"/> object that can be stored inside unmanaged values.
+    /// Represents a <see cref="Type"/> object that can be stored inside unmanaged values.
     /// <para>
     /// Deterministically tied to the full name of the type.
     /// </para>
@@ -316,9 +316,7 @@ namespace Unmanaged
                         {
                             break;
                         }
-#if !DEBUG
-                        Console.WriteLine($"Collision hash detected between {type} and {TypeTable.types[value]}");
-#else
+#if DEBUG
                         Debug.WriteLine($"Collision hash detected between {type} and {TypeTable.types[value]}");
 #endif
                     }

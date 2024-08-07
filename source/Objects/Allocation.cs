@@ -27,6 +27,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Creates an existing allocation from the given pointer.
+        /// </summary>
         public Allocation(void* pointer)
         {
             this.pointer = pointer;

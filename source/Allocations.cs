@@ -1,30 +1,24 @@
 ﻿#if DEBUG
-#define TRACK_ALLOCATIONS
-#else
-#define IGNORE_STACKTRACES
+#define TRACK
 #endif
 
 using System;
+using System.Runtime.InteropServices;
+
+#if TRACK
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
+#endif
 
 namespace Unmanaged
 {
     public static unsafe class Allocations
     {
+#if TRACK
         private static readonly HashSet<nint> addresses = new();
         private static readonly Dictionary<nint, StackTrace> allocations = new();
         private static readonly Dictionary<nint, StackTrace> disposals = new();
 
-        /// <summary>
-        /// Invoked just once before <see cref="ThrowIfAny"/> is used,
-        /// allowing to perform any automatic necessary cleanup.
-        /// </summary>
-        public static event Action? Finish;
-
-#if TRACK_ALLOCATIONS
         /// <summary>
         /// Amount of allocations made that have not been freed.
         /// This value is always 0 in release builds.
@@ -36,64 +30,72 @@ namespace Unmanaged
 
         static Allocations()
         {
+#if TRACK
             AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
             {
-                Finish?.Invoke();
                 ThrowIfAny();
             };
+#endif
         }
 
         /// <summary>
         /// Throws an <see cref="Exception"/> if there are any memory leaks.
         /// </summary>
-        public static void ThrowIfAny(bool clear = true)
+        public static void ThrowIfAny(bool clearAll = true)
         {
-#if TRACK_ALLOCATIONS
+#if TRACK
             if (addresses.Count > 0)
             {
-                StringBuilder exceptionBuilder = new();
-                exceptionBuilder.AppendLine($"Leaked {addresses.Count} allocation(s):\n");
+                List<char> exceptionBuilder = new();
+                Append("Leaked ");
+                Append(addresses.Count.ToString());
+                AppendLine(" allocation(s):");
                 foreach (nint address in addresses)
                 {
+                    Append("    ");
                     if (allocations.TryGetValue(address, out StackTrace? allocation))
                     {
-                        exceptionBuilder.AppendLine($"    {address:X} from {allocation}");
+                        Append(address.ToString());
+                        Append(" from ");
+                        AppendLine(allocation.ToString());
                     }
                     else
                     {
-                        exceptionBuilder.AppendLine($"    {address:X}");
+                        AppendLine(address.ToString());
                     }
                 }
 
-                string exceptionMessage = exceptionBuilder.ToString();
-                if (clear)
+                string exceptionMessage = new(exceptionBuilder.ToArray());
+                if (clearAll)
                 {
-                    Clear();
+                    foreach (nint address in addresses)
+                    {
+#if ALIGNED
+                        NativeMemory.AlignedFree((void*)address);
+#else
+                        NativeMemory.Free((void*)address);
+#endif
+                    }
+                }
+
+                void Append(string str)
+                {
+                    for (int i = 0; i < str.Length; i++)
+                    {
+                        exceptionBuilder.Add(str[i]);
+                    }
+                }
+
+                void AppendLine(string str)
+                {
+                    Append(str);
+                    exceptionBuilder.Add('\n');
                 }
 
                 throw new Exception(exceptionMessage);
             }
 #endif
-        }
-
-        /// <summary>
-        /// Frees all allocations made by this class.
-        /// </summary>
-        public static void Clear()
-        {
-            foreach (nint address in addresses)
-            {
-#if ALIGNED
-                NativeMemory.AlignedFree((void*)address);
-#else
-                NativeMemory.Free((void*)address);
-#endif
-            }
-
-            addresses.Clear();
-            allocations.Clear();
-            disposals.Clear();
-        }
+                    }
 
         public static void* Allocate(uint size)
         {
@@ -102,13 +104,12 @@ namespace Unmanaged
 #else
             void* pointer = NativeMemory.Alloc(size);
 #endif
+
+#if TRACK
             nint address = (nint)pointer;
-#if TRACK_ALLOCATIONS
             addresses.Add(address);
-#if !IGNORE_STACKTRACES
             allocations[address] = new StackTrace(1, true);
             disposals[address] = null!;
-#endif
 #endif
             return pointer;
         }
@@ -131,12 +132,11 @@ namespace Unmanaged
 #else
             NativeMemory.Free(pointer);
 #endif
+
+#if TRACK
             nint address = (nint)pointer;
-#if TRACK_ALLOCATIONS
             addresses.Remove(address);
-#if !IGNORE_STACKTRACES
             disposals[address] = new StackTrace(1, true);
-#endif
 #endif
             pointer = null;
         }
@@ -150,17 +150,19 @@ namespace Unmanaged
 
         public static void* Reallocate(void* pointer, uint newSize)
         {
+#if TRACK
             nint oldAddress = (nint)pointer;
-#if TRACK_ALLOCATIONS
             addresses.Remove(oldAddress);
 #endif
+
 #if ALIGNED
             void* newPointer = NativeMemory.AlignedRealloc(pointer, newSize, GetAlignment(newSize));
 #else
             void* newPointer = NativeMemory.Realloc(pointer, newSize);
 #endif
+
+#if TRACK
             nint newAddress = (nint)newPointer;
-#if TRACK_ALLOCATIONS
             addresses.Add(newAddress);
 #endif
             return newPointer;
@@ -184,7 +186,7 @@ namespace Unmanaged
                 return true;
             }
 
-#if TRACK_ALLOCATIONS
+#if TRACK
             nint address = (nint)pointer;
             return !addresses.Contains(address);
 #else
@@ -192,13 +194,12 @@ namespace Unmanaged
 #endif
         }
 
-        [Conditional("DEBUG")]
         public static void ThrowIfNull(void* pointer)
         {
             if (IsNull(pointer))
             {
-#if !IGNORE_STACKTRACES
                 nint address = (nint)pointer;
+#if TRACK
                 if (allocations.TryGetValue(address, out StackTrace? stackTrace))
                 {
                     if (disposals.TryGetValue(address, out StackTrace? disposedStackTrace))
@@ -222,6 +223,7 @@ namespace Unmanaged
                     }
                 }
 #endif
+                throw new NullReferenceException($"Invalid pointer {address:X}.");
             }
         }
 
