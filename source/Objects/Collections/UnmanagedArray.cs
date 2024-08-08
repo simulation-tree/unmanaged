@@ -128,6 +128,7 @@ namespace Unmanaged.Collections
         /// Resizes the array to match the given length and
         /// optionally initializes new elements to <c>default</c> state.
         /// </summary>
+        //todo: remove this Resize and use the setter in length?
         public readonly void Resize(uint length, bool initialize = false)
         {
             UnsafeArray.Resize(value, length, initialize);

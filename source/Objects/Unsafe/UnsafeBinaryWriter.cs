@@ -73,7 +73,7 @@ namespace Unmanaged.Serialization.Unsafe
                 writer->items.Resize(writer->capacity);
             }
 
-            writer->items.Write(writer->position, data, length);
+            writer->items.Write(data, writer->position, length);
             writer->position = endPosition;
         }
     }

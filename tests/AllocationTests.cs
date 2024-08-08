@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using System;
 using Unmanaged;
 
 namespace Tests
@@ -20,10 +21,10 @@ namespace Tests
         public void WriteMultipleValues()
         {
             using Allocation allocation = new(sizeof(uint) * 4);
-            allocation.Write(0, 5);
-            allocation.Write(1, 15);
-            allocation.Write(2, 25);
-            allocation.Write(3, 50);
+            allocation.Write(5, 0 * sizeof(uint));
+            allocation.Write(15, 1 * sizeof(uint));
+            allocation.Write(25, 2 * sizeof(uint));
+            allocation.Write(50, 3 * sizeof(uint));
 
             Span<uint> bufferSpan = allocation.AsSpan<uint>(0, 4);
             Assert.That(bufferSpan.Length, Is.EqualTo(4));
@@ -37,14 +38,33 @@ namespace Tests
         public void ResizeAllocation()
         {
             using Allocation a = new(sizeof(int));
-            a.Write(0, 1337);
+            a.Write(1337, 0 * sizeof(int));
             a.Resize(sizeof(int) * 2);
-            a.Write(1, 1338);
+            a.Write(1338, 1 * sizeof(int));
             Assert.That(Allocations.Count, Is.EqualTo(1));
 
             Span<int> span = a.AsSpan<int>(0, 2);
             Assert.That(span[0], Is.EqualTo(1337));
             Assert.That(span[1], Is.EqualTo(1338));
+        }
+
+        [Test]
+        public void ReadPartsOfTuple()
+        {
+            using Allocation tuple = new(8);
+            tuple.Write((5, 1337));
+
+            int a = tuple.Read<int>(0 * sizeof(int));
+            int b = tuple.Read<int>(1 * sizeof(int));
+            Assert.That(a, Is.EqualTo(5));
+            Assert.That(b, Is.EqualTo(1337));
+
+            tuple.Write(23, 1 * sizeof(int));
+
+            a = tuple.Read<int>(0 * sizeof(int));
+            b = tuple.Read<int>(1 * sizeof(int));
+            Assert.That(a, Is.EqualTo(5));
+            Assert.That(b, Is.EqualTo(23));
         }
 
         [Test]
@@ -158,15 +178,15 @@ namespace Tests
         {
             using Allocation a = new(sizeof(int) * 4);
             using Allocation b = new(sizeof(int) * 8);
-            a.Write(0, 1);
-            a.Write(1, 2);
-            a.Write(2, 3);
-            a.Write(3, 4);
+            a.Write(1, 0 * sizeof(int));
+            a.Write(2, 1 * sizeof(int));
+            a.Write(3, 2 * sizeof(int));
+            a.Write(4, 3 * sizeof(int));
             a.CopyTo(b, 0, 0, sizeof(int) * 4);
-            b.Write(4 + 0, 5);
-            b.Write(4 + 1, 6);
-            b.Write(4 + 2, 7);
-            b.Write(4 + 3, 8);
+            b.Write(5, (4 + 0) * sizeof(int));
+            b.Write(6, (4 + 1) * sizeof(int));
+            b.Write(7, (4 + 2) * sizeof(int));
+            b.Write(8, (4 + 3) * sizeof(int));
             Span<int> bufferSpan = b.AsSpan<int>(0, 8);
             Assert.That(bufferSpan.Length, Is.EqualTo(8));
             Assert.That(bufferSpan[0], Is.EqualTo(1));

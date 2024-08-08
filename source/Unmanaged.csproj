@@ -8,6 +8,7 @@
 		<PublishAot>true</PublishAot>
 		<IsAotCompatible>true</IsAotCompatible>
 		<NoStdLib>true</NoStdLib>
+		<NoStandardLibraries>true</NoStandardLibraries>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -15,7 +16,6 @@
 		<WarningLevel>7</WarningLevel>
 		<IsAotCompatible>true</IsAotCompatible>
 		<Optimize>false</Optimize>
-		<NoWarn>NU1900</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

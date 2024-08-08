@@ -95,7 +95,7 @@ namespace Unmanaged
                 throw new Exception(exceptionMessage);
             }
 #endif
-                    }
+        }
 
         public static void* Allocate(uint size)
         {

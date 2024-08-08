@@ -18,10 +18,10 @@ namespace Tests
         public void ContainValueAndCompare()
         {
             using Container container = Container.Create(32);
-            ref int value = ref container.AsRef<int>();
+            ref int value = ref container.Read<int>();
             value *= 32;
             using Container anotherContainer = Container.Create(value);
-            Assert.That(anotherContainer.AsRef<int>(), Is.EqualTo(container.AsRef<int>()));
+            Assert.That(anotherContainer.Read<int>(), Is.EqualTo(container.Read<int>()));
         }
 
         [Test]

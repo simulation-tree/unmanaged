@@ -21,8 +21,8 @@ Span<char> text = allocation.AsSpan<char>();
 ```cs
 using Container floatContainer = Container.Create(5f);
 RuntimeType type = floatContainer.type;
-float floatValue = floatContainer.As<float>();
-Assert.Throws(floatContainer.As<int>());
+float floatValue = floatContainer.Read<float>();
+Assert.Throws(floatContainer.Read<int>()); //type mismatch
 ```
 
 > The equality operation between two containers are unlike the one for allocations.

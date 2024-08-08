@@ -38,12 +38,19 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new uninitialized allocation.
         /// </summary>
-        public Allocation(uint size)
+        public Allocation(uint size, bool clear = false)
         {
             pointer = Allocations.Allocate(size);
+            if (clear)
+            {
+                Clear(size);
+            }
         }
 
 #if NET5_0_OR_GREATER
+        /// <summary>
+        /// Creates a new empty allocation.
+        /// </summary>
         public Allocation()
         {
             pointer = Allocations.Allocate(0);
@@ -58,18 +65,16 @@ namespace Unmanaged
             Allocations.Free(ref pointer);
         }
 
-        public readonly void Write<T>(T value) where T : unmanaged
-        {
-            Write(0, value);
-        }
-
-        public readonly void Write<T>(uint index, T value) where T : unmanaged
+        /// <summary>
+        /// Writes the given value into the memory of this allocation.
+        /// <para>Position is in bytes.</para>
+        /// </summary>
+        public readonly void Write<T>(T value, uint start = 0) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             uint length = (uint)sizeof(T);
-            uint position = index * length;
             void* ptr = &value;
-            Write(position, ptr, length);
+            Write(ptr, start, length);
         }
 
         public readonly void Write<T>(Span<T> span) where T : unmanaged
@@ -77,7 +82,7 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             fixed (T* ptr = span)
             {
-                Write(0, ptr, (uint)(span.Length * sizeof(T)));
+                Write(ptr, 0, (uint)(span.Length * sizeof(T)));
             }
         }
 
@@ -89,17 +94,16 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             fixed (T* ptr = span)
             {
-                Write(0, ptr, (uint)(span.Length * sizeof(T)));
+                Write(ptr, 0, (uint)(span.Length * sizeof(T)));
             }
         }
 
-        public readonly void Write(uint position, void* data, uint length)
+        public readonly void Write(void* data, uint start, uint length)
         {
             Allocations.ThrowIfNull(pointer);
-            Unsafe.CopyBlock((void*)((nint)pointer + position), data, length);
+            Unsafe.CopyBlock((void*)((nint)pointer + start), data, length);
         }
 
-        /// <returns>A span of bytes for the given slice range of memory.</returns>
         public readonly Span<byte> AsSpan(uint start, uint length)
         {
             Allocations.ThrowIfNull(pointer);
@@ -107,8 +111,9 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Gets a span of elements from the memory, where the start and
-        /// length values are normalized to type <typeparamref name="T"/>.
+        /// Gets a span of elements from the memory.
+        /// <para>Both <paramref name="start"/> and <paramref name="length"/> are expected
+        /// to be in elements, not bytes.</para>
         /// </summary>
         public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
@@ -118,10 +123,14 @@ namespace Unmanaged
             return new Span<T>((void*)((nint)pointer + position), (int)length);
         }
 
-        public readonly ref T AsRef<T>() where T : unmanaged
+        /// <summary>
+        /// Reads a value of <typeparamref name="T"/> from the memory at the given position.
+        /// <para>Position is in bytes.</para>
+        /// </summary>
+        public readonly ref T Read<T>(uint start = 0) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            return ref Unsafe.AsRef<T>(pointer);
+            return ref Unsafe.AsRef<T>((void*)((nint)pointer + start));
         }
 
         /// <summary>

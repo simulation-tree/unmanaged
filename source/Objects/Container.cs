@@ -47,6 +47,15 @@ namespace Unmanaged
             }
         }
 
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfTypeMismatch(RuntimeType type)
+        {
+            if (this.type != type)
+            {
+                throw new ArgumentException("Type mismatch.", nameof(type));
+            }
+        }
+
         public readonly int CopyTo(Span<byte> destinationBuffer)
         {
             Allocations.ThrowIfNull(pointer);
@@ -58,6 +67,14 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Interprets the container as a simple allocation.
+        /// </summary>
+        public readonly Allocation AsAllocation()
+        {
+            return new(pointer);
+        }
+
+        /// <summary>
         /// Retrieves a span of all bytes in the container.
         /// </summary>
         public unsafe readonly Span<byte> AsSpan()
@@ -66,10 +83,10 @@ namespace Unmanaged
             return new Span<byte>(pointer, type.Size);
         }
 
-        public unsafe readonly ref T AsRef<T>() where T : unmanaged
+        public unsafe readonly ref T Read<T>() where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            ThrowIfSizeMismatch(sizeof(T));
+            ThrowIfTypeMismatch(RuntimeType.Get<T>());
             return ref Unsafe.AsRef<T>(pointer);
         }
 
