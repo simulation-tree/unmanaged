@@ -105,6 +105,19 @@ namespace Unmanaged.Collections
             UnsafeDictionary.Add<K, V>(this.value, key, value);
         }
 
+        public readonly void AddOrSet(K key, V value)
+        {
+            if (ContainsKey(key))
+            {
+                ref var v = ref GetRef(key);
+                v = value;
+            }
+            else
+            {
+                Add(key, value);
+            }
+        }
+
         public readonly ref V AddRef(K key, V value)
         {
             UnsafeDictionary.Add<K, V>(this.value, key, value);
