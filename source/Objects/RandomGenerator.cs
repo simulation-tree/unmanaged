@@ -11,6 +11,9 @@ namespace Unmanaged
         public readonly ulong State => *(ulong*)pointer;
 
 #if NET5_0_OR_GREATER
+        /// <summary>
+        /// Creates a new random generator initialized with a random seed.
+        /// </summary>
         public RandomGenerator()
         {
             pointer = Allocations.Allocate(sizeof(ulong));
