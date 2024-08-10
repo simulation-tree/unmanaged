@@ -64,6 +64,9 @@ namespace Unmanaged.Collections
         }
 
 #if NET5_0_OR_GREATER
+        /// <summary>
+        /// Creates an empty array.
+        /// </summary>
         public UnmanagedArray()
         {
             this = Create();
@@ -161,6 +164,11 @@ namespace Unmanaged.Collections
         public readonly void CopyTo(Span<T> span)
         {
             AsSpan().CopyTo(span);
+        }
+
+        public readonly void CopyFrom(Span<T> span)
+        {
+            span.CopyTo(AsSpan());
         }
 
         public readonly Enumerator GetEnumerator()

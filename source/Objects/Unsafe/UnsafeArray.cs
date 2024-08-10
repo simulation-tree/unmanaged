@@ -37,7 +37,7 @@ namespace Unmanaged.Collections
 
         public static bool IsDisposed(UnsafeArray* array)
         {
-            return Allocations.IsNull(array) || array->items.IsDisposed;
+            return Allocations.IsNull(array);
         }
 
         public static uint GetLength(UnsafeArray* array)
