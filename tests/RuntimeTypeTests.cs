@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -205,6 +206,8 @@ namespace Tests
 
             Assert.That(RuntimeType.IsUnmanaged(typeof(DeepType), out uint deepSize), Is.True);
             Assert.That(deepSize, Is.EqualTo(40));
+
+            Assert.That(RuntimeType.IsUnmanaged(typeof(Color), out uint colorSize), Is.False); //<--- actually insane...
         }
 
         [Test]

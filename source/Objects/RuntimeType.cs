@@ -59,13 +59,26 @@ namespace Unmanaged
 
         public override string ToString()
         {
+            Span<char> buffer = stackalloc char[128];
+            int count = ToString(buffer);
+            return new string(buffer[..count]);
+        }
+
+        public readonly int ToString(Span<char> buffer)
+        {
 #if DEBUG
             if (TypeTable.types.TryGetValue(value, out Type? systemType))
             {
-                return systemType?.FullName ?? value.ToString();
+                string? str = systemType?.FullName;
+                if (str is not null)
+                {
+                    str.AsSpan().CopyTo(buffer);
+                    return str.Length;
+                }
             }
 #endif
-            return value.ToString();
+
+            return value.TryFormat(buffer, out int charsWritten) ? charsWritten : 0;
         }
 
         public readonly override int GetHashCode()
@@ -103,6 +116,9 @@ namespace Unmanaged
             return new(value);
         }
 
+        /// <summary>
+        /// Checks if the given type is a value type all the way down.
+        /// </summary>
         public static bool IsUnmanaged(Type type, out uint size)
         {
             if (type.IsClass)
