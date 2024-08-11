@@ -1,8 +1,5 @@
 #if !NET5_0_OR_GREATER
-//for Unity
-using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace System.Runtime.InteropServices
 {
