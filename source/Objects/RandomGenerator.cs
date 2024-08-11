@@ -227,7 +227,13 @@ namespace Unmanaged
             {
                 DateTime now = DateTime.UtcNow;
                 long ticks = now.Ticks;
+
+#if NET5_0_OR_GREATER
                 int pid = Environment.ProcessId;
+#else
+                int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
+#endif
+
                 ulong baseSeed = (ulong)pid * (ulong)ticks;
                 baseSeed ^= baseSeed >> 13;
                 baseSeed ^= baseSeed << 3;
