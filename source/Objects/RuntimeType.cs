@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
+
 #if DEBUG
 using System.Diagnostics;
 #endif
@@ -19,6 +20,22 @@ namespace Unmanaged
     [StructLayout(LayoutKind.Sequential, Size = 4)]
     public readonly struct RuntimeType : IEquatable<RuntimeType>
     {
+        //todo: efficiency: can this and its related code be ditched?
+        internal static readonly HashSet<uint> typeHashes = new();
+        internal static readonly Dictionary<uint, Type> types = new();
+
+        public static IEnumerable<(uint, Type)> Types
+        {
+            get
+            {
+                foreach (uint hash in typeHashes)
+                {
+                    Type type = types[hash];
+                    yield return (hash, type);
+                }
+            }
+        }
+
         public const uint Byte = 946434049;
         public const uint SByte = 1894944769;
         public const uint Short = 123904002;
@@ -67,10 +84,10 @@ namespace Unmanaged
         public readonly int ToString(Span<char> buffer)
         {
 #if DEBUG
-            if (TypeTable.types.TryGetValue(value, out Type? systemType))
+            if (types.TryGetValue(value, out Type? systemType))
             {
                 string? str = systemType?.FullName;
-                if (str is not null)
+                if (str != null)
                 {
                     str.AsSpan().CopyTo(buffer);
                     return str.Length;
@@ -107,10 +124,12 @@ namespace Unmanaged
         /// </summary>
         public unsafe static RuntimeType Get<T>() where T : unmanaged
         {
+#if DEBUG
             if (sizeof(T) > MaxSize)
             {
                 throw new InvalidOperationException($"The type {typeof(T)} is too large to be used as a RuntimeType.");
             }
+#endif
 
             uint value = GenericHasher<T>.value;
             return new(value);
@@ -121,7 +140,7 @@ namespace Unmanaged
         /// </summary>
         public static bool IsUnmanaged(Type type, out uint size)
         {
-            if (type.IsClass)
+            if (type.IsClass || type.IsInterface)
             {
                 size = default;
                 return false;
@@ -252,10 +271,8 @@ namespace Unmanaged
             uint fullNameHash = CalculateHash(fullTypeName, attempt);
             uint assemblyNameHash = CalculateHash(assemblyName, attempt);
             uint value = fullNameHash ^ assemblyNameHash;
-
-            //replace last 12 bits with type length
             value &= 0xFFFFF000;
-            value |= (size & 0xFFF);
+            value |= (size & 0xFFF); //embed size into last 12 bits
             return value;
         }
 
@@ -316,37 +333,26 @@ namespace Unmanaged
                 unchecked
                 {
                     Type type = typeof(T);
+                    ReadOnlySpan<char> fullName = type.FullName.AsSpan();
+                    ReadOnlySpan<char> assemblyName = type.Assembly.GetName().Name.AsSpan();
                     uint size = (uint)sizeof(T);
                     byte attempt = 1;
                     while (true)
                     {
-                        value = CalculateHash(type.FullName.AsSpan(), attempt);
-                        value ^= CalculateHash(type.Assembly.GetName().Name.AsSpan(), attempt);
+                        value = CalculateHash(fullName, assemblyName, size, attempt);
                         attempt++;
 
-                        //replace last 12 bits with type length
-                        value &= 0xFFFFF000;
-                        value |= (size & 0xFFF);
-
-                        if (!TypeTable.typeHashes.Contains(value))
+                        if (typeHashes.Add(value))
                         {
+                            types.Add(value, type);
                             break;
                         }
 #if DEBUG
-                        Debug.WriteLine($"Collision hash detected between {type} and {TypeTable.types[value]}");
+                        Debug.WriteLine($"Collision hash detected between {type} and {types[value]}");
 #endif
                     }
-
-                    TypeTable.typeHashes.Add(value);
-                    TypeTable.types.Add(value, type);
                 }
             }
-        }
-
-        private static class TypeTable
-        {
-            internal static readonly List<uint> typeHashes = new();
-            internal static readonly Dictionary<uint, Type> types = new();
         }
     }
 }
