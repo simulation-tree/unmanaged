@@ -1,6 +1,6 @@
 {
     "name": "Unmanaged",
-    "rootNamespace": "",
+    "rootNamespace": "Unmanaged",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

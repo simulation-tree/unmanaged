@@ -138,9 +138,14 @@ namespace Unmanaged
         /// <summary>
         /// Checks if the given type is a value type all the way down.
         /// </summary>
-        public static bool IsUnmanaged(Type type, out uint size)
+        public unsafe static bool IsUnmanaged(Type type, out uint size)
         {
-            if (type.IsClass || type.IsInterface)
+            if (type.IsPointer)
+            {
+                size = (uint)sizeof(void*);
+                return true;
+            }
+            else if (type.IsClass || type.IsInterface)
             {
                 size = default;
                 return false;
