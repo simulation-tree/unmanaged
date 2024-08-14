@@ -38,6 +38,29 @@ namespace Unmanaged
             Allocations.Free(ref pointer);
         }
 
+        public readonly override string ToString()
+        {
+            Span<char> buffer = stackalloc char[256];
+            int length = ToString(buffer);
+            return new string(buffer[..length]);
+        }
+
+        public readonly int ToString(Span<char> buffer)
+        {
+            int length = 0;
+            if (IsDisposed)
+            {
+                "<Disposed>".AsSpan().CopyTo(buffer);
+                length = 10;
+            }
+            else
+            {
+                length = type.ToString(buffer);
+            }
+
+            return length;
+        }
+
         [Conditional("DEBUG")]
         private readonly void ThrowIfSizeMismatch(int size)
         {
