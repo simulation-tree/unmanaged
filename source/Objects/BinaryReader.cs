@@ -45,7 +45,7 @@ namespace Unmanaged
         /// <summary>
         /// Duplicates the reader into a new instance while sharing the data.
         /// <para>
-        /// Disposing of this instance won't dispose the original reader or
+        /// Disposing of this instance won't dispose the original reader, or
         /// the shared data.
         /// </para>
         /// </summary>

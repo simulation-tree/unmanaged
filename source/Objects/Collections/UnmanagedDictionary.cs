@@ -183,6 +183,11 @@ namespace Unmanaged.Collections
 
         public readonly bool Equals(UnmanagedDictionary<K, V> other)
         {
+            if (IsDisposed && other.IsDisposed)
+            {
+                return true;
+            }
+
             int hash = GetHashCode();
             int otherHash = other.GetHashCode();
             return hash == otherHash;
