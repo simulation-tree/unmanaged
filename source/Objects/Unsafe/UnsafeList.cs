@@ -428,7 +428,7 @@ namespace Unmanaged.Collections
             return list->items.Address;
         }
 
-        public static void CopyTo(UnsafeList* source, uint sourceIndex, UnsafeList* destination, uint destinationIndex)
+        public static void CopyElementTo(UnsafeList* source, uint sourceIndex, UnsafeList* destination, uint destinationIndex)
         {
             if (sourceIndex >= source->count)
             {
