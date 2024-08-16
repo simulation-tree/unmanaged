@@ -9,6 +9,8 @@
 		<IsAotCompatible>true</IsAotCompatible>
 		<NoStdLib>true</NoStdLib>
 		<NoStandardLibraries>true</NoStandardLibraries>
+		<BaseOutputPath>bin~\</BaseOutputPath>
+		<BaseIntermediateOutputPath>obj~\</BaseIntermediateOutputPath>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
