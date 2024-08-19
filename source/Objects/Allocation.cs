@@ -36,7 +36,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new uninitialized allocation.
+        /// Creates a new uninitialized allocation with the given size.
         /// </summary>
         public Allocation(uint size, bool clear = false)
         {
@@ -47,7 +47,7 @@ namespace Unmanaged
             }
         }
 
-#if NET5_0_OR_GREATER
+#if NET
         /// <summary>
         /// Creates a new empty allocation.
         /// </summary>

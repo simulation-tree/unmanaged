@@ -86,7 +86,7 @@ namespace Unmanaged
 #if DEBUG
             if (types.TryGetValue(value, out Type? systemType))
             {
-                string? str = systemType?.FullName;
+                string? str = systemType?.Name;
                 if (str != null)
                 {
                     str.AsSpan().CopyTo(buffer);

@@ -46,6 +46,11 @@ namespace Unmanaged.Collections
             value = UnsafeArray.Allocate(span);
         }
 
+        public UnmanagedArray(UnmanagedList<T> items)
+        {
+            value = UnsafeArray.Allocate<T>(items.AsSpan());
+        }
+
         public UnmanagedArray(IEnumerable<T> items)
         {
             uint count = 0;

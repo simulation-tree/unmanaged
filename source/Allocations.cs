@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 #if TRACK
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Collections.Concurrent;
 #endif
 
 namespace Unmanaged
@@ -15,7 +16,7 @@ namespace Unmanaged
     public static unsafe class Allocations
     {
 #if TRACK
-        private static readonly HashSet<nint> addresses = new();
+        private static readonly ConcurrentBag<nint> addresses = new();
         private static readonly Dictionary<nint, StackTrace> allocations = new();
         private static readonly Dictionary<nint, StackTrace> disposals = new();
 
@@ -109,7 +110,7 @@ namespace Unmanaged
             nint address = (nint)pointer;
             addresses.Add(address);
             allocations[address] = new StackTrace(1, true);
-            disposals[address] = null!;
+            disposals.Remove(address);
 #endif
             return pointer;
         }
@@ -132,10 +133,18 @@ namespace Unmanaged
 #else
             NativeMemory.Free(pointer);
 #endif
-
 #if TRACK
             nint address = (nint)pointer;
-            addresses.Remove(address);
+            nint[] temp = addresses.ToArray();
+            addresses.Clear();
+            foreach (nint addr in temp)
+            {
+                if (addr != address)
+                {
+                    addresses.Add(addr);
+                }
+            }
+
             disposals[address] = new StackTrace(1, true);
 #endif
             pointer = null;
@@ -152,7 +161,15 @@ namespace Unmanaged
         {
 #if TRACK
             nint oldAddress = (nint)pointer;
-            addresses.Remove(oldAddress);
+            nint[] temp = addresses.ToArray();
+            addresses.Clear();
+            foreach (nint addr in temp)
+            {
+                if (addr != oldAddress)
+                {
+                    addresses.Add(addr);
+                }
+            }
 #endif
 
 #if ALIGNED
@@ -188,7 +205,7 @@ namespace Unmanaged
 
 #if TRACK
             nint address = (nint)pointer;
-            return !addresses.Contains(address);
+            return Array.IndexOf(addresses.ToArray(), address) == -1;
 #else
             return false;
 #endif

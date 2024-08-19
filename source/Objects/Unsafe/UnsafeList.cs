@@ -15,7 +15,7 @@ namespace Unmanaged.Collections
         {
             if (value == 0)
             {
-                throw new InvalidOperationException("Allocation capacity cannot be zero.");
+                throw new InvalidOperationException("List capacity cannot be zero.");
             }
         }
 
