@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 #if TRACK
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Collections.Concurrent;
 #endif
 
 namespace Unmanaged
@@ -41,10 +40,11 @@ namespace Unmanaged
 
         /// <summary>
         /// Throws an <see cref="Exception"/> if there are any memory leaks.
+        /// <para>No effect in release builds.</para>
         /// </summary>
-        public static void ThrowIfAny(bool clearAll = true)
-        {
 #if TRACK
+        public static void ThrowIfAny()
+        {
             if (addresses.Count > 0)
             {
                 List<char> exceptionBuilder = new();
@@ -67,16 +67,13 @@ namespace Unmanaged
                 }
 
                 string exceptionMessage = new(exceptionBuilder.ToArray());
-                if (clearAll)
+                foreach (nint address in addresses)
                 {
-                    foreach (nint address in addresses)
-                    {
 #if ALIGNED
-                        NativeMemory.AlignedFree((void*)address);
+                    NativeMemory.AlignedFree((void*)address);
 #else
-                        NativeMemory.Free((void*)address);
+                    NativeMemory.Free((void*)address);
 #endif
-                    }
                 }
 
                 void Append(string str)
@@ -95,8 +92,10 @@ namespace Unmanaged
 
                 throw new Exception(exceptionMessage);
             }
-#endif
         }
+#else
+        public static void ThrowIfAny() { }
+#endif
 
         public static void* Allocate(uint size)
         {
