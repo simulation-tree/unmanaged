@@ -16,7 +16,7 @@ namespace Unmanaged
     public static unsafe class Allocations
     {
 #if TRACK
-        private static readonly ConcurrentBag<nint> addresses = new();
+        private static readonly HashSet<nint> addresses = new();
         private static readonly Dictionary<nint, StackTrace> allocations = new();
         private static readonly Dictionary<nint, StackTrace> disposals = new();
 
@@ -135,16 +135,7 @@ namespace Unmanaged
 #endif
 #if TRACK
             nint address = (nint)pointer;
-            nint[] temp = addresses.ToArray();
-            addresses.Clear();
-            foreach (nint addr in temp)
-            {
-                if (addr != address)
-                {
-                    addresses.Add(addr);
-                }
-            }
-
+            addresses.Remove(address);
             disposals[address] = new StackTrace(1, true);
 #endif
             pointer = null;
@@ -161,15 +152,7 @@ namespace Unmanaged
         {
 #if TRACK
             nint oldAddress = (nint)pointer;
-            nint[] temp = addresses.ToArray();
-            addresses.Clear();
-            foreach (nint addr in temp)
-            {
-                if (addr != oldAddress)
-                {
-                    addresses.Add(addr);
-                }
-            }
+            addresses.Remove(oldAddress);
 #endif
 
 #if ALIGNED
@@ -205,9 +188,7 @@ namespace Unmanaged
 
 #if TRACK
             nint address = (nint)pointer;
-            nint[] addr = addresses.ToArray();
-            int index = Array.IndexOf(addr, address);
-            return index == -1;
+            return !addresses.Contains(address);
 #else
             return false;
 #endif
@@ -223,22 +204,22 @@ namespace Unmanaged
                 {
                     if (disposals.TryGetValue(address, out StackTrace? disposedStackTrace))
                     {
-                        throw new NullReferenceException($"Invalid pointer at {address}\nAllocated then disposed at:{stackTrace}\n{disposedStackTrace}");
+                        throw new NullReferenceException($"Invalid pointer at `{address}` allocated then disposed at:\n{stackTrace}\n{disposedStackTrace}");
                     }
                     else
                     {
-                        throw new NullReferenceException($"Unrecognized pointer at {address} that isn't known to be disposed, but was previously allocated at:\n{stackTrace}");
+                        throw new NullReferenceException($"Unrecognized pointer at `{address}` that isn't known to be disposed, but supposedly allocated at:\n{stackTrace}");
                     }
                 }
                 else
                 {
                     if (disposals.TryGetValue(address, out stackTrace))
                     {
-                        throw new NullReferenceException($"Unrecognized pointer at {address} that isn't known to be allocated, but has been disposed at:\n{stackTrace}");
+                        throw new NullReferenceException($"Unrecognized pointer at `{address}` that isn't known to be allocated, but has been disposed at:\n{stackTrace}");
                     }
                     else
                     {
-                        throw new NullReferenceException($"Unknown pointer at {address} that hasn't ever been allocated or disposed.");
+                        throw new NullReferenceException($"Unknown pointer at `{address}` that hasn't ever been allocated or disposed.");
                     }
                 }
 #endif
