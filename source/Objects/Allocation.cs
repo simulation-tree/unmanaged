@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// An unmanaged allocation.
+    /// An unmanaged allocation of memory.
     /// </summary>
     public unsafe struct Allocation : IDisposable, IEquatable<Allocation>
     {
@@ -68,7 +68,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given value into the memory starting at this position in bytes.
         /// </summary>
-        public readonly void Write<T>(T value, uint start = 0) where T : unmanaged
+        public readonly void Write<T>(uint start, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             uint length = (uint)sizeof(T);
@@ -213,7 +213,7 @@ namespace Unmanaged
         public static Allocation Create<T>(T value) where T : unmanaged
         {
             Allocation allocation = new((uint)sizeof(T));
-            allocation.Write(value);
+            allocation.Write(0, value);
             return allocation;
         }
 

@@ -1,6 +1,6 @@
 ﻿using System;
 
-//todo: move this into a serialization lib?
+//todo: move this into a serialization lib? maybe into `data`? but BinaryReader and writer depend on these :(
 public static class ByteSpanFunctions
 {
     /// <summary>
