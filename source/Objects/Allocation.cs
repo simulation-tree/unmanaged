@@ -66,8 +66,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Writes the given value into the memory of this allocation.
-        /// <para>Position is in bytes.</para>
+        /// Writes the given value into the memory starting at this position in bytes.
         /// </summary>
         public readonly void Write<T>(T value, uint start = 0) where T : unmanaged
         {
@@ -124,8 +123,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Reads a value of <typeparamref name="T"/> from the memory at the given position.
-        /// <para>Position is in bytes.</para>
+        /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
         /// </summary>
         public readonly ref T Read<T>(uint start = 0) where T : unmanaged
         {
@@ -150,22 +148,6 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             nint address = (nint)((nint)pointer + start);
             NativeMemory.Clear((void*)address, length);
-        }
-
-        /// <summary>
-        /// Resizes the allocation, and leaves new bytes uninitialized.
-        /// </summary>
-        public void Resize(uint newLength)
-        {
-            pointer = Allocations.Reallocate(pointer, newLength);
-        }
-
-        /// <summary>
-        /// Resizes the allocation to fit the given type.
-        /// </summary>
-        public void Resize<T>() where T : unmanaged
-        {
-            Resize((uint)sizeof(T));
         }
 
         /// <summary>
@@ -198,6 +180,23 @@ namespace Unmanaged
         public readonly override int GetHashCode()
         {
             return HashCode.Combine((nint)pointer);
+        }
+
+        /// <summary>
+        /// Moves existing memory into a new allocation of the given size.
+        /// </summary>
+        public static void Resize(ref Allocation allocation, uint newLength)
+        {
+            allocation = new(Allocations.Reallocate(allocation.pointer, newLength));
+        }
+
+        /// <summary>
+        /// Moves existing memory into a new allocation that is able to
+        /// fit the given type.
+        /// </summary>
+        public static void Resize<T>(ref Allocation allocation) where T : unmanaged
+        {
+            Resize(ref allocation, (uint)sizeof(T));
         }
 
         /// <summary>

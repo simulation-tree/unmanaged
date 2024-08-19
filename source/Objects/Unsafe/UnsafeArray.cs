@@ -116,7 +116,7 @@ namespace Unmanaged.Collections
             {
                 uint size = array->type.Size;
                 uint oldLength = array->length;
-                array->items.Resize(size * newLength);
+                Allocation.Resize(ref array->items, size * newLength);
                 array->length = newLength;
 
                 if (initialize && newLength > oldLength)

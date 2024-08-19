@@ -205,7 +205,9 @@ namespace Unmanaged
 
 #if TRACK
             nint address = (nint)pointer;
-            return Array.IndexOf(addresses.ToArray(), address) == -1;
+            nint[] addr = addresses.ToArray();
+            int index = Array.IndexOf(addr, address);
+            return index == -1;
 #else
             return false;
 #endif
@@ -221,26 +223,26 @@ namespace Unmanaged
                 {
                     if (disposals.TryGetValue(address, out StackTrace? disposedStackTrace))
                     {
-                        throw new NullReferenceException($"Invalid pointer {address:X}\nAllocated at:{stackTrace}\nDisposed at:\n{disposedStackTrace}");
+                        throw new NullReferenceException($"Invalid pointer at {address}\nAllocated then disposed at:{stackTrace}\n{disposedStackTrace}");
                     }
                     else
                     {
-                        throw new NullReferenceException($"Invalid pointer {address:X} that no longer exists, was previously allocated at:\n{stackTrace}");
+                        throw new NullReferenceException($"Unrecognized pointer at {address} that isn't known to be disposed, but was previously allocated at:\n{stackTrace}");
                     }
                 }
                 else
                 {
                     if (disposals.TryGetValue(address, out stackTrace))
                     {
-                        throw new NullReferenceException($"Invalid pointer {address:X} that isn't known to be allocated, but has been disposed at:\n{stackTrace}");
+                        throw new NullReferenceException($"Unrecognized pointer at {address} that isn't known to be allocated, but has been disposed at:\n{stackTrace}");
                     }
                     else
                     {
-                        throw new NullReferenceException($"Invalid pointer {address:X} that hasn't ever been allocated or disposed.");
+                        throw new NullReferenceException($"Unknown pointer at {address} that hasn't ever been allocated or disposed.");
                     }
                 }
 #endif
-                throw new NullReferenceException($"Invalid pointer {address:X}.");
+                throw new NullReferenceException($"Unknown pointer at {address}.");
             }
         }
 

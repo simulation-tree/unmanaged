@@ -70,7 +70,7 @@ namespace Unmanaged.Serialization.Unsafe
             while (writer->capacity < endPosition)
             {
                 writer->capacity *= 2;
-                writer->items.Resize(writer->capacity);
+                Allocation.Resize(ref writer->items, writer->capacity);
             }
 
             writer->items.Write(data, writer->position, length);

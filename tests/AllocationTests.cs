@@ -37,15 +37,17 @@ namespace Tests
         [Test]
         public void ResizeAllocation()
         {
-            using Allocation a = new(sizeof(int));
+            Allocation a = new(sizeof(int));
             a.Write(1337, 0 * sizeof(int));
-            a.Resize(sizeof(int) * 2);
+            Allocation.Resize(ref a, sizeof(int) * 2);
             a.Write(1338, 1 * sizeof(int));
             Assert.That(Allocations.Count, Is.EqualTo(1));
 
             Span<int> span = a.AsSpan<int>(0, 2);
             Assert.That(span[0], Is.EqualTo(1337));
             Assert.That(span[1], Is.EqualTo(1338));
+            a.Dispose();
+            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
