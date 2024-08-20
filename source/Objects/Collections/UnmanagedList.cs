@@ -21,10 +21,9 @@ namespace Unmanaged.Collections
         /// </summary>
         public readonly nint Address => UnsafeList.GetAddress(value);
 
-        public readonly T this[uint index]
+        public readonly ref T this[uint index]
         {
-            get => UnsafeList.Get<T>(value, index);
-            set => UnsafeList.Set<T>(this.value, index, value);
+            get => ref UnsafeList.GetRef<T>(value, index);
         }
 
         readonly T IReadOnlyList<T>.this[int index] => UnsafeList.Get<T>(value, (uint)index);

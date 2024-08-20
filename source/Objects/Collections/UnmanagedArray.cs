@@ -12,10 +12,9 @@ namespace Unmanaged.Collections
         public readonly uint Length => UnsafeArray.GetLength(value);
         public readonly nint Address => UnsafeArray.GetAddress(value);
 
-        public readonly T this[uint index]
+        public readonly ref T this[uint index]
         {
-            get => UnsafeArray.GetRef<T>(value, index);
-            set => UnsafeArray.GetRef<T>(this.value, index) = value;
+            get => ref UnsafeArray.GetRef<T>(value, index);
         }
 
         public readonly ReadOnlySpan<T> this[Range range] => AsSpan()[range];
