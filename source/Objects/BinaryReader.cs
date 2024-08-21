@@ -98,7 +98,7 @@ namespace Unmanaged
         /// <summary>
         /// Returns all bytes in the reader.
         /// </summary>
-        public readonly ReadOnlySpan<byte> AsSpan()
+        public readonly ReadOnlySpan<byte> GetBytes()
         {
             ThrowIfDisposed();
             Allocation allocation = UnsafeBinaryReader.GetData(value);
@@ -110,7 +110,7 @@ namespace Unmanaged
         /// </summary>
         public readonly ReadOnlySpan<byte> GetRemainingBytes()
         {
-            return AsSpan()[(int)Position..];
+            return GetBytes()[(int)Position..];
         }
 
         [Conditional("DEBUG")]
@@ -137,7 +137,7 @@ namespace Unmanaged
         /// <returns>Amount of bytes read.</returns>
         public readonly byte PeekUTF8(uint position, out char low, out char high)
         {
-            ReadOnlySpan<byte> bytes = AsSpan();
+            ReadOnlySpan<byte> bytes = GetBytes();
             return bytes.PeekUTF8(position, out low, out high);
         }
 
@@ -218,7 +218,7 @@ namespace Unmanaged
 
         public readonly int PeekUTF8Span(uint position, uint length, Span<char> buffer)
         {
-            ReadOnlySpan<byte> bytes = AsSpan();
+            ReadOnlySpan<byte> bytes = GetBytes();
             return bytes.PeekUTF8Span(position, length, buffer);
         }
 

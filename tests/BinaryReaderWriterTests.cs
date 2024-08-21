@@ -155,7 +155,7 @@ namespace Tests
             Assert.That(writer.Position, Is.EqualTo(sizeof(int) * 3));
             byte[] bytes = writer.AsSpan().ToArray();
             using BinaryReader reader = new(bytes);
-            byte[] readerBytes = reader.AsSpan().ToArray();
+            byte[] readerBytes = reader.GetBytes().ToArray();
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(32));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(64));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(128));
