@@ -38,6 +38,9 @@ namespace Unmanaged.Collections
             this.value = list;
         }
 
+        /// <summary>
+        /// Creates a new list with the given initial capacity.
+        /// </summary>
         public UnmanagedList(uint initialCapacity = 1)
         {
             value = UnsafeList.Allocate<T>(initialCapacity);
@@ -83,7 +86,7 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Returns the span for the contents of the list.
+        /// Returns a span containing elements in the list.
         /// </summary>
         public readonly Span<T> AsSpan()
         {
