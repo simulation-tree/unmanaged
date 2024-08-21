@@ -10,13 +10,7 @@ namespace Unmanaged.Collections
 
         public readonly bool IsDisposed => UnsafeArray.IsDisposed(value);
         public readonly uint Length => UnsafeArray.GetLength(value);
-        public readonly nint Address => UnsafeArray.GetAddress(value);
-
-        public readonly ref T this[uint index]
-        {
-            get => ref UnsafeArray.GetRef<T>(value, index);
-        }
-
+        public readonly ref T this[uint index] => ref UnsafeArray.GetRef<T>(value, index);
         public readonly ReadOnlySpan<T> this[Range range] => AsSpan()[range];
 
         readonly int IReadOnlyCollection<T>.Count => (int)Length;
@@ -35,36 +29,28 @@ namespace Unmanaged.Collections
             value = UnsafeArray.Allocate<T>(length);
         }
 
+        /// <summary>
+        /// Creates a new array containing the given span.
+        /// </summary>
         public UnmanagedArray(Span<T> span)
         {
             value = UnsafeArray.Allocate<T>(span);
         }
 
+        /// <summary>
+        /// Creates a new array containing the given span.
+        /// </summary>
         public UnmanagedArray(ReadOnlySpan<T> span)
         {
             value = UnsafeArray.Allocate(span);
         }
 
+        /// <summary>
+        /// Creates a new array containing elements from the given list.
+        /// </summary>
         public UnmanagedArray(UnmanagedList<T> items)
         {
             value = UnsafeArray.Allocate<T>(items.AsSpan());
-        }
-
-        public UnmanagedArray(IEnumerable<T> items)
-        {
-            uint count = 0;
-            foreach (T item in items)
-            {
-                count++;
-            }
-
-            value = UnsafeArray.Allocate<T>(count);
-            uint index = 0;
-            foreach (T item in items)
-            {
-                UnsafeArray.GetRef<T>(value, index) = item;
-                index++;
-            }
         }
 
 #if NET5_0_OR_GREATER

@@ -9,22 +9,19 @@ namespace Unmanaged.Collections
         private UnsafeList* value;
 
         public readonly bool IsDisposed => UnsafeList.IsDisposed(value);
+
+        /// <summary>
+        /// Amount of elements in the list.
+        /// </summary>
         public readonly uint Count => UnsafeList.GetCountRef(value);
+
         public readonly uint Capacity
         {
             get => UnsafeList.GetCapacity(value);
             set => UnsafeList.SetCapacity(this.value, value);
         }
 
-        /// <summary>
-        /// Address that points to all elements in the list.
-        /// </summary>
-        public readonly nint Address => UnsafeList.GetAddress(value);
-
-        public readonly ref T this[uint index]
-        {
-            get => ref UnsafeList.GetRef<T>(value, index);
-        }
+        public readonly ref T this[uint index] => ref UnsafeList.GetRef<T>(value, index);
 
         readonly T IReadOnlyList<T>.this[int index] => UnsafeList.Get<T>(value, (uint)index);
         readonly int IReadOnlyCollection<T>.Count => (int)Count;
@@ -95,7 +92,6 @@ namespace Unmanaged.Collections
 
         /// <summary>
         /// Returns the list as a span of a different type <typeparamref name="V"/>.
-        /// Assuming its size is equal to <typeparamref name="T"/>.
         /// </summary>
         public readonly Span<V> AsSpan<V>() where V : unmanaged
         {
@@ -214,7 +210,8 @@ namespace Unmanaged.Collections
 
         public readonly void AddRange(UnmanagedList<T> list)
         {
-            UnsafeList.AddRange(value, (UnsafeList*)list.Address, list.Count);
+            nint address = UnsafeList.GetAddress(list.value);
+            UnsafeList.AddRange(value, (void*)address, list.Count);
         }
 
         /// <summary>
