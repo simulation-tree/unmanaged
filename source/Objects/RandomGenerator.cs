@@ -55,43 +55,43 @@ namespace Unmanaged
 
         public readonly byte NextByte()
         {
-            uint* t = (uint*)pointer;
-            *t ^= *t << 13;
-            *t ^= *t >> 7;
-            *t ^= *t << 17;
-            return (byte)*t;
+            unchecked
+            {
+                return (byte)NextUInt();
+            }
         }
 
         public readonly sbyte NextSByte()
         {
-            return (sbyte)NextByte();
+            unchecked
+            {
+                return (sbyte)NextUInt();
+            }
         }
 
         public readonly ulong NextULong()
         {
-            ulong* t = (ulong*)pointer;
-            *t ^= *t >> 13;
-            *t ^= *t << 7;
-            *t ^= *t >> 17;
-            return *t;
+            ulong t = *(ulong*)pointer;
+            t ^= t << 13;
+            t ^= t >> 7;
+            t ^= t << 17;
+            *(ulong*)pointer = t;
+            return t;
         }
 
         public readonly uint NextUInt()
         {
-            uint* t = (uint*)pointer;
-            *t ^= *t << 13;
-            *t ^= *t >> 17;
-            *t ^= *t << 5;
-            return *t;
+            uint t = *(uint*)pointer;
+            t ^= t << 13;
+            t ^= t >> 17;
+            t ^= t << 5;
+            *(uint*)pointer = t;
+            return t;
         }
 
         public readonly bool NextBool()
         {
-            uint* t = (uint*)pointer;
-            *t ^= *t << 13;
-            *t ^= *t >> 17;
-            *t ^= *t << 5;
-            return (*t & 0x8000) != 0;
+            return NextUInt() % 2 == 0;
         }
 
         public readonly ulong NextULong(ulong maxExclusive)
@@ -157,8 +157,12 @@ namespace Unmanaged
         /// </summary>
         public readonly float NextFloat()
         {
-            uint value = NextUInt();
-            return value / (float)uint.MaxValue;
+            uint t = *(uint*)pointer;
+            t ^= t << 13;
+            t ^= t >> 7;
+            t ^= t << 17;
+            *(uint*)pointer = t;
+            return t / (float)uint.MaxValue;
         }
 
         public readonly float NextFloat(float maxExclusive)
@@ -175,8 +179,12 @@ namespace Unmanaged
 
         public readonly double NextDouble()
         {
-            ulong value = NextULong();
-            return value / (double)ulong.MaxValue;
+            ulong t = *(ulong*)pointer;
+            t ^= t << 13;
+            t ^= t >> 7;
+            t ^= t << 17;
+            *(ulong*)pointer = t;
+            return t / (double)ulong.MaxValue;
         }
 
         public readonly double NextDouble(double maxExclusive)

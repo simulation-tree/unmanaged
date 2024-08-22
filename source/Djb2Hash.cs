@@ -12,6 +12,11 @@ namespace Unmanaged
             return Get((str ?? string.Empty).AsSpan());
         }
 
+        public unsafe static int Get<T>(T* pointer, int length) where T : unmanaged
+        {
+            return Get(new Span<T>(pointer, length));
+        }
+
         public static int Get<T>(ReadOnlySpan<T> span) where T : notnull
         {
             //djb2 implementation from CommunityToolkit.HighPerformance/SpanHelper.Hash.cs

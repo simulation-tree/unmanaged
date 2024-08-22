@@ -86,8 +86,8 @@ namespace Tests
             double min = 1;
             double max = 0;
             double avg = 0;
-            Stopwatch stopwatch = Stopwatch.StartNew();
             Random systemRandom = new(1337);
+            Stopwatch stopwatch = Stopwatch.StartNew();
             for (int i = 0; i < iterations; i++)
             {
                 double value = systemRandom.NextDouble();
@@ -102,8 +102,8 @@ namespace Tests
             min = 1;
             max = 0;
             avg = 0;
-            stopwatch.Restart();
             using RandomGenerator rng = new(1337);
+            stopwatch.Restart();
             for (int i = 0; i < iterations; i++)
             {
                 double value = rng.NextDouble();

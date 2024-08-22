@@ -65,7 +65,7 @@ namespace Unmanaged
                 }
 
                 Span<char> buffer = stackalloc char[MaxLength];
-                int length = CopyTo(buffer);
+                int length = ToString(buffer);
                 if (value > length)
                 {
                     for (int i = length; i < value; i++)
@@ -102,7 +102,7 @@ namespace Unmanaged
             readonly get
             {
                 Span<char> span = stackalloc char[MaxLength];
-                int length = CopyTo(span);
+                int length = ToString(span);
                 if (index < 0 || index >= length)
                 {
                     throw new IndexOutOfRangeException();
@@ -244,7 +244,7 @@ namespace Unmanaged
         public void Append(ReadOnlySpan<char> text)
         {
             Span<char> buffer = stackalloc char[MaxLength];
-            int length = CopyTo(buffer);
+            int length = ToString(buffer);
             if (length + text.Length > MaxLength)
             {
                 throw new InvalidOperationException($"Text exceeds maximum length of {MaxLength} after operation.");
@@ -259,7 +259,7 @@ namespace Unmanaged
         public void Append(char value)
         {
             Span<char> buffer = stackalloc char[MaxLength];
-            int length = CopyTo(buffer);
+            int length = ToString(buffer);
             if (length + 1 > MaxLength)
             {
                 throw new InvalidOperationException($"Text exceeds maximum length of {MaxLength} after operation.");
@@ -290,7 +290,7 @@ namespace Unmanaged
         public void Append(FixedString text)
         {
             Span<char> buffer = stackalloc char[MaxLength];
-            int length = CopyTo(buffer);
+            int length = ToString(buffer);
             if (length + text.Length > MaxLength)
             {
                 throw new InvalidOperationException($"Text exceeds maximum length of {MaxLength} after operation.");
@@ -298,7 +298,7 @@ namespace Unmanaged
 
             Span<char> destinationBuffer = stackalloc char[length + text.Length];
             buffer[..length].CopyTo(destinationBuffer);
-            text.CopyTo(destinationBuffer[length..]);
+            text.ToString(destinationBuffer[length..]);
             Build(destinationBuffer);
         }
 
@@ -339,21 +339,21 @@ namespace Unmanaged
         public readonly unsafe int IndexOf(ReadOnlySpan<char> value, StringComparison comparison = StringComparison.Ordinal)
         {
             Span<char> buffer = stackalloc char[MaxLength];
-            int length = CopyTo(buffer);
+            int length = ToString(buffer);
             return buffer[..length].IndexOf(value);
         }
 
         public readonly unsafe int LastIndexOf(char value)
         {
             Span<char> buffer = stackalloc char[MaxLength];
-            int length = CopyTo(buffer);
+            int length = ToString(buffer);
             return buffer[..length].LastIndexOf(value);
         }
 
         public readonly unsafe FixedString Slice(int start)
         {
             Span<char> temp = stackalloc char[MaxLength];
-            int thisLength = CopyTo(temp);
+            int thisLength = ToString(temp);
             if (start > thisLength)
             {
                 throw new ArgumentOutOfRangeException(nameof(start));
@@ -368,7 +368,7 @@ namespace Unmanaged
         public readonly unsafe FixedString Slice(int start, int length)
         {
             Span<char> temp = stackalloc char[MaxLength];
-            int thisLength = CopyTo(temp);
+            int thisLength = ToString(temp);
             if (start + length > thisLength)
             {
                 throw new ArgumentOutOfRangeException(nameof(start));
@@ -391,7 +391,7 @@ namespace Unmanaged
         public readonly bool Contains(ReadOnlySpan<char> text, StringComparison comparison = StringComparison.Ordinal)
         {
             Span<char> temp = stackalloc char[MaxLength];
-            int length = CopyTo(temp);
+            int length = ToString(temp);
             ReadOnlySpan<char> span = temp[..length];
             return span.Contains(text, comparison);
         }
@@ -399,7 +399,7 @@ namespace Unmanaged
         public readonly bool EndsWith(ReadOnlySpan<char> text, StringComparison comparison = StringComparison.Ordinal)
         {
             Span<char> temp = stackalloc char[MaxLength];
-            int length = CopyTo(temp);
+            int length = ToString(temp);
             ReadOnlySpan<char> span = temp[..length];
             return span.EndsWith(text, comparison);
         }
@@ -412,7 +412,7 @@ namespace Unmanaged
         public void RemoveAt(int start, int length)
         {
             Span<char> temp = stackalloc char[MaxLength];
-            int thisLength = CopyTo(temp);
+            int thisLength = ToString(temp);
             Span<char> buffer = stackalloc char[thisLength - length + 1];
             temp[..start].CopyTo(buffer[..start]);
             temp[(start + length)..thisLength].CopyTo(buffer[start..]);
@@ -443,7 +443,7 @@ namespace Unmanaged
         public void Insert(int position, ReadOnlySpan<char> text)
         {
             Span<char> temp = stackalloc char[MaxLength];
-            int thisLength = CopyTo(temp);
+            int thisLength = ToString(temp);
 
             if (text.Length + thisLength > MaxLength)
             {
@@ -461,8 +461,20 @@ namespace Unmanaged
         public readonly override string ToString()
         {
             Span<char> temp = stackalloc char[MaxLength];
-            int length = CopyTo(temp);
+            int length = ToString(temp);
             return temp[..length].ToString();
+        }
+
+        /// <summary>
+        /// Copies all characters into the destination <see cref="char"/> buffer.
+        /// </summary>
+        /// <returns>Amount of characters copied, the greatest between buffer length and text content length.</returns>
+        public readonly int ToString(Span<char> buffer)
+        {
+            fixed (char* bufferPtr = buffer)
+            {
+                return CopyTo(bufferPtr, 0, buffer.Length);
+            }
         }
 
         /// <summary>
@@ -470,21 +482,9 @@ namespace Unmanaged
         /// </summary>
         public readonly override int GetHashCode()
         {
-            Span<char> temp = stackalloc char[MaxLength];
-            int length = CopyTo(temp);
-            return Djb2Hash.Get(temp[..length]);
-        }
-
-        /// <summary>
-        /// Copies all characters into the destination <see cref="char"/> buffer.
-        /// </summary>
-        /// <returns>Amount of characters copied, the greatest between buffer length and text content length.</returns>
-        public readonly int CopyTo(Span<char> buffer)
-        {
-            fixed (char* bufferPtr = buffer)
-            {
-                return CopyTo(bufferPtr, 0, buffer.Length);
-            }
+            Span<char> buffer = stackalloc char[MaxLength];
+            int length = ToString(buffer);
+            return Djb2Hash.Get(buffer[..length]);
         }
 
         public readonly int CopyTo(Span<byte> buffer)
@@ -573,7 +573,7 @@ namespace Unmanaged
             }
 
             Span<char> temp = stackalloc char[MaxLength];
-            int thisLength = CopyTo(temp);
+            int thisLength = ToString(temp);
             if (start < 0 || start + length > thisLength)
             {
                 throw new ArgumentOutOfRangeException(nameof(start));
