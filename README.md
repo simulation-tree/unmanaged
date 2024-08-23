@@ -10,36 +10,41 @@ Library containing primitive definitions for working with unmanaged C#.
 - `Container`
 
 ### Allocations and Containers
-`Allocation`s are a reference to unmanaged memory, and they must be disposed manually.
+`Allocation`s are a reference to unmanaged memory, and they must be disposed manually. The equivalent of `alloc` and `free`.
 ```cs
-using Allocation allocation = new(sizeof(char) * 5);
-allocation.Write("Hello".AsSpan());
-Span<char> text = allocation.AsSpan<char>();
+using (Allocation allocation = new(sizeof(char) * 5))
+{
+    allocation.Write("Hello".AsSpan());
+    Span<char> text = allocation.AsSpan<char>();
+}
 ```
 
-`Container`s extend further, and reference both the memory and their intended type.
+`Container`s extend a bit further by being aware of the type they store.
 ```cs
-using Container floatContainer = Container.Create(5f);
-RuntimeType type = floatContainer.type;
-float floatValue = floatContainer.Read<float>();
-Assert.Throws(floatContainer.Read<int>()); //type mismatch
+using (Container floatContainer = Container.Create(5f))
+{
+    RuntimeType type = floatContainer.type;
+    ref float floatValue = ref floatContainer.Read<float>();
+    Assert.Throws(floatContainer.Read<int>()); //type not the same
+}
 ```
 
-> The equality operation between two containers are unlike the one for allocations.
+> The equality condition between two containers is different from containers.
 Allocations check for address equality, while containers check for memory equality.
 
 ### Fixed String
-The `FixedString` type can store up to 291 UTF8 characters until a terminator.
-Useful for storing short text without heap allocations:
+The `FixedString` type can store up to 291 UTF8 characters within its 256 bytes of space, 
+until a `\0` terminator. Useful for when text is known to be short enough, until a list/array is needed:
 ```cs
 FixedString text = new("Hello World");
-Span<char> text = stackalloc char[text.Length];
-text.CopyTo(strSpan);
+Span<char> textBuffer = stackalloc char[FixedString.MaxLength];
+int length = text.CopyTo(textBuffer);
 
-Span<byte> utf8bytes = stackalloc char[16];
+Span<byte> utf8bytes = stackalloc char[256];
 int bytesCopied = text.CopyTo(utf8bytes);
 
 FixedString textFromBytes = new(utf8bytes[..bytesCopied]);
+Assert.That(textFromBytes.ToString, Is.EqualTo(Encoding.UTF8.GetString(textBuffer[..length])));
 ```
 
 ### Random Generator
@@ -49,21 +54,30 @@ using RandomGenerator random = new();
 int fairDiceRoll = random.NextInt(0, 6);
 ```
 
+### Runtime Type
+The `RuntimeType` itself is 4 bytes big, and it stores the hash built from the type's full name
+with its size embedded:
+```cs
+RuntimeType intType = RuntimeType.Get<byte>();
+RuntimeType floatType = RuntimeType.Get<float>();
+Assert.That(intType.Size, Is.EqualTo(sizeof(byte)));
+Assert.That(intType == floatType, Is.False);
+```
+
 ### Safety checks
-When compiling with a debug profile (where `DEBUG` flag is set), all allocations originating
-from `Allocations` or `Allocation`, will have their stacktraces tracked. This is useful for
-investigating where the offending leaks are coming from.
+When compiling without release settings (where a `#DEBUG` flag is set), all allocations
+originating from `Allocations` or `Allocation` will be tracked. This is so that, when debugging
+is finished and the program exists, an exception can be thrown if there are any allocations
+that would leak in a release build.
 
-When compiling with a release profile, all checks are dropped. The executing program is
-expected to be able to maintain its state on its own. Tracing can be re-enabled in release
-builds with the `TRACK` flag.
+With release settings, all checks are dropped. The executing program is expected to dispose all
+of the allocations it has made. The `#TRACK` flag is used to re-enabled allocation tracking,
+at the cost of performance.
 
-> Because release builds have all safety checks dropped, it's the users responsibility
-and choice for how allocations are freed (automagically or manually). Considering
-relying on the `using`+`IDisposable` combination throughout your types.
+> It's the program's responsibility, and choice for when and how allocations are disposed.
 
 ### Memory alignment
-All allocations are unaligned by default. This can be toggled with the `ALIGNED` flag.
+Allocations are not aligned by default, which can be toggled by enabling the `#ALIGNED` flag.
 
 ### Contributing and direction
 This library is developed to provide the building blocks that a `System` namespace might, but only through unmanaged code. To minimize runtime cost and to expose more
