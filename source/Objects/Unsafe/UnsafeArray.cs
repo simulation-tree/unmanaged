@@ -46,7 +46,7 @@ namespace Unmanaged.Collections
             return array->length;
         }
 
-        public static nint GetAddress(UnsafeArray* array)
+        public static nint GetStartAddress(UnsafeArray* array)
         {
             ThrowIfDisposed(array);
             return array->items.Address;
@@ -79,7 +79,7 @@ namespace Unmanaged.Collections
         {
             ThrowIfDisposed(array);
             ThrowIfOutOfRange(array, index);
-            T* ptr = (T*)GetAddress(array);
+            T* ptr = (T*)GetStartAddress(array);
             return ref ptr[index];
         }
 

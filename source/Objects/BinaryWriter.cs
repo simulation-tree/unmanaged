@@ -18,7 +18,7 @@ namespace Unmanaged
             set => UnsafeBinaryWriter.SetPosition(this.value, value);
         }
 
-        public readonly nint Address => UnsafeBinaryWriter.GetAddress(value);
+        public readonly nint Address => UnsafeBinaryWriter.GetStartAddress(value);
 
         public BinaryWriter(uint capacity = 1)
         {

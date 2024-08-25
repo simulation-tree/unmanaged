@@ -213,7 +213,7 @@ namespace Unmanaged.Collections
 
         public readonly void AddRange(UnmanagedList<T> list)
         {
-            nint address = UnsafeList.GetAddress(list.value);
+            nint address = UnsafeList.GetStartAddress(list.value);
             UnsafeList.AddRange(value, (void*)address, list.Count);
         }
 

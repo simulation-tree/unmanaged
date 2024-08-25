@@ -81,7 +81,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
             }
 
-            T* ptr = (T*)GetAddress(list);
+            T* ptr = (T*)GetStartAddress(list);
             return ref ptr[index];
         }
 
@@ -423,7 +423,7 @@ namespace Unmanaged.Collections
         /// <summary>
         /// Returns the address of the first element in the list.
         /// </summary>
-        public static nint GetAddress(UnsafeList* list)
+        public static nint GetStartAddress(UnsafeList* list)
         {
             return list->items.Address;
         }

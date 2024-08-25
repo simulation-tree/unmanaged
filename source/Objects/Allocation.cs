@@ -109,16 +109,16 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a span of the bytes in this allocation.
         /// </summary>
-        public readonly Span<byte> AsSpan(uint start, uint length)
+        public readonly Span<byte> AsSpan(uint start, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
-            return new Span<byte>((void*)((nint)pointer + start), (int)length);
+            return new Span<byte>((void*)((nint)pointer + start), (int)byteLength);
         }
 
         /// <summary>
         /// Gets a span of elements from the memory.
         /// <para>Both <paramref name="start"/> and <paramref name="length"/> are expected
-        /// to be in elements, not bytes.</para>
+        /// to be in <typeparamref name="T"/> elements.</para>
         /// </summary>
         public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
@@ -140,31 +140,31 @@ namespace Unmanaged
         /// <summary>
         /// Resets the memory to <c>default</c> state.
         /// </summary>
-        public readonly void Clear(uint length)
+        public readonly void Clear(uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
-            NativeMemory.Clear(pointer, length);
+            NativeMemory.Clear(pointer, byteLength);
         }
 
         /// <summary>
         /// Resets a range of memory to <c>default</c> state.
         /// </summary>
-        public readonly void Clear(uint start, uint length)
+        public readonly void Clear(uint start, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
             nint address = (nint)((nint)pointer + start);
-            NativeMemory.Clear((void*)address, length);
+            NativeMemory.Clear((void*)address, byteLength);
         }
 
         /// <summary>
-        /// Copies contents of this allocation into the destination.
+        /// Copies bytes of this allocation into the destination.
         /// </summary>
-        public readonly void CopyTo(Allocation destination, uint sourceIndex, uint destinationIndex, uint size)
+        public readonly void CopyTo(Allocation destination, uint sourceIndex, uint destinationIndex, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
             Allocations.ThrowIfNull(destination.pointer);
-            Span<byte> sourceSpan = AsSpan<byte>(sourceIndex, size);
-            Span<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, size);
+            Span<byte> sourceSpan = AsSpan<byte>(sourceIndex, byteLength);
+            Span<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, byteLength);
             sourceSpan.CopyTo(destinationSpan);
         }
 

@@ -15,7 +15,7 @@ namespace Unmanaged.Serialization.Unsafe
             this.capacity = capacity;
         }
 
-        public static nint GetAddress(UnsafeBinaryWriter* writer)
+        public static nint GetStartAddress(UnsafeBinaryWriter* writer)
         {
             return writer->items.Address;
         }
