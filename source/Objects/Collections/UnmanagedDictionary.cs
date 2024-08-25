@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Unmanaged.Collections
@@ -10,36 +9,23 @@ namespace Unmanaged.Collections
 
         public readonly uint Count => UnsafeDictionary.GetCount(value);
         public readonly bool IsDisposed => UnsafeDictionary.IsDisposed(value);
-        public readonly ReadOnlySpan<K> Keys => UnsafeDictionary.GetKeys<K>(value);
-        public readonly ReadOnlySpan<V> Values => UnsafeDictionary.GetValues<V>(value);
 
-        public readonly V this[K key]
+        public readonly ref V this[K key]
         {
             get
             {
                 if (ContainsKey(key))
                 {
-                    return GetRef(key);
+                    return ref UnsafeDictionary.GetValueRef<K, V>(value, key);
                 }
                 else
                 {
-                    throw new KeyNotFoundException($"The key '{key}' was not found in the dictionary.");
-                }
-            }
-            set
-            {
-                if (ContainsKey(key))
-                {
-                    ref var v = ref GetRef(key);
-                    v = value;
-                }
-                else
-                {
-                    ref var v = ref AddRef(key, default);
-                    v = value;
+                    throw new NullReferenceException($"The key `{key}` was not found in the dictionary.");
                 }
             }
         }
+
+        public readonly ReadOnlySpan<K> Keys => UnsafeDictionary.GetKeys<K>(value);
 
         public UnmanagedDictionary(UnsafeDictionary* dictionary)
         {
@@ -64,19 +50,24 @@ namespace Unmanaged.Collections
 
         public readonly bool ContainsKey(K key)
         {
-            return UnsafeDictionary.ContainsKey<K, V>(value, key);
+            return UnsafeDictionary.ContainsKey(value, key);
         }
 
-        public readonly ref V GetRef(K key)
+        public readonly K GetKeyAtIndex(uint index)
         {
-            return ref UnsafeDictionary.GetValueRef<K, V>(value, key);
+            if (index >= Count)
+            {
+                throw new IndexOutOfRangeException($"The index `{index}` was out of range.");
+            }
+
+            return UnsafeDictionary.GetKeyRef<K>(value, index);
         }
 
         public readonly bool TryGetValue(K key, out V value)
         {
             if (ContainsKey(key))
             {
-                value = GetRef(key);
+                value = UnsafeDictionary.GetValueRef<K, V>(this.value, key);
                 return true;
             }
             else
@@ -91,7 +82,7 @@ namespace Unmanaged.Collections
             if (ContainsKey(key))
             {
                 found = true;
-                return ref GetRef(key);
+                return ref UnsafeDictionary.GetValueRef<K, V>(value, key);
             }
             else
             {
@@ -102,15 +93,15 @@ namespace Unmanaged.Collections
 
         public readonly void Add(K key, V value)
         {
-            UnsafeDictionary.Add<K, V>(this.value, key, value);
+            UnsafeDictionary.Add(this.value, key, value);
         }
 
         public readonly void AddOrSet(K key, V value)
         {
             if (ContainsKey(key))
             {
-                ref var v = ref GetRef(key);
-                v = value;
+                ref V existingValue = ref UnsafeDictionary.GetValueRef<K, V>(this.value, key);
+                existingValue = value;
             }
             else
             {
@@ -118,16 +109,10 @@ namespace Unmanaged.Collections
             }
         }
 
-        public readonly ref V AddRef(K key, V value)
-        {
-            UnsafeDictionary.Add<K, V>(this.value, key, value);
-            return ref GetRef(key);
-        }
-
         public readonly ref V AddRef(K key)
         {
-            UnsafeDictionary.Add<K, V>(this.value, key, default);
-            return ref GetRef(key);
+            UnsafeDictionary.Add<K, V>(value, key, default);
+            return ref UnsafeDictionary.GetValueRef<K, V>(value, key);
         }
 
         public readonly bool TryAdd(K key, V value)
@@ -145,17 +130,16 @@ namespace Unmanaged.Collections
 
         public readonly V Remove(K key)
         {
-            V removed = GetRef(key);
-            UnsafeDictionary.Remove<K, V>(value, key);
-            return removed;
+            V existingValue = UnsafeDictionary.GetValueRef<K, V>(value, key);
+            UnsafeDictionary.Remove(value, key);
+            return existingValue;
         }
 
         public readonly bool TryRemove(K key, out V removed)
         {
             if (ContainsKey(key))
             {
-                removed = GetRef(key);
-                Remove(key);
+                removed = Remove(key);
                 return true;
             }
             else
@@ -197,20 +181,7 @@ namespace Unmanaged.Collections
         {
             unchecked
             {
-                int hash = 17;
-                ReadOnlySpan<K> keys = Keys;
-                foreach (K key in keys)
-                {
-                    hash = hash * 31 + key.GetHashCode();
-                }
-
-                ReadOnlySpan<V> values = Values;
-                foreach (V value in values)
-                {
-                    hash = hash * 31 + value.GetHashCode();
-                }
-
-                return hash;
+                return (int)value;
             }
         }
 

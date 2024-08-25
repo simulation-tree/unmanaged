@@ -76,24 +76,27 @@ namespace Unmanaged
             Write(ptr, start, length);
         }
 
-        public readonly void Write<T>(Span<T> span) where T : unmanaged
+        /// <summary>
+        /// Writes the given span into the memory starting at this position in bytes.
+        /// </summary>
+        public readonly void Write<T>(uint start, Span<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             fixed (T* ptr = span)
             {
-                Write(ptr, 0, (uint)(span.Length * sizeof(T)));
+                Write(ptr, start, (uint)(span.Length * sizeof(T)));
             }
         }
 
         /// <summary>
-        /// Writes the given span into the memory.
+        /// Writes the given span into the memory starting at this position in bytes.
         /// </summary>
-        public readonly void Write<T>(ReadOnlySpan<T> span) where T : unmanaged
+        public readonly void Write<T>(uint start, ReadOnlySpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             fixed (T* ptr = span)
             {
-                Write(ptr, 0, (uint)(span.Length * sizeof(T)));
+                Write(ptr, start, (uint)(span.Length * sizeof(T)));
             }
         }
 
@@ -103,6 +106,9 @@ namespace Unmanaged
             Unsafe.CopyBlock((void*)((nint)pointer + start), data, length);
         }
 
+        /// <summary>
+        /// Retrieves a span of the bytes in this allocation.
+        /// </summary>
         public readonly Span<byte> AsSpan(uint start, uint length)
         {
             Allocations.ThrowIfNull(pointer);
@@ -218,7 +224,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an uninitialized allocation that fits the given type.
+        /// Creates an uninitialized allocation that can contain a(n) <typeparamref name="T"/>
         /// </summary>
         public static Allocation Create<T>() where T : unmanaged
         {
@@ -250,6 +256,21 @@ namespace Unmanaged
         public static bool operator !=(Allocation left, Allocation right)
         {
             return !(left == right);
+        }
+
+        public static implicit operator void*(Allocation allocation)
+        {
+            return allocation.pointer;
+        }
+
+        public static implicit operator Allocation*(Allocation allocation)
+        {
+            return (Allocation*)allocation.pointer;
+        }
+
+        public static implicit operator nint(Allocation allocation)
+        {
+            return allocation.Address;
         }
     }
 }

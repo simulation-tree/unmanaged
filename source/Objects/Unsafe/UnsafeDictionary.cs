@@ -8,26 +8,49 @@ namespace Unmanaged.Collections
         private RuntimeType keyType;
         private RuntimeType valueType;
         private uint count;
-        private UnsafeList* keys;
-        private UnsafeList* values;
+        private uint capacity;
+        private Allocation keys;
+        private Allocation values;
 
         [Conditional("DEBUG")]
-        private static void ThrowIfSizeMismatch<K, V>(UnsafeDictionary* dictionary) where K : unmanaged where V : unmanaged
+        private static void ThrowIfKeySizeMismatches<K>(UnsafeDictionary* dictionary) where K : unmanaged
         {
             if (dictionary->keyType.Size != sizeof(K))
             {
-                throw new InvalidOperationException("Key size mismatch.");
+                throw new ArgumentException("Key size doesn't match the expected size.");
             }
+        }
 
+        [Conditional("DEBUG")]
+        private static void ThrowIfValueSizeMismatches<V>(UnsafeDictionary* dictionary) where V : unmanaged
+        {
             if (dictionary->valueType.Size != sizeof(V))
             {
-                throw new InvalidOperationException("Value size mismatch.");
+                throw new ArgumentException("Value size doesn't match the expected size.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfOutOfRange(UnsafeDictionary* dictionary, uint index)
+        {
+            if (index > dictionary->count)
+            {
+                throw new ArgumentException($"Index {index} is out of range for dictionary of length {dictionary->count}.");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfCapacityIsZero(uint capacity)
+        {
+            if (capacity == 0)
+            {
+                throw new InvalidOperationException("Dictionary capacity cannot be zero.");
             }
         }
 
         public static bool IsDisposed(UnsafeDictionary* dictionary)
         {
-            return Allocations.IsNull(dictionary) || UnsafeList.IsDisposed(dictionary->keys);
+            return Allocations.IsNull(dictionary);
         }
 
         public static uint GetCount(UnsafeDictionary* dictionary)
@@ -38,103 +61,131 @@ namespace Unmanaged.Collections
 
         public static UnsafeDictionary* Allocate<K, V>(uint initialCapacity = 1) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
-            RuntimeType type = RuntimeType.Get<K>();
-            UnsafeDictionary* dictionary = Allocations.Allocate<UnsafeDictionary>();
-            dictionary->keyType = type;
-            dictionary->valueType = RuntimeType.Get<V>();
-            dictionary->count = 0;
-            dictionary->keys = UnsafeList.Allocate<K>(initialCapacity);
-            dictionary->values = UnsafeList.Allocate<V>(initialCapacity);
-            return dictionary;
+            return Allocate(RuntimeType.Get<K>(), RuntimeType.Get<V>(), initialCapacity);
         }
 
         public static UnsafeDictionary* Allocate(RuntimeType keyType, RuntimeType valueType, uint initialCapacity = 1)
         {
-            UnsafeDictionary* dictionary = Allocations.Allocate<UnsafeDictionary>();
+            ThrowIfCapacityIsZero(initialCapacity);
+            UnsafeDictionary* dictionary = (UnsafeDictionary*)Allocation.Create<UnsafeDictionary>();
             dictionary->keyType = keyType;
             dictionary->valueType = valueType;
             dictionary->count = 0;
-            dictionary->keys = UnsafeList.Allocate(keyType, initialCapacity);
-            dictionary->values = UnsafeList.Allocate(valueType, initialCapacity);
+            dictionary->capacity = initialCapacity;
+            dictionary->keys = new Allocation(initialCapacity * keyType.Size);
+            dictionary->values = new Allocation(initialCapacity * valueType.Size);
             return dictionary;
         }
 
         public static void Free(ref UnsafeDictionary* dictionary)
         {
             Allocations.ThrowIfNull(dictionary);
-            UnsafeList.Free(ref dictionary->keys);
-            UnsafeList.Free(ref dictionary->values);
+            dictionary->keys.Dispose();
+            dictionary->values.Dispose();
             Allocations.Free(ref dictionary);
+        }
+
+        private static bool TryIndexOf<K>(UnsafeDictionary* dictionary, K key, out uint index) where K : unmanaged, IEquatable<K>
+        {
+            Allocations.ThrowIfNull(dictionary);
+            ThrowIfKeySizeMismatches<K>(dictionary);
+            uint count = GetCount(dictionary);
+            uint keySize = (uint)sizeof(K);
+            for (uint i = 0; i < count; i++)
+            {
+                if (dictionary->keys.Read<K>(i * keySize).Equals(key))
+                {
+                    index = i;
+                    return true;
+                }
+            }
+
+            index = default;
+            return false;
+        }
+
+        public static Span<K> GetKeys<K>(UnsafeDictionary* dictionary) where K : unmanaged
+        {
+            Allocations.ThrowIfNull(dictionary);
+            ThrowIfKeySizeMismatches<K>(dictionary);
+            return dictionary->keys.AsSpan<K>(0, dictionary->count);
         }
 
         public static ref V GetValueRef<K, V>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
             Allocations.ThrowIfNull(dictionary);
-            ThrowIfSizeMismatch<K, V>(dictionary);
-            uint index = UnsafeList.IndexOf<K>(dictionary->keys, key);
-            return ref UnsafeList.GetRef<V>(dictionary->values, index);
-        }
-
-        public static ref K GetKeyRef<K, V>(UnsafeDictionary* dictionary, uint index) where K : unmanaged, IEquatable<K> where V : unmanaged
-        {
-            Allocations.ThrowIfNull(dictionary);
-            ThrowIfSizeMismatch<K, V>(dictionary);
-            if (index >= dictionary->count)
+            ThrowIfKeySizeMismatches<K>(dictionary);
+            if (!TryIndexOf(dictionary, key, out uint index))
             {
-                throw new IndexOutOfRangeException();
+                throw new NullReferenceException($"The key '{key}' was not found in the dictionary to retrieve.");
             }
 
-            return ref UnsafeList.GetRef<K>(dictionary->keys, index);
+            return ref dictionary->values.Read<V>(index * dictionary->valueType.Size);
         }
 
-        public static bool ContainsKey<K, V>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K> where V : unmanaged
+        public static ref K GetKeyRef<K>(UnsafeDictionary* dictionary, uint index) where K : unmanaged, IEquatable<K>
         {
             Allocations.ThrowIfNull(dictionary);
-            ThrowIfSizeMismatch<K, V>(dictionary);
-            return UnsafeList.Contains(dictionary->keys, key);
+            ThrowIfKeySizeMismatches<K>(dictionary);
+            ThrowIfOutOfRange(dictionary, index);
+            return ref dictionary->keys.Read<K>(index * (uint)sizeof(K));
         }
 
-        public static ReadOnlySpan<K> GetKeys<K>(UnsafeDictionary* dictionary) where K : unmanaged, IEquatable<K>
+        public static bool ContainsKey<K>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K>
         {
             Allocations.ThrowIfNull(dictionary);
-            return UnsafeList.AsSpan<K>(dictionary->keys);
-        }
-
-        public static ReadOnlySpan<V> GetValues<V>(UnsafeDictionary* dictionary) where V : unmanaged
-        {
-            Allocations.ThrowIfNull(dictionary);
-            return UnsafeList.AsSpan<V>(dictionary->values);
+            ThrowIfKeySizeMismatches<K>(dictionary);
+            return TryIndexOf(dictionary, key, out _);
         }
 
         public static void Add<K, V>(UnsafeDictionary* dictionary, K key, V value) where K : unmanaged, IEquatable<K> where V : unmanaged
         {
             Allocations.ThrowIfNull(dictionary);
-            ThrowIfSizeMismatch<K, V>(dictionary);
-            if (UnsafeList.Contains(dictionary->keys, key))
+            ThrowIfKeySizeMismatches<K>(dictionary);
+            ThrowIfValueSizeMismatches<V>(dictionary);
+            if (ContainsKey(dictionary, key))
             {
-                throw new ArgumentException("An element with the same key already exists.");
+                throw new ArgumentException($"The key '{key}' already exists in the dictionary.");
             }
 
-            UnsafeList.Add(dictionary->keys, key);
-            UnsafeList.Add(dictionary->values, value);
+            uint keySize = (uint)sizeof(K);
+            uint valueSize = (uint)sizeof(V);
+            dictionary->keys.Write(dictionary->count * keySize, key);
+            dictionary->values.Write(dictionary->count * valueSize, value);
             dictionary->count++;
+
+            ref uint capacity = ref dictionary->capacity;
+            if (dictionary->count == capacity)
+            {
+                capacity *= 2;
+                Allocation.Resize(ref dictionary->keys, capacity * keySize);
+                Allocation.Resize(ref dictionary->values, capacity * valueSize);
+            }
         }
 
-        public static void Remove<K, V>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K> where V : unmanaged
+        public static void Remove<K>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K>
         {
             Allocations.ThrowIfNull(dictionary);
-            ThrowIfSizeMismatch<K, V>(dictionary);
-            uint index = UnsafeList.IndexOf(dictionary->keys, key);
-            UnsafeList.RemoveAtBySwapping<K>(dictionary->keys, index);
-            UnsafeList.RemoveAtBySwapping(dictionary->values, index);
-            dictionary->count--;
+            ThrowIfKeySizeMismatches<K>(dictionary);
+            if (!TryIndexOf(dictionary, key, out uint index))
+            {
+                throw new NullReferenceException($"The key '{key}' was not found in the dictionary to remove.");
+            }
+
+            //move last element into slot
+            ref uint count = ref dictionary->count;
+            count--;
+            uint keySize = (uint)sizeof(K);
+            uint valueSize = dictionary->valueType.Size;
+            K lastKey = dictionary->keys.Read<K>(count * keySize);
+            dictionary->keys.Write(index * keySize, lastKey);
+            Span<byte> lastValue = dictionary->values.AsSpan(count * valueSize, valueSize);
+            dictionary->values.Write(index * valueSize, lastValue);
         }
 
         public static void Clear(UnsafeDictionary* dictionary)
         {
             Allocations.ThrowIfNull(dictionary);
-            UnsafeList.Clear(dictionary->keys);
-            UnsafeList.Clear(dictionary->values);
             dictionary->count = 0;
         }
     }

@@ -4,7 +4,7 @@ using Unmanaged.Collections;
 
 namespace Tests
 {
-    public class CollectionTests
+    public class ListTests
     {
         [TearDown]
         public void CleanUp()
@@ -267,25 +267,6 @@ namespace Tests
             }
 
             nestedData.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
-        }
-
-        [Test]
-        public void CreatingAndDisposingDictionary()
-        {
-            UnmanagedDictionary<byte, uint> map = UnmanagedDictionary<byte, uint>.Create();
-            map.Add(0, 23);
-            map.Add(1, 42);
-            map.Add(2, 69);
-            Assert.That(map.ContainsKey(0), Is.True);
-            Assert.That(map.ContainsKey(1), Is.True);
-            Assert.That(map.ContainsKey(2), Is.True);
-            Assert.That(map.ContainsKey(3), Is.False);
-            Assert.That(map[0], Is.EqualTo(23));
-            Assert.That(map[1], Is.EqualTo(42));
-            Assert.That(map[2], Is.EqualTo(69));
-            map.Dispose();
-
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 

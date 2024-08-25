@@ -20,7 +20,8 @@ namespace Unmanaged
     [StructLayout(LayoutKind.Sequential, Size = 4)]
     public readonly struct RuntimeType : IEquatable<RuntimeType>
     {
-        //todo: efficiency: can this and its related code be ditched?
+        //todo: efficiency: can this and its related code be ditched? only when RuntimeType becomes 8 bytes big
+        //this exists here for avoiding hash collisions
         internal static readonly HashSet<uint> typeHashes = new();
         internal static readonly Dictionary<uint, Type> types = new();
 
