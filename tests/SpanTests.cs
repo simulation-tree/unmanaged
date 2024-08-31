@@ -47,8 +47,8 @@ namespace Tests
                 referenceData[(int)i] = (byte)i;
             }
 
-            USpan<byte> slice = data[2..4];
-            Span<byte> referenceSlice = referenceData[2..4];
+            USpan<byte> slice = data.Slice(2, 4);
+            Span<byte> referenceSlice = referenceData.Slice(2, 4);
 
             Assert.That(slice.length, Is.EqualTo(referenceSlice.Length));
             Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
@@ -72,9 +72,8 @@ namespace Tests
                     referenceData[(int)i] = (byte)i;
                 }
 
-                Range sliceRange = (int)sliceStart..(int)(sliceStart + sliceLength);
-                USpan<byte> slice = data[sliceRange];
-                Span<byte> referenceSlice = referenceData[sliceRange];
+                USpan<byte> slice = data.Slice(sliceStart, sliceLength);
+                Span<byte> referenceSlice = referenceData.Slice((int)sliceStart, (int)sliceLength);
                 Assert.That(slice.length, Is.EqualTo(referenceSlice.Length));
                 Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
             }
@@ -86,7 +85,7 @@ namespace Tests
             Span<byte> data = stackalloc byte[8];
             try
             {
-                Span<byte> slice = data[8..9];
+                Span<byte> slice = data.Slice(8, 1);
                 Assert.Fail();
             }
             catch (ArgumentOutOfRangeException)
@@ -100,7 +99,7 @@ namespace Tests
             USpan<byte> uData = stackalloc byte[8];
             try
             {
-                USpan<byte> slice = uData[8..9];
+                USpan<byte> slice = uData.Slice(8, 1);
                 Assert.Fail();
             }
             catch (ArgumentOutOfRangeException)
@@ -110,6 +109,50 @@ namespace Tests
             {
                 Assert.Fail();
             }
+        }
+
+        [Test]
+        public void FillingAndClearing()
+        {
+            USpan<byte> data = stackalloc byte[8];
+            for (uint i = 0; i < 8; i++)
+            {
+                Assert.That(data[i], Is.EqualTo(0));
+            }
+
+            data.Fill(1);
+            for (uint i = 0; i < 8; i++)
+            {
+                Assert.That(data[i], Is.EqualTo(1));
+            }
+
+            data.Clear();
+            for (uint i = 0; i < 8; i++)
+            {
+                Assert.That(data[i], Is.EqualTo(0));
+            }
+        }
+
+        [Test]
+        public void CopyIntoAnotherSpan()
+        {
+            USpan<byte> data = stackalloc byte[8];
+            data[0] = 1;
+            data[1] = 2;
+            USpan<byte> otherData = stackalloc byte[8];
+            data.CopyTo(otherData);
+
+            Assert.That(otherData[0], Is.EqualTo(1));
+            Assert.That(otherData[1], Is.EqualTo(2));
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+            {
+                USpan<byte> data = stackalloc byte[8];
+                data[0] = 1;
+                data[1] = 2;
+                USpan<byte> lessData = stackalloc byte[1];
+                data.CopyTo(lessData);
+            });
         }
     }
 }

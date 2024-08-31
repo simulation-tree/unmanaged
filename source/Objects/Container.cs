@@ -90,7 +90,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Interprets the container as a simple allocation.
+        /// Interprets the container as an <see cref="Allocation"/>
         /// </summary>
         public readonly Allocation AsAllocation()
         {

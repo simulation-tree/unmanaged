@@ -17,11 +17,17 @@ using (Allocation allocation = new(sizeof(char) * 5))
     allocation.Write("Hello".AsSpan());
     Span<char> text = allocation.AsSpan<char>();
 }
+
+using (Allocation allocation = Allocation.Create(3.14f))
+{
+    ref float floatValue = ref allocation.Read<float>();
+    floatValue *= 2;
+}
 ```
 
 `Container`s extend a bit further by being aware of the type they store.
 ```cs
-using (Container floatContainer = Container.Create(5f))
+using (Container floatContainer = Container.Create(3.14f))
 {
     RuntimeType type = floatContainer.type;
     ref float floatValue = ref floatContainer.Read<float>();
@@ -29,7 +35,7 @@ using (Container floatContainer = Container.Create(5f))
 }
 ```
 
-> The equality condition between two containers is different from containers.
+> The equality condition between two containers is different from allocations.
 Allocations check for address equality, while containers check for memory equality.
 
 ### Fixed String
@@ -77,10 +83,12 @@ at the cost of performance.
 > It's the program's responsibility, and choice for when and how allocations are disposed.
 
 ### Memory alignment
-Allocations are not aligned by default, which can be toggled by enabling the `#ALIGNED` flag.
+Allocations are not aligned by default, this can be toggled with the `#ALIGNED` flag.
 
 ### Contributing and direction
-This library is developed to provide the building blocks that a `System` namespace might, but only through unmanaged code. To minimize runtime cost and to expose more
-efficiency that was always there. Commonly putting the author in a position where they need to excerise more control, because _with great power comes great responsibility_.
+This library is developed to provide the building blocks that a `System` namespace might,
+but exclusively through unmanaged code. In order to minimize runtime cost and to expose more
+efficiency that was always there with C#. Commonly putting the author in a position where they
+need to excerise more control, because _with great power comes great responsibility_.
 
 Contributions that fit this are welcome.
