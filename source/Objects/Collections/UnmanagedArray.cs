@@ -53,7 +53,7 @@ namespace Unmanaged.Collections
             value = UnsafeArray.Allocate<T>(items.AsSpan());
         }
 
-#if NET5_0_OR_GREATER
+#if NET
         /// <summary>
         /// Creates an empty array.
         /// </summary>
