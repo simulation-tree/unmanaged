@@ -21,6 +21,7 @@ namespace Unmanaged.Collections
             set => UnsafeList.SetCapacity(this.value, value);
         }
 
+        public readonly nint StartAddress => UnsafeList.GetStartAddress(value);
         public readonly ref T this[uint index] => ref UnsafeList.GetRef<T>(value, index);
 
         readonly T IReadOnlyList<T>.this[int index] => UnsafeList.Get<T>(value, (uint)index);
@@ -46,12 +47,7 @@ namespace Unmanaged.Collections
             value = UnsafeList.Allocate<T>(initialCapacity);
         }
 
-        public UnmanagedList(Span<T> span)
-        {
-            value = UnsafeList.Allocate(span);
-        }
-
-        public UnmanagedList(ReadOnlySpan<T> span)
+        public UnmanagedList(USpan<T> span)
         {
             value = UnsafeList.Allocate(span);
         }
@@ -80,15 +76,10 @@ namespace Unmanaged.Collections
             UnsafeList.Free(ref value);
         }
 
-        public readonly void* AsPointer()
-        {
-            return value;
-        }
-
         /// <summary>
         /// Returns a span containing elements in the list.
         /// </summary>
-        public readonly Span<T> AsSpan()
+        public readonly USpan<T> AsSpan()
         {
             return UnsafeList.AsSpan<T>(value);
         }
@@ -96,7 +87,7 @@ namespace Unmanaged.Collections
         /// <summary>
         /// Returns the list as a span of a different type <typeparamref name="V"/>.
         /// </summary>
-        public readonly Span<V> AsSpan<V>() where V : unmanaged
+        public readonly USpan<V> AsSpan<V>() where V : unmanaged
         {
             return UnsafeList.AsSpan<V>(value);
         }
@@ -104,12 +95,12 @@ namespace Unmanaged.Collections
         /// <summary>
         /// Returns the remaining span starting from the given index.
         /// </summary>
-        public readonly Span<T> AsSpan(uint start)
+        public readonly USpan<T> AsSpan(uint start)
         {
             return UnsafeList.AsSpan<T>(value, start);
         }
 
-        public readonly Span<T> AsSpan(uint start, uint length)
+        public readonly USpan<T> AsSpan(uint start, uint length)
         {
             return UnsafeList.AsSpan<T>(value, start, length);
         }
@@ -134,7 +125,7 @@ namespace Unmanaged.Collections
         /// <returns><c>true</c> if item was added.</returns>
         public readonly bool TryAdd<V>(V item) where V : unmanaged, IEquatable<V>
         {
-            Span<V> span = UnsafeList.AsSpan<V>(value);
+            USpan<V> span = UnsafeList.AsSpan<V>(value);
             if (span.Contains(item))
             {
                 return false;
@@ -159,19 +150,11 @@ namespace Unmanaged.Collections
         {
             uint start = Count;
             AddDefault(count);
-            Span<T> span = AsSpan(start);
-            for (int i = 0; i < count; i++)
+            USpan<T> span = AsSpan(start);
+            for (uint i = 0; i < count; i++)
             {
                 span[i] = defaultValue;
             }
-        }
-
-        /// <summary>
-        /// Adds the given span to the list.
-        /// </summary>
-        public readonly void AddRange(ReadOnlySpan<T> items)
-        {
-            UnsafeList.AddRange(value, items);
         }
 
         public readonly void AddRange(void* pointer, uint count)
@@ -179,7 +162,7 @@ namespace Unmanaged.Collections
             UnsafeList.AddRange(value, pointer, count);
         }
 
-        public readonly void InsertRange(uint index, ReadOnlySpan<T> items)
+        public readonly void InsertRange(uint index, USpan<T> items)
         {
             uint count = Count;
             if (index > count)
@@ -187,7 +170,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            uint length = (uint)items.Length;
+            uint length = items.length;
             if (index == count)
             {
                 AddRange(items);
@@ -203,10 +186,18 @@ namespace Unmanaged.Collections
         }
 
         /// <summary>
-        /// Adds the given span of different type <typeparamref name="V"/> into
+        /// Adds the given span to the list.
+        /// </summary>
+        public readonly void AddRange(USpan<T> items)
+        {
+            UnsafeList.AddRange(value, items);
+        }
+
+        /// <summary>
+        /// Adds the given span of <typeparamref name="V"/> into
         /// the list, assuming its size equals to <typeparamref name="T"/>.
         /// </summary>
-        public readonly void AddRange<V>(ReadOnlySpan<V> items) where V : unmanaged
+        public readonly void AddRange<V>(USpan<V> items) where V : unmanaged
         {
             UnsafeList.AddRange(value, items);
         }
@@ -298,14 +289,6 @@ namespace Unmanaged.Collections
             UnsafeList.Clear(value);
         }
 
-        /// <summary>
-        /// Returns the element at the given index by reference.
-        /// </summary>
-        public readonly ref T GetRef(uint index)
-        {
-            return ref UnsafeList.GetRef<T>(value, index);
-        }
-
         public readonly override int GetHashCode()
         {
             nint ptr = (nint)value;
@@ -317,7 +300,7 @@ namespace Unmanaged.Collections
             return UnsafeList.GetContentHashCode(value);
         }
 
-        public readonly void CopyTo(Span<T> destination)
+        public readonly void CopyTo(USpan<T> destination)
         {
             AsSpan().CopyTo(destination);
         }
@@ -354,16 +337,15 @@ namespace Unmanaged.Collections
 
         readonly int IList<T>.IndexOf(T item)
         {
-            Span<T> values = AsSpan();
-            for (int i = 0; i < values.Length; i++)
+            USpan<T> values = AsSpan();
+            if (values.TryIndexOf(item, out uint index))
             {
-                if (values[i].Equals(item))
-                {
-                    return i;
-                }
+                return (int)index;
             }
-
-            return -1;
+            else
+            {
+                return -1;
+            }
         }
 
         readonly void IList<T>.Insert(int index, T item)
@@ -378,17 +360,8 @@ namespace Unmanaged.Collections
 
         readonly bool ICollection<T>.Contains(T item)
         {
-            Span<T> values = AsSpan();
-            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
-            for (int i = 0; i < values.Length; i++)
-            {
-                if (comparer.Equals(values[i], item))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            USpan<T> values = AsSpan();
+            return values.Contains(item);
         }
 
         readonly void ICollection<T>.CopyTo(T[] array, int arrayIndex)
@@ -398,18 +371,16 @@ namespace Unmanaged.Collections
 
         readonly bool ICollection<T>.Remove(T item)
         {
-            Span<T> values = AsSpan();
-            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
-            for (int i = 0; i < values.Length; i++)
+            USpan<T> values = AsSpan();
+            if (values.TryIndexOf(item, out uint index))
             {
-                if (comparer.Equals(values[i], item))
-                {
-                    RemoveAt((uint)i);
-                    return true;
-                }
+                RemoveAt(index);
+                return true;
             }
-
-            return false;
+            else
+            {
+                return false;
+            }
         }
 
         public static UnmanagedList<T> Create(uint initialCapacity = 1)

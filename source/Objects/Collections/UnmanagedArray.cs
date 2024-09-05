@@ -11,7 +11,6 @@ namespace Unmanaged.Collections
         public readonly bool IsDisposed => UnsafeArray.IsDisposed(value);
         public readonly uint Length => UnsafeArray.GetLength(value);
         public readonly ref T this[uint index] => ref UnsafeArray.GetRef<T>(value, index);
-        public readonly ReadOnlySpan<T> this[Range range] => AsSpan()[range];
 
         readonly int IReadOnlyCollection<T>.Count => (int)Length;
         readonly T IReadOnlyList<T>.this[int index] => UnsafeArray.GetRef<T>(value, (uint)index);
@@ -32,17 +31,9 @@ namespace Unmanaged.Collections
         /// <summary>
         /// Creates a new array containing the given span.
         /// </summary>
-        public UnmanagedArray(Span<T> span)
+        public UnmanagedArray(USpan<T> span)
         {
             value = UnsafeArray.Allocate<T>(span);
-        }
-
-        /// <summary>
-        /// Creates a new array containing the given span.
-        /// </summary>
-        public UnmanagedArray(ReadOnlySpan<T> span)
-        {
-            value = UnsafeArray.Allocate(span);
         }
 
         /// <summary>
@@ -87,14 +78,14 @@ namespace Unmanaged.Collections
         /// <summary>
         /// Returns the array as a span.
         /// </summary>
-        public readonly Span<T> AsSpan()
+        public readonly USpan<T> AsSpan()
         {
             return UnsafeArray.AsSpan<T>(value);
         }
 
-        public readonly Span<T> AsSpan(uint start, uint length)
+        public readonly USpan<T> AsSpan(uint start, uint length)
         {
-            return AsSpan().Slice((int)start, (int)length);
+            return AsSpan().Slice(start, length);
         }
 
         public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
@@ -127,36 +118,12 @@ namespace Unmanaged.Collections
             UnsafeArray.Resize(value, length, initialize);
         }
 
-        /// <summary>
-        /// Retrieves a reference to the value at the specified index.
-        /// </summary>
-        public readonly ref T GetRef(uint index)
-        {
-            return ref UnsafeArray.GetRef<T>(value, index);
-        }
-
-        /// <summary>
-        /// Retrieves the value at the specified index.
-        /// </summary>
-        public readonly T Get(uint index)
-        {
-            return UnsafeArray.GetRef<T>(value, index);
-        }
-
-        /// <summary>
-        /// Assigns a value to the specified index.
-        /// </summary>
-        public readonly void Set(uint index, T value)
-        {
-            UnsafeArray.GetRef<T>(this.value, index) = value;
-        }
-
-        public readonly void CopyTo(Span<T> span)
+        public readonly void CopyTo(USpan<T> span)
         {
             AsSpan().CopyTo(span);
         }
 
-        public readonly void CopyFrom(Span<T> span)
+        public readonly void CopyFrom(USpan<T> span)
         {
             span.CopyTo(AsSpan());
         }

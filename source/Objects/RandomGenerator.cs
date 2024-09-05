@@ -10,7 +10,7 @@ namespace Unmanaged
 
         public readonly ulong State => *(ulong*)pointer;
 
-#if NET5_0_OR_GREATER
+#if NET
         /// <summary>
         /// Creates a new random generator initialized with a random seed.
         /// </summary>
@@ -35,16 +35,32 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given byte
         /// sequence as the initialization seed.
         /// </summary>
-        public RandomGenerator(ReadOnlySpan<byte> seed) : this((ulong)Djb2Hash.Get(seed))
+        public RandomGenerator(USpan<byte> seed)
         {
+            long hash = Djb2Hash.Get(seed) * 0x9E3779B9;
+            pointer = Allocations.Allocate(sizeof(ulong));
+            ulong* t = (ulong*)pointer;
+            *t = (ulong)hash;
         }
 
         /// <summary>
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
-        public RandomGenerator(ReadOnlySpan<char> seed) : this((ulong)Djb2Hash.Get(seed))
+        public RandomGenerator(USpan<char> seed)
         {
+            long hash = Djb2Hash.Get(seed) * 0x9E3779B9;
+            pointer = Allocations.Allocate(sizeof(ulong));
+            ulong* t = (ulong*)pointer;
+            *t = (ulong)hash;
+        }
+
+        public RandomGenerator(string seed)
+        {
+            long hash = Djb2Hash.Get(seed) * 0x9E3779B9;
+            pointer = Allocations.Allocate(sizeof(ulong));
+            ulong* t = (ulong*)pointer;
+            *t = (ulong)hash;
         }
 
         public void Dispose()
@@ -203,11 +219,11 @@ namespace Unmanaged
         /// Fills the given span with random bytes.
         /// </summary>
         /// <param name="bytes"></param>
-        public readonly void NextBytes(Span<byte> bytes)
+        public readonly void NextBytes(USpan<byte> bytes)
         {
             ulong* t = (ulong*)pointer;
             ulong value = *t;
-            for (int i = 0; i < bytes.Length; i++)
+            for (uint i = 0; i < bytes.length; i++)
             {
                 value ^= value >> 13;
                 value ^= value << 7;

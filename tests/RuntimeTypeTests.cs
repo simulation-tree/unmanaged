@@ -199,6 +199,17 @@ namespace Tests
         }
 
         [Test]
+        public void CompareCombinedHashes()
+        {
+            RuntimeType a = RuntimeType.Get<Guid>();
+            RuntimeType b = RuntimeType.Get<Vector3>();
+            RuntimeType c = RuntimeType.Get<float>();
+            int hash = RuntimeType.CombineHash([a, b, c]);
+            int otherHash = RuntimeType.CombineHash([c, a, b]);
+            Assert.That(hash, Is.EqualTo(otherHash));
+        }
+
+        [Test]
         public void CheckIfTypeIsUnmanaged()
         {
             Assert.That(RuntimeType.IsUnmanaged(typeof(DateTime), out uint size), Is.True);

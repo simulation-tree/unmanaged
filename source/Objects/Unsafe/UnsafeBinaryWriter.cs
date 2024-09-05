@@ -27,10 +27,10 @@ namespace Unmanaged.Serialization.Unsafe
             return ptr;
         }
 
-        public static UnsafeBinaryWriter* Allocate(Span<byte> span)
+        public static UnsafeBinaryWriter* Allocate(USpan<byte> span)
         {
             UnsafeBinaryWriter* ptr = Allocations.Allocate<UnsafeBinaryWriter>();
-            ptr[0] = new(Allocation.Create(span), (uint)span.Length, (uint)span.Length);
+            ptr[0] = new(Allocation.Create(span), span.length, span.length);
             return ptr;
         }
 

@@ -39,19 +39,19 @@ namespace Unmanaged.Serialization.Unsafe
             return copy;
         }
 
-        public static UnsafeBinaryReader* Allocate(ReadOnlySpan<byte> bytes, uint position = 0)
+        public static UnsafeBinaryReader* Allocate(USpan<byte> bytes, uint position = 0)
         {
             UnsafeBinaryReader* reader = Allocations.Allocate<UnsafeBinaryReader>();
-            reader[0] = new(position, Allocation.Create(bytes), (uint)bytes.Length, false);
+            reader[0] = new(position, Allocation.Create(bytes), bytes.length, false);
             return reader;
         }
 
         public static UnsafeBinaryReader* Allocate(Stream stream, uint position = 0)
         {
             using UnmanagedArray<byte> buffer = new((uint)stream.Length + 4);
-            Span<byte> span = buffer.AsSpan();
-            int length = stream.Read(span);
-            Span<byte> bytes = span[..length];
+            USpan<byte> span = buffer.AsSpan();
+            uint length = (uint)stream.Read(span.AsSystemSpan());
+            USpan<byte> bytes = span.Slice(0, length);
             return Allocate(bytes, position);
         }
 

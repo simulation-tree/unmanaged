@@ -68,9 +68,9 @@ namespace Unmanaged.Collections
             return array;
         }
 
-        public static UnsafeArray* Allocate<T>(ReadOnlySpan<T> span) where T : unmanaged
+        public static UnsafeArray* Allocate<T>(USpan<T> span) where T : unmanaged
         {
-            UnsafeArray* array = Allocate<T>((uint)span.Length);
+            UnsafeArray* array = Allocate<T>(span.length);
             span.CopyTo(array->items.AsSpan<T>(0, array->length));
             return array;
         }
@@ -83,7 +83,7 @@ namespace Unmanaged.Collections
             return ref ptr[index];
         }
 
-        public static Span<T> AsSpan<T>(UnsafeArray* array) where T : unmanaged
+        public static USpan<T> AsSpan<T>(UnsafeArray* array) where T : unmanaged
         {
             ThrowIfDisposed(array);
             return array->items.AsSpan<T>(0, array->length);
@@ -92,18 +92,8 @@ namespace Unmanaged.Collections
         public static bool TryIndexOf<T>(UnsafeArray* array, T value, out uint index) where T : unmanaged, IEquatable<T>
         {
             ThrowIfDisposed(array);
-            Span<T> span = AsSpan<T>(array);
-            int i = span.IndexOf(value);
-            if (i == -1)
-            {
-                index = uint.MaxValue;
-                return false;
-            }
-            else
-            {
-                index = (uint)i;
-                return true;
-            }
+            USpan<T> span = AsSpan<T>(array);
+            return span.TryIndexOf(value, out index);
         }
 
         /// <summary>

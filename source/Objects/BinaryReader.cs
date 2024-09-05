@@ -29,7 +29,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the data in the span.
         /// </summary>
-        public BinaryReader(ReadOnlySpan<byte> data, uint position = 0)
+        public BinaryReader(USpan<byte> data, uint position = 0)
         {
             value = UnsafeBinaryReader.Allocate(data, position);
         }
@@ -50,7 +50,7 @@ namespace Unmanaged
         /// </summary>
         public BinaryReader(BinaryWriter writer)
         {
-            value = UnsafeBinaryReader.Allocate(writer.AsSpan());
+            value = UnsafeBinaryReader.Allocate(writer.GetBytes());
         }
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace Unmanaged
         /// <summary>
         /// Returns all bytes in the reader.
         /// </summary>
-        public readonly ReadOnlySpan<byte> GetBytes()
+        public readonly USpan<byte> GetBytes()
         {
             ThrowIfDisposed();
             Allocation allocation = UnsafeBinaryReader.GetData(value);
@@ -108,9 +108,9 @@ namespace Unmanaged
         /// <summary>
         /// Returns the remaining bytes.
         /// </summary>
-        public readonly ReadOnlySpan<byte> GetRemainingBytes()
+        public readonly USpan<byte> GetRemainingBytes()
         {
-            return GetBytes()[(int)Position..];
+            return GetBytes().Slice(Position);
         }
 
         [Conditional("DEBUG")]
@@ -137,7 +137,7 @@ namespace Unmanaged
         /// <returns>Amount of bytes read.</returns>
         public readonly byte PeekUTF8(uint position, out char low, out char high)
         {
-            ReadOnlySpan<byte> bytes = GetBytes();
+            USpan<byte> bytes = GetBytes();
             return bytes.PeekUTF8(position, out low, out high);
         }
 
@@ -160,8 +160,7 @@ namespace Unmanaged
 
         public readonly T PeekValue<T>(uint position) where T : unmanaged
         {
-            uint size = (uint)sizeof(T);
-            if (position + size > Length)
+            if (position + USpan<T>.ElementSize > Length)
             {
                 return default;
             }
@@ -186,21 +185,21 @@ namespace Unmanaged
 
         public readonly void Advance<T>(uint length = 1) where T : unmanaged
         {
-            Advance((uint)sizeof(T) * length);
+            Advance(USpan<T>.ElementSize * length);
         }
 
         /// <summary>
         /// Reads a span of values from the reader with the specified length.
         /// </summary>
-        public readonly ReadOnlySpan<T> ReadSpan<T>(uint length) where T : unmanaged
+        public readonly USpan<T> ReadSpan<T>(uint length) where T : unmanaged
         {
             ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
-            ReadOnlySpan<T> span = PeekSpan<T>(Position, length);
-            position += (uint)(sizeof(T) * length);
+            USpan<T> span = PeekSpan<T>(Position, length);
+            position += USpan<T>.ElementSize * length;
             return span;
         }
 
-        public readonly ReadOnlySpan<T> PeekSpan<T>(uint length) where T : unmanaged
+        public readonly USpan<T> PeekSpan<T>(uint length) where T : unmanaged
         {
             return PeekSpan<T>(Position, length);
         }
@@ -208,17 +207,16 @@ namespace Unmanaged
         /// <summary>
         /// Reads a span starting at the given position in bytes.
         /// </summary>
-        public readonly ReadOnlySpan<T> PeekSpan<T>(uint position, uint length) where T : unmanaged
+        public readonly USpan<T> PeekSpan<T>(uint position, uint length) where T : unmanaged
         {
-            ThrowIfReadingPastLength(position + (uint)(sizeof(T) * length));
+            ThrowIfReadingPastLength(position + USpan<T>.ElementSize * length);
             nint address = UnsafeBinaryReader.GetData(value).Address + (nint)position;
-            Span<T> span = new((T*)address, (int)length);
-            return span;
+            return new(address, length);
         }
 
-        public readonly int PeekUTF8Span(uint position, uint length, Span<char> buffer)
+        public readonly uint PeekUTF8Span(uint position, uint length, USpan<char> buffer)
         {
-            ReadOnlySpan<byte> bytes = GetBytes();
+            USpan<byte> bytes = GetBytes();
             return bytes.PeekUTF8Span(position, length, buffer);
         }
 
@@ -233,12 +231,12 @@ namespace Unmanaged
         /// Reads UTF8 bytes as characters into the given buffer
         /// until a terminator is found, or no bytes are left.
         /// </summary>
-        public readonly int ReadUTF8Span(Span<char> buffer)
+        public readonly uint ReadUTF8Span(USpan<char> buffer)
         {
             ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
             uint start = position;
-            int read = PeekUTF8Span(start, (uint)buffer.Length, buffer);
-            position += (uint)read;
+            uint read = PeekUTF8Span(start, buffer.length, buffer);
+            position += read;
             return read;
         }
 
@@ -249,11 +247,25 @@ namespace Unmanaged
             return value;
         }
 
-        public static BinaryReader CreateFromUTF8(ReadOnlySpan<char> text)
+        public static BinaryReader CreateFromUTF8(USpan<char> text)
         {
             using BinaryWriter writer = BinaryWriter.Create();
-            writer.WriteUTF8Span(text);
-            return new BinaryReader(writer.AsSpan());
+            writer.WriteUTF8Text(text);
+            return new BinaryReader(writer.GetBytes());
+        }
+
+        public static BinaryReader CreateFromUTF8(FixedString text)
+        {
+            using BinaryWriter writer = BinaryWriter.Create();
+            writer.WriteUTF8Text(text);
+            return new BinaryReader(writer.GetBytes());
+        }
+
+        public static BinaryReader CreateFromUTF8(string text)
+        {
+            using BinaryWriter writer = BinaryWriter.Create();
+            writer.WriteUTF8Text(text);
+            return new BinaryReader(writer.GetBytes());
         }
 
         public static BinaryReader Create()

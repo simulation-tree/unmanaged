@@ -75,14 +75,14 @@ namespace Unmanaged
             this.value = value;
         }
 
-        public override string ToString()
+        public unsafe override string ToString()
         {
-            Span<char> buffer = stackalloc char[128];
-            int count = ToString(buffer);
-            return new string(buffer[..count]);
+            USpan<char> buffer = stackalloc char[128];
+            uint count = ToString(buffer);
+            return new string(buffer.pointer, 0, (int)count);
         }
 
-        public readonly int ToString(Span<char> buffer)
+        public readonly uint ToString(USpan<char> buffer)
         {
 #if DEBUG
             if (types.TryGetValue(value, out Type? systemType))
@@ -91,12 +91,12 @@ namespace Unmanaged
                 if (str != null)
                 {
                     str.AsSpan().CopyTo(buffer);
-                    return str.Length;
+                    return (uint)str.Length;
                 }
             }
 #endif
 
-            return value.TryFormat(buffer, out int charsWritten) ? charsWritten : 0;
+            return value.ToString(buffer);
         }
 
         public readonly override int GetHashCode()
@@ -239,17 +239,24 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a hash of the given types regardless of order.
         /// </summary>
-        public static uint CombineHash(ReadOnlySpan<RuntimeType> types)
+        public static int CombineHash(USpan<RuntimeType> types)
         {
-            int typeCount = types.Length;
-            Span<RuntimeType> typesSpan = stackalloc RuntimeType[typeCount];
+            uint typeCount = types.length;
+            if (typeCount == 0)
+            {
+                return 0;
+            }
+
+            USpan<RuntimeType> typesSpan = stackalloc RuntimeType[(int)typeCount];
             types.CopyTo(typesSpan);
             uint hash = 0;
-            while (typeCount > 0)
+            uint max = 0;
+            uint index = 0;
+            while (true)
             {
-                uint max = 0;
-                int index = -1;
-                for (int i = 0; i < typeCount; i++)
+                max = 0;
+                index = 0;
+                for (uint i = 0; i < typeCount; i++)
                 {
                     RuntimeType type = typesSpan[i];
                     if (type.value > max)
@@ -267,12 +274,19 @@ namespace Unmanaged
                 RuntimeType last = typesSpan[typeCount - 1];
                 typesSpan[index] = last;
                 typeCount--;
+                if (typeCount == 0)
+                {
+                    break;
+                }
             }
 
-            return hash;
+            unchecked
+            {
+                return (int)hash;
+            }
         }
 
-        public static uint CalculateHash(ReadOnlySpan<char> fullTypeName, ReadOnlySpan<char> assemblyName, uint size, byte attempt = 1)
+        public static uint CalculateHash(USpan<char> fullTypeName, USpan<char> assemblyName, uint size, byte attempt = 1)
         {
             uint fullNameHash = CalculateHash(fullTypeName, attempt);
             uint assemblyNameHash = CalculateHash(assemblyName, attempt);
@@ -308,16 +322,16 @@ namespace Unmanaged
                 }
             }
 
-            return CalculateHash(type.FullName.AsSpan(), type.Assembly.GetName().Name.AsSpan(), size, attempt);
+            return CalculateHash(MemoryExtensions.AsSpan(type.FullName), MemoryExtensions.AsSpan(type.Assembly.GetName().Name), size, attempt);
         }
 
-        private static uint CalculateHash(ReadOnlySpan<char> text, byte attempt)
+        private static uint CalculateHash(USpan<char> text, byte attempt)
         {
             unchecked
             {
                 uint salt = 174440041u * attempt;
                 uint hash = 0;
-                for (int i = 0; i < text.Length; i++)
+                for (uint i = 0; i < text.length; i++)
                 {
                     char c = text[i];
                     hash = (hash << 5) - hash + (c * salt);
@@ -339,8 +353,8 @@ namespace Unmanaged
                 unchecked
                 {
                     Type type = typeof(T);
-                    ReadOnlySpan<char> fullName = type.FullName.AsSpan();
-                    ReadOnlySpan<char> assemblyName = type.Assembly.GetName().Name.AsSpan();
+                    ReadOnlySpan<char> fullName = MemoryExtensions.AsSpan(type.FullName);
+                    ReadOnlySpan<char> assemblyName = MemoryExtensions.AsSpan(type.Assembly.GetName().Name);
                     uint size = (uint)sizeof(T);
                     byte attempt = 1;
                     while (true)

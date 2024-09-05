@@ -1,4 +1,5 @@
 ﻿using System;
+using Unmanaged;
 
 //todo: move this into a serialization lib? maybe into `data`? but BinaryReader and writer depend on these :(
 public static class ByteSpanFunctions
@@ -7,10 +8,10 @@ public static class ByteSpanFunctions
     /// Peeks the next UTF-8 character in the stream.
     /// </summary>
     /// <returns>Amount of bytes read.</returns>
-    public static byte PeekUTF8(this ReadOnlySpan<byte> bytes, uint position, out char low, out char high)
+    public static byte PeekUTF8(this USpan<byte> bytes, uint position, out char low, out char high)
     {
         high = default;
-        byte firstByte = bytes[(int)position];
+        byte firstByte = bytes[position];
         int codePoint;
         byte additional;
         if ((firstByte & 0x80) == 0)
@@ -40,7 +41,7 @@ public static class ByteSpanFunctions
 
         for (uint j = 1; j <= additional; j++)
         {
-            byte next = bytes[(int)(position + j)];
+            byte next = bytes[position + j];
             if ((next & 0xC0) != 0x80)
             {
                 throw new FormatException("Invalid UTF-8 continuation byte");
@@ -69,15 +70,15 @@ public static class ByteSpanFunctions
     /// until a <c>default</c> character is found (included in the buffer).</para>
     /// </summary>
     /// <returns>Amount of character values copied.</returns>
-    public static int PeekUTF8Span(this ReadOnlySpan<byte> bytes, uint start, uint length, Span<char> buffer)
+    public static uint PeekUTF8Span(this USpan<byte> bytes, uint start, uint length, USpan<char> buffer)
     {
-        int t = 0;
-        if (bytes.Length < length)
+        uint t = 0;
+        uint i = 0;
+        if (length > bytes.length)
         {
-            length = (uint)bytes.Length;
+            length = bytes.length;
         }
 
-        uint i = 0;
         while (i < length)
         {
             uint cLength = PeekUTF8(bytes, start + i, out char low, out char high);
@@ -107,10 +108,10 @@ public static class ByteSpanFunctions
     /// Reads how long the UTF-8 text is by counting characters
     /// until the terminator.
     /// </summary>
-    public static int GetUTF8Length(this ReadOnlySpan<byte> bytes)
+    public static uint GetUTF8Length(this USpan<byte> bytes)
     {
-        int position = 0;
-        while (position < bytes.Length)
+        uint position = 0;
+        while (position < bytes.length)
         {
             byte next = bytes[position];
             if (next == default)
@@ -118,7 +119,7 @@ public static class ByteSpanFunctions
                 break;
             }
 
-            position += PeekUTF8(bytes, (uint)position, out _, out _);
+            position += PeekUTF8(bytes, position, out _, out _);
         }
 
         return position;

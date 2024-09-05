@@ -25,7 +25,7 @@ namespace Unmanaged.Collections
             }
         }
 
-        public readonly ReadOnlySpan<K> Keys => UnsafeDictionary.GetKeys<K>(value);
+        public readonly USpan<K> Keys => UnsafeDictionary.GetKeys<K>(value);
 
         public UnmanagedDictionary(UnsafeDictionary* dictionary)
         {

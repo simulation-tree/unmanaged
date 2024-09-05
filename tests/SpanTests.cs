@@ -54,7 +54,7 @@ namespace Tests
             Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
 
             using RandomGenerator rng = new();
-            for (int i = 0; i < 32; i++)
+            for (uint i = 0; i < 32; i++)
             {
                 uint length = rng.NextUInt(8, 16);
                 uint sliceLength = rng.NextUInt(1, 4);
@@ -77,6 +77,24 @@ namespace Tests
                 Assert.That(slice.length, Is.EqualTo(referenceSlice.Length));
                 Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
             }
+        }
+
+        [Test]
+        public void SliceText()
+        {
+            USpan<char> text = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'];
+            USpan<char> slice = text.Slice(0, 5);
+            Assert.That(slice.length, Is.EqualTo(5));
+            Assert.That(slice[0], Is.EqualTo('H'));
+            Assert.That(slice[1], Is.EqualTo('e'));
+            Assert.That(slice[2], Is.EqualTo('l'));
+            Assert.That(slice[3], Is.EqualTo('l'));
+            Assert.That(slice[4], Is.EqualTo('o'));
+
+            slice = text.Slice(2, 2);
+            Assert.That(slice.length, Is.EqualTo(2));
+            Assert.That(slice[0], Is.EqualTo('l'));
+            Assert.That(slice[1], Is.EqualTo('l'));
         }
 
         [Test]
@@ -153,6 +171,25 @@ namespace Tests
                 USpan<byte> lessData = stackalloc byte[1];
                 data.CopyTo(lessData);
             });
+        }
+
+        [Test]
+        public void CreateFromCollectionExpression()
+        {
+            USpan<byte> data = [1, 2, 3, 4, 5];
+            Assert.That(data.length, Is.EqualTo(5));
+            Assert.That(data[0], Is.EqualTo(1));
+            Assert.That(data[1], Is.EqualTo(2));
+            Assert.That(data[2], Is.EqualTo(3));
+            Assert.That(data[3], Is.EqualTo(4));
+            Assert.That(data[4], Is.EqualTo(5));
+        }
+
+        [Test]
+        public void ToStringWithChars()
+        {
+            USpan<char> text = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'];
+            Assert.That(text.ToString(), Is.EqualTo("Hello World"));
         }
     }
 }

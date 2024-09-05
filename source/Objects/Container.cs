@@ -40,33 +40,21 @@ namespace Unmanaged
 
         public readonly override string ToString()
         {
-            Span<char> buffer = stackalloc char[256];
-            int length = ToString(buffer);
-            return new string(buffer[..length]);
+            USpan<char> buffer = stackalloc char[256];
+            uint length = ToString(buffer);
+            return new string(buffer.pointer, 0, (int)length);
         }
 
-        public readonly int ToString(Span<char> buffer)
+        public readonly uint ToString(USpan<char> buffer)
         {
-            int length = 0;
             if (IsDisposed)
             {
                 "<Disposed>".AsSpan().CopyTo(buffer);
-                length = 10;
+                return 10;
             }
             else
             {
-                length = type.ToString(buffer);
-            }
-
-            return length;
-        }
-
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfSizeMismatch(int size)
-        {
-            if (size != type.Size)
-            {
-                throw new ArgumentException("Size mismatch.", nameof(size));
+                return type.ToString(buffer);
             }
         }
 
@@ -79,12 +67,12 @@ namespace Unmanaged
             }
         }
 
-        public readonly int CopyTo(Span<byte> destinationBuffer)
+        public readonly uint CopyTo(USpan<byte> destinationBuffer)
         {
             Allocations.ThrowIfNull(pointer);
 
-            Span<byte> sourceBuffer = AsSpan();
-            int length = Math.Min(sourceBuffer.Length, destinationBuffer.Length);
+            USpan<byte> sourceBuffer = AsSpan();
+            uint length = Math.Min(sourceBuffer.length, destinationBuffer.length);
             sourceBuffer.Slice(0, length).CopyTo(destinationBuffer);
             return length;
         }
@@ -100,10 +88,10 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a span of all bytes in the container.
         /// </summary>
-        public unsafe readonly Span<byte> AsSpan()
+        public unsafe readonly USpan<byte> AsSpan()
         {
             Allocations.ThrowIfNull(pointer);
-            return new Span<byte>(pointer, type.Size);
+            return new USpan<byte>(pointer, type.Size);
         }
 
         public unsafe readonly ref T Read<T>() where T : unmanaged
@@ -155,7 +143,7 @@ namespace Unmanaged
             return container;
         }
 
-        public static Container Create(RuntimeType type, ReadOnlySpan<byte> bytes)
+        public static Container Create(RuntimeType type, USpan<byte> bytes)
         {
             Container container = new(Allocations.Allocate(type.Size), type);
             bytes.CopyTo(container.AsSpan());

@@ -21,7 +21,7 @@ namespace Tests
             float min = 1f;
             float max = 0f;
             float avg = 0f;
-            for (int i = 0; i < iterations; i++)
+            for (uint i = 0; i < iterations; i++)
             {
                 float value = rng.NextFloat();
                 min = Math.Min(min, value);
@@ -43,7 +43,7 @@ namespace Tests
             double min = 1d;
             double max = 0d;
             double avg = 0d;
-            for (int i = 0; i < iterations; i++)
+            for (uint i = 0; i < iterations; i++)
             {
                 double value = rng.NextDouble();
                 min = Math.Min(min, value);
@@ -64,7 +64,7 @@ namespace Tests
             float min = 1f;
             float max = 0f;
             float avg = 0f;
-            for (int i = 0; i < iterations; i++)
+            for (uint i = 0; i < iterations; i++)
             {
                 using RandomGenerator rng = RandomGenerator.Create();
                 float value = rng.NextFloat();
@@ -88,7 +88,7 @@ namespace Tests
             double avg = 0;
             Random systemRandom = new(1337);
             Stopwatch stopwatch = Stopwatch.StartNew();
-            for (int i = 0; i < iterations; i++)
+            for (uint i = 0; i < iterations; i++)
             {
                 double value = systemRandom.NextDouble();
                 min = Math.Min(min, value);
@@ -104,7 +104,7 @@ namespace Tests
             avg = 0;
             using RandomGenerator rng = new(1337);
             stopwatch.Restart();
-            for (int i = 0; i < iterations; i++)
+            for (uint i = 0; i < iterations; i++)
             {
                 double value = rng.NextDouble();
                 min = Math.Min(min, value);
@@ -154,7 +154,7 @@ namespace Tests
             using RandomGenerator rng = new(1337);
             const int iterations = 1000000;
             int trueCount = 0;
-            for (int i = 0; i < iterations; i++)
+            for (uint i = 0; i < iterations; i++)
             {
                 if (rng.NextBool())
                 {

@@ -31,7 +31,7 @@ namespace Tests
         [Test]
         public void CreatingArrayFromSpan()
         {
-            Span<int> span = stackalloc int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            USpan<int> span = stackalloc int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
             using UnmanagedArray<int> array = new(span);
             Assert.That(array.Length, Is.EqualTo(8));
         }

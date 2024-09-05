@@ -202,7 +202,7 @@ namespace Tests
             list.Add(2);
             list.Add(3);
             list.Add(4);
-            Span<int> span = stackalloc int[4];
+            USpan<int> span = stackalloc int[4];
             list.CopyTo(span);
             Assert.That(span[0], Is.EqualTo(1));
             Assert.That(span[1], Is.EqualTo(2));
@@ -219,11 +219,12 @@ namespace Tests
             UnsafeList.Add(data, 3);
             UnsafeList.Add(data, 4);
 
-            Span<byte> span = UnsafeList.AsSpan<byte>(data);
-            int value1 = BitConverter.ToInt32(span.Slice(0, 4));
-            int value2 = BitConverter.ToInt32(span.Slice(4, 4));
-            int value3 = BitConverter.ToInt32(span.Slice(8, 4));
-            int value4 = BitConverter.ToInt32(span.Slice(12, 4));
+            USpan<byte> span = UnsafeList.AsSpan<byte>(data);
+            Assert.That(span.length, Is.EqualTo(sizeof(int) * 4));
+            int value1 = BitConverter.ToInt32(span.Slice(0, 4).AsSystemSpan());
+            int value2 = BitConverter.ToInt32(span.Slice(4, 4).AsSystemSpan());
+            int value3 = BitConverter.ToInt32(span.Slice(8, 4).AsSystemSpan());
+            int value4 = BitConverter.ToInt32(span.Slice(12, 4).AsSystemSpan());
             Assert.That(value1, Is.EqualTo(1));
             Assert.That(value2, Is.EqualTo(2));
             Assert.That(value3, Is.EqualTo(3));
@@ -235,10 +236,10 @@ namespace Tests
         [Test]
         public void ListFromSpan()
         {
-            Span<char> word = stackalloc char[] { 'H', 'e', 'l', 'l', 'o' };
+            USpan<char> word = ['H', 'e', 'l', 'l', 'o'];
             UnmanagedList<char> list = new(word);
             Assert.That(list.Count, Is.EqualTo(5));
-            Span<char> otherSpan = list.AsSpan();
+            USpan<char> otherSpan = list.AsSpan();
             Assert.That(otherSpan[0], Is.EqualTo('H'));
             Assert.That(otherSpan[1], Is.EqualTo('e'));
             Assert.That(otherSpan[2], Is.EqualTo('l'));
@@ -253,7 +254,7 @@ namespace Tests
             UnmanagedArray<UnmanagedList<byte>> nestedData = new(8);
             for (uint i = 0; i < 8; i++)
             {
-                ref UnmanagedList<byte> list = ref nestedData.GetRef(i);
+                ref UnmanagedList<byte> list = ref nestedData[i];
                 list = UnmanagedList<byte>.Create();
                 list.Add((byte)i);
             }
@@ -283,6 +284,14 @@ namespace Tests
             Assert.That(UnsafeList.AsSpan<int>(a).ToArray(), Is.EqualTo(new[] { 1, 3, 3, 7, 7 }));
             UnsafeList.Free(ref a);
             UnsafeList.Free(ref b);
+        }
+
+        [Test]
+        public void CompareContentHashCodes()
+        {
+            using UnmanagedList<char> a = new("fourth page");
+            using UnmanagedList<char> b = new("fourth page");
+            Assert.That(a.GetContentHashCode(), Is.EqualTo(b.GetContentHashCode()));
         }
     }
 }

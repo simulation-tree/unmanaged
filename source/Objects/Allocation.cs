@@ -18,12 +18,12 @@ namespace Unmanaged
 
         public readonly nint Address => (nint)pointer;
 
-        public readonly Span<byte> this[Range range]
+        public readonly ref byte this[uint index]
         {
             get
             {
                 Allocations.ThrowIfNull(pointer);
-                return new Span<byte>((void*)((nint)pointer + range.Start.Value), range.End.Value - range.Start.Value);
+                return ref Unsafe.Add(ref Unsafe.AsRef<byte>(pointer), index);
             }
         }
 
@@ -66,38 +66,22 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Writes the given value into the memory starting at this position in bytes.
+        /// Writes a single given value into the memory into this byte position.
         /// </summary>
         public readonly void Write<T>(uint start, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            uint length = (uint)sizeof(T);
             void* ptr = &value;
-            Write(ptr, start, length);
+            Write(ptr, start, USpan<T>.ElementSize);
         }
 
         /// <summary>
         /// Writes the given span into the memory starting at this position in bytes.
         /// </summary>
-        public readonly void Write<T>(uint start, Span<T> span) where T : unmanaged
+        public readonly void Write<T>(uint start, USpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            fixed (T* ptr = span)
-            {
-                Write(ptr, start, (uint)(span.Length * sizeof(T)));
-            }
-        }
-
-        /// <summary>
-        /// Writes the given span into the memory starting at this position in bytes.
-        /// </summary>
-        public readonly void Write<T>(uint start, ReadOnlySpan<T> span) where T : unmanaged
-        {
-            Allocations.ThrowIfNull(pointer);
-            fixed (T* ptr = span)
-            {
-                Write(ptr, start, (uint)(span.Length * sizeof(T)));
-            }
+            Write(span.pointer, start, span.length * USpan<T>.ElementSize);
         }
 
         public readonly void Write(void* data, uint start, uint length)
@@ -109,10 +93,10 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a span of the bytes in this allocation.
         /// </summary>
-        public readonly Span<byte> AsSpan(uint start, uint byteLength)
+        public readonly USpan<byte> AsSpan(uint start, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
-            return new Span<byte>((void*)((nint)pointer + start), (int)byteLength);
+            return new USpan<byte>((void*)((nint)pointer + start), byteLength);
         }
 
         /// <summary>
@@ -120,12 +104,11 @@ namespace Unmanaged
         /// <para>Both <paramref name="start"/> and <paramref name="length"/> are expected
         /// to be in <typeparamref name="T"/> elements.</para>
         /// </summary>
-        public readonly Span<T> AsSpan<T>(uint start, uint length) where T : unmanaged
+        public readonly USpan<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            uint byteLength = (uint)sizeof(T);
-            uint position = start * byteLength;
-            return new Span<T>((void*)((nint)pointer + position), (int)length);
+            uint position = start * USpan<T>.ElementSize;
+            return new USpan<T>((void*)((nint)pointer + position), length);
         }
 
         /// <summary>
@@ -163,8 +146,8 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             Allocations.ThrowIfNull(destination.pointer);
-            Span<byte> sourceSpan = AsSpan<byte>(sourceIndex, byteLength);
-            Span<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, byteLength);
+            USpan<byte> sourceSpan = AsSpan<byte>(sourceIndex, byteLength);
+            USpan<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, byteLength);
             sourceSpan.CopyTo(destinationSpan);
         }
 
@@ -202,7 +185,7 @@ namespace Unmanaged
         /// </summary>
         public static void Resize<T>(ref Allocation allocation) where T : unmanaged
         {
-            Resize(ref allocation, (uint)sizeof(T));
+            Resize(ref allocation, USpan<T>.ElementSize);
         }
 
         /// <summary>
@@ -218,7 +201,7 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>(T value) where T : unmanaged
         {
-            Allocation allocation = new((uint)sizeof(T));
+            Allocation allocation = new(USpan<T>.ElementSize);
             allocation.Write(0, value);
             return allocation;
         }
@@ -228,23 +211,18 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>() where T : unmanaged
         {
-            Allocation allocation = new((uint)sizeof(T));
+            Allocation allocation = new(USpan<T>.ElementSize);
             return allocation;
         }
 
-        public static Allocation Create<T>(Span<T> span) where T : unmanaged
+        /// <summary>
+        /// Creates an allocation containg the given span.
+        /// </summary>
+        public static Allocation Create<T>(USpan<T> span) where T : unmanaged
         {
-            uint length = (uint)(span.Length * sizeof(T));
+            uint length = span.length * USpan<T>.ElementSize;
             Allocation allocation = new(length);
-            span.CopyTo(allocation.AsSpan<T>(0, (uint)span.Length));
-            return allocation;
-        }
-
-        public static Allocation Create<T>(ReadOnlySpan<T> span) where T : unmanaged
-        {
-            uint length = (uint)(span.Length * sizeof(T));
-            Allocation allocation = new(length);
-            span.CopyTo(allocation.AsSpan<T>(0, (uint)span.Length));
+            span.CopyTo(allocation.AsSpan<T>(0, span.length));
             return allocation;
         }
 

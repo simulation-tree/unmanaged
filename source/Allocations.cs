@@ -78,9 +78,9 @@ namespace Unmanaged
 
                 void Append(string str)
                 {
-                    for (int i = 0; i < str.Length; i++)
+                    for (uint i = 0; i < str.Length; i++)
                     {
-                        exceptionBuilder.Add(str[i]);
+                        exceptionBuilder.Add(str[(int)i]);
                     }
                 }
 

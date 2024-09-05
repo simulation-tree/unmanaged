@@ -44,18 +44,15 @@ namespace Unmanaged
         public void WriteValue<T>(T value) where T : unmanaged
         {
             T* ptr = &value;
-            UnsafeBinaryWriter.Write(ref this.value, ptr, (uint)sizeof(T));
+            UnsafeBinaryWriter.Write(ref this.value, ptr, USpan<T>.ElementSize);
         }
 
-        public void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
+        public void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            fixed (T* ptr = span)
-            {
-                UnsafeBinaryWriter.Write(ref this.value, ptr, (uint)(span.Length * sizeof(T)));
-            }
+            UnsafeBinaryWriter.Write(ref value, span.pointer, span.length * USpan<T>.ElementSize);
         }
 
-        public void WriteUTF8(char value)
+        public void WriteUTF8Character(char value)
         {
             if (value < 0x7F)
             {
@@ -84,25 +81,32 @@ namespace Unmanaged
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8Span(ReadOnlySpan<char> text)
+        public void WriteUTF8Text(USpan<char> text)
         {
             foreach (char c in text)
             {
-                WriteUTF8(c);
+                WriteUTF8Character(c);
             }
         }
 
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8Span(FixedString text)
+        public void WriteUTF8Text(FixedString text)
         {
-            Span<char> buffer = stackalloc char[FixedString.MaxLength];
-            int length = text.ToString(buffer);
-            WriteUTF8Span(buffer[..length]);
+            USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
+            uint length = text.CopyTo(buffer);
+            WriteUTF8Text(buffer.Slice(0, length));
         }
 
-        public void WriteObject<T>(T value) where T : unmanaged, ISerializable
+        public void WriteUTF8Text(string text)
+        {
+            USpan<char> buffer = stackalloc char[text.Length];
+            text.AsSpan().CopyTo(buffer);
+            WriteUTF8Text(buffer);
+        }
+
+        public readonly void WriteObject<T>(T value) where T : unmanaged, ISerializable
         {
             value.Write(this);
         }
@@ -123,29 +127,14 @@ namespace Unmanaged
         /// <summary>
         /// All bytes written into the writer.
         /// </summary>
-        public readonly Span<byte> AsSpan()
+        public readonly USpan<byte> GetBytes()
         {
-            return new((void*)Address, (int)Position);
+            return new((void*)Address, Position);
         }
 
-        public readonly Span<byte> AsSpan(uint position, uint length)
+        public readonly USpan<T> AsSpan<T>() where T : unmanaged
         {
-            return AsSpan().Slice((int)position, (int)length);
-        }
-
-        public readonly ReadOnlySpan<T> AsSpan<T>() where T : unmanaged
-        {
-            return new((void*)Address, (int)Position / sizeof(T));
-        }
-
-        public readonly ReadOnlySpan<T> AsSpan<T>(uint length) where T : unmanaged
-        {
-            return AsSpan<T>()[..(int)length];
-        }
-
-        public readonly ReadOnlySpan<T> AsSpan<T>(uint position, uint length) where T : unmanaged
-        {
-            return AsSpan<T>().Slice((int)position, (int)length);
+            return new((void*)Address, Position / USpan<T>.ElementSize);
         }
 
         public static BinaryWriter Create()

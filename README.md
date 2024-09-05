@@ -10,12 +10,13 @@ Library containing primitive definitions for working with unmanaged C#.
 - `Container`
 
 ### Allocations and Containers
-`Allocation`s are a reference to unmanaged memory, and they must be disposed manually. The equivalent of `alloc` and `free`.
+`Allocation`s are a reference to unmanaged memory, and they must be disposed manually.
+The equivalent of `alloc` and `free`:
 ```cs
 using (Allocation allocation = new(sizeof(char) * 5))
 {
     allocation.Write("Hello".AsSpan());
-    Span<char> text = allocation.AsSpan<char>();
+    USpan<char> text = allocation.AsSpan<char>();
 }
 
 using (Allocation allocation = Allocation.Create(3.14f))
@@ -39,15 +40,15 @@ using (Container floatContainer = Container.Create(3.14f))
 Allocations check for address equality, while containers check for memory equality.
 
 ### Fixed String
-The `FixedString` type can store up to 291 UTF8 characters within its 256 bytes of space, 
-until a `\0` terminator. Useful for when text is known to be short enough, until a list/array is needed:
+The `FixedString` type can store up to 256 `char` values. Useful for when text is known
+to be short enough until a list/array is needed:
 ```cs
 FixedString text = new("Hello World");
-Span<char> textBuffer = stackalloc char[FixedString.MaxLength];
-int length = text.CopyTo(textBuffer);
+USpan<char> textBuffer = stackalloc char[(int)FixedString.MaxLength];
+uint length = text.CopyTo(textBuffer);
 
-Span<byte> utf8bytes = stackalloc char[256];
-int bytesCopied = text.CopyTo(utf8bytes);
+USpan<byte> utf8bytes = stackalloc char[256];
+uint bytesCopied = text.CopyTo(utf8bytes);
 
 FixedString textFromBytes = new(utf8bytes[..bytesCopied]);
 Assert.That(textFromBytes.ToString, Is.EqualTo(Encoding.UTF8.GetString(textBuffer[..length])));

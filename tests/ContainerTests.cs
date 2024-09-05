@@ -43,9 +43,9 @@ namespace Tests
         public void ReadBytes()
         {
             using Container a = Container.Create(1337);
-            Span<byte> bytes = a.AsSpan();
-            Assert.That(bytes.Length, Is.EqualTo(sizeof(int)));
-            Assert.That(BitConverter.ToInt32(bytes), Is.EqualTo(1337));
+            USpan<byte> bytes = a.AsSpan();
+            Assert.That(bytes.length, Is.EqualTo(sizeof(int)));
+            Assert.That(BitConverter.ToInt32(bytes.AsSystemSpan()), Is.EqualTo(1337));
         }
 
         [Test]

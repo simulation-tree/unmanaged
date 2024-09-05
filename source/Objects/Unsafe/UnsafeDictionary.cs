@@ -15,7 +15,7 @@ namespace Unmanaged.Collections
         [Conditional("DEBUG")]
         private static void ThrowIfKeySizeMismatches<K>(UnsafeDictionary* dictionary) where K : unmanaged
         {
-            if (dictionary->keyType.Size != sizeof(K))
+            if (dictionary->keyType.Size != USpan<K>.ElementSize)
             {
                 throw new ArgumentException("Key size doesn't match the expected size.");
             }
@@ -24,7 +24,7 @@ namespace Unmanaged.Collections
         [Conditional("DEBUG")]
         private static void ThrowIfValueSizeMismatches<V>(UnsafeDictionary* dictionary) where V : unmanaged
         {
-            if (dictionary->valueType.Size != sizeof(V))
+            if (dictionary->valueType.Size != USpan<V>.ElementSize)
             {
                 throw new ArgumentException("Value size doesn't match the expected size.");
             }
@@ -90,7 +90,7 @@ namespace Unmanaged.Collections
             Allocations.ThrowIfNull(dictionary);
             ThrowIfKeySizeMismatches<K>(dictionary);
             uint count = GetCount(dictionary);
-            uint keySize = (uint)sizeof(K);
+            uint keySize = USpan<K>.ElementSize;
             for (uint i = 0; i < count; i++)
             {
                 if (dictionary->keys.Read<K>(i * keySize).Equals(key))
@@ -104,7 +104,7 @@ namespace Unmanaged.Collections
             return false;
         }
 
-        public static Span<K> GetKeys<K>(UnsafeDictionary* dictionary) where K : unmanaged
+        public static USpan<K> GetKeys<K>(UnsafeDictionary* dictionary) where K : unmanaged
         {
             Allocations.ThrowIfNull(dictionary);
             ThrowIfKeySizeMismatches<K>(dictionary);
@@ -128,7 +128,7 @@ namespace Unmanaged.Collections
             Allocations.ThrowIfNull(dictionary);
             ThrowIfKeySizeMismatches<K>(dictionary);
             ThrowIfOutOfRange(dictionary, index);
-            return ref dictionary->keys.Read<K>(index * (uint)sizeof(K));
+            return ref dictionary->keys.Read<K>(index * USpan<K>.ElementSize);
         }
 
         public static bool ContainsKey<K>(UnsafeDictionary* dictionary, K key) where K : unmanaged, IEquatable<K>
@@ -148,8 +148,8 @@ namespace Unmanaged.Collections
                 throw new ArgumentException($"The key '{key}' already exists in the dictionary.");
             }
 
-            uint keySize = (uint)sizeof(K);
-            uint valueSize = (uint)sizeof(V);
+            uint keySize = USpan<K>.ElementSize;
+            uint valueSize = USpan<V>.ElementSize;
             dictionary->keys.Write(dictionary->count * keySize, key);
             dictionary->values.Write(dictionary->count * valueSize, value);
             dictionary->count++;
@@ -175,11 +175,11 @@ namespace Unmanaged.Collections
             //move last element into slot
             ref uint count = ref dictionary->count;
             count--;
-            uint keySize = (uint)sizeof(K);
+            uint keySize = USpan<K>.ElementSize;
             uint valueSize = dictionary->valueType.Size;
             K lastKey = dictionary->keys.Read<K>(count * keySize);
             dictionary->keys.Write(index * keySize, lastKey);
-            Span<byte> lastValue = dictionary->values.AsSpan(count * valueSize, valueSize);
+            USpan<byte> lastValue = dictionary->values.AsSpan(count * valueSize, valueSize);
             dictionary->values.Write(index * valueSize, lastValue);
         }
 
