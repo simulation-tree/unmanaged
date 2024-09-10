@@ -75,6 +75,11 @@ namespace Unmanaged.Collections
             UnsafeArray.Clear(value, start, length);
         }
 
+        public readonly void Fill(T defaultValue)
+        {
+            AsSpan().Fill(defaultValue);
+        }
+
         /// <summary>
         /// Returns the array as a span.
         /// </summary>

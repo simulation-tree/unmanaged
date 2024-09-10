@@ -89,19 +89,8 @@ namespace Unmanaged.Collections
         {
             Allocations.ThrowIfNull(dictionary);
             ThrowIfKeySizeMismatches<K>(dictionary);
-            uint count = GetCount(dictionary);
-            uint keySize = USpan<K>.ElementSize;
-            for (uint i = 0; i < count; i++)
-            {
-                if (dictionary->keys.Read<K>(i * keySize).Equals(key))
-                {
-                    index = i;
-                    return true;
-                }
-            }
-
-            index = default;
-            return false;
+            USpan<K> keys = GetKeys<K>(dictionary);
+            return keys.TryIndexOf(key, out index);
         }
 
         public static USpan<K> GetKeys<K>(UnsafeDictionary* dictionary) where K : unmanaged
