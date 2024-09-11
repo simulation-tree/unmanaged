@@ -70,6 +70,11 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         private readonly void ThrowIfAccessingOutOfRange(uint index)
         {
+            if (index == default && length == default)
+            {
+                return;
+            }
+
             if (index >= length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index must be less than the length of the span");
@@ -93,7 +98,7 @@ namespace Unmanaged
             }
             else
             {
-                USpan<char> buffer = stackalloc char[64];
+                USpan<char> buffer = stackalloc char[32];
                 uint length = ToString(buffer);
                 return new string(buffer.pointer, 0, (int)length);
             }
@@ -118,12 +123,7 @@ namespace Unmanaged
             buffer[length++] = '>';
             buffer[length++] = '[';
 
-            Span<char> signedBuffer = stackalloc char[16];
-            this.length.TryFormat(signedBuffer, out int signedLength);
-            for (uint i = 0; i < signedLength; i++)
-            {
-                buffer[length++] = signedBuffer[(int)i];
-            }
+            length += this.length.ToString(buffer.Slice(length));
 
             buffer[length++] = ']';
             return length;
@@ -154,13 +154,13 @@ namespace Unmanaged
         public readonly USpan<T> Slice(uint start, uint length)
         {
             ThrowIfAccessingOutOfRange(start);
-            return new USpan<T>((void*)(pointer + start), length);
+            return new USpan<T>(pointer + start, length);
         }
 
         public readonly USpan<T> Slice(uint start)
         {
             ThrowIfAccessingOutOfRange(start);
-            return new USpan<T>((void*)(pointer + start), length - start);
+            return new USpan<T>(pointer + start, length - start);
         }
 
         public readonly uint IndexOf(T value)
@@ -354,11 +354,7 @@ namespace Unmanaged
             private readonly USpan<T> span;
             private int index;
 
-            public ref T Current
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get => ref span[(uint)index];
-            }
+            public readonly ref T Current => ref span[(uint)index];
 
             internal Enumerator(USpan<T> span)
             {
