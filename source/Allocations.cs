@@ -175,8 +175,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Returns <c>true</c> if the pointer is null, or isn't known
-        /// to be a tracked allocation.
+        /// Returns <c>true</c> if the pointer is null.
         /// </summary>
         public static bool IsNull(void* pointer)
         {
@@ -185,12 +184,7 @@ namespace Unmanaged
                 return true;
             }
 
-#if TRACK
-            nint address = (nint)pointer;
-            return !addresses.Contains(address);
-#else
             return false;
-#endif
         }
 
         public static void ThrowIfNull(void* pointer)
