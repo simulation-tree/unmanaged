@@ -16,7 +16,7 @@ public unsafe static class SpanFunctions
     /// <summary>
     /// Retrieves a span containing the given text.
     /// </summary>
-    public static USpan<char> AsSpan(this string text)
+    public static USpan<char> AsUSpan(this string text)
     {
         ThrowIfStringObjectIsNull(text);
         fixed (char* pointer = text)
@@ -105,13 +105,21 @@ public unsafe static class SpanFunctions
     public static uint ToString(this nint value, USpan<char> buffer)
     {
         Span<char> systemSpan = buffer.AsSystemSpan();
+#if NET
         return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
+#else
+        return ToString((long)value, buffer);
+#endif
     }
 
     public static uint ToString(this nuint value, USpan<char> buffer)
     {
         Span<char> systemSpan = buffer.AsSystemSpan();
+#if NET
         return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
+#else
+        return ToString((ulong)value, buffer);
+#endif
     }
 
     public static uint ToString(this DateTime dateTime, USpan<char> buffer)

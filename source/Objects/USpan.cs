@@ -8,7 +8,9 @@ namespace Unmanaged
     /// Represents a continous region of unmanaged memory
     /// containing <typeparamref name="T"/> elements.
     /// </summary>
+#if NET
     [CollectionBuilder(typeof(USpanBuilder), "Create")]
+#endif
     public readonly unsafe ref struct USpan<T> where T : unmanaged
     {
         public readonly static uint ElementSize = (uint)sizeof(T);

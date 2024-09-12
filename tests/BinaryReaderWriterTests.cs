@@ -165,7 +165,7 @@ namespace Tests
         public void WriteSpan()
         {
             using BinaryWriter writer = BinaryWriter.Create();
-            writer.WriteSpan("Hello there".AsSpan());
+            writer.WriteSpan("Hello there".AsUSpan());
 
             using BinaryReader reader = new(writer.GetBytes());
             Assert.That(reader.ReadSpan<char>(11).ToString(), Is.EqualTo("Hello there"));

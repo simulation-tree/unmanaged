@@ -1,4 +1,5 @@
-#if !NET5_0_OR_GREATER
+#if !NET
+using System.Buffers;
 using System.Runtime.CompilerServices;
 
 namespace System.Runtime.InteropServices
@@ -55,6 +56,15 @@ namespace System
             }
 
             return false;
+        }
+
+        public static unsafe void Sort<T>(this Span<T> span) where T : IComparable<T>
+        {
+            T[] buffer = ArrayPool<T>.Shared.Rent(span.Length);
+            span.CopyTo(buffer);
+            Array.Sort(buffer);
+            buffer.AsSpan(0, span.Length).CopyTo(span);
+            ArrayPool<T>.Shared.Return(buffer);
         }
     }
 }

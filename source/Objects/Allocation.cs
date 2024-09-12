@@ -23,7 +23,11 @@ namespace Unmanaged
             get
             {
                 Allocations.ThrowIfNull(pointer);
+#if NET
                 return ref Unsafe.Add(ref Unsafe.AsRef<byte>(pointer), index);
+#else
+                return ref Unsafe.Add(ref Unsafe.AsRef<byte>(pointer), (int)index);
+#endif
             }
         }
 
@@ -91,7 +95,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Retrieves a span of the bytes in this allocation.
+        /// Retrieves a span slice of the bytes in this allocation.
         /// </summary>
         public readonly USpan<byte> AsSpan(uint start, uint byteLength)
         {

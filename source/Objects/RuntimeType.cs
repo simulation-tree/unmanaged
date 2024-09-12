@@ -59,7 +59,7 @@ namespace Unmanaged
         public readonly uint value;
 
         /// <summary>
-        /// Size of the type.
+        /// Size of the type in bytes.
         /// </summary>
         public readonly ushort Size
         {
@@ -90,7 +90,7 @@ namespace Unmanaged
                 string? str = systemType?.Name;
                 if (str != null)
                 {
-                    str.AsSpan().CopyTo(buffer);
+                    str.AsUSpan().CopyTo(buffer);
                     return (uint)str.Length;
                 }
             }
@@ -322,7 +322,7 @@ namespace Unmanaged
                 }
             }
 
-            return CalculateHash(MemoryExtensions.AsSpan(type.FullName), MemoryExtensions.AsSpan(type.Assembly.GetName().Name), size, attempt);
+            return CalculateHash(type.FullName.AsSpan(), type.Assembly.GetName().Name.AsSpan(), size, attempt);
         }
 
         private static uint CalculateHash(USpan<char> text, byte attempt)
@@ -353,8 +353,8 @@ namespace Unmanaged
                 unchecked
                 {
                     Type type = typeof(T);
-                    ReadOnlySpan<char> fullName = MemoryExtensions.AsSpan(type.FullName);
-                    ReadOnlySpan<char> assemblyName = MemoryExtensions.AsSpan(type.Assembly.GetName().Name);
+                    ReadOnlySpan<char> fullName = type.FullName.AsSpan();
+                    ReadOnlySpan<char> assemblyName = type.Assembly.GetName().Name.AsSpan();
                     uint size = (uint)sizeof(T);
                     byte attempt = 1;
                     while (true)

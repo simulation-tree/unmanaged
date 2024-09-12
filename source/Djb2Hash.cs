@@ -7,7 +7,7 @@ namespace Unmanaged
     {
         public static int Get(string? str)
         {
-            return Get((str ?? string.Empty).AsSpan());
+            return Get((str ?? string.Empty).AsUSpan());
         }
 
         public unsafe static int Get<T>(T* pointer, uint length) where T : unmanaged

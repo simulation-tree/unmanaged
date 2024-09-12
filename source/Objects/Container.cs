@@ -49,7 +49,7 @@ namespace Unmanaged
         {
             if (IsDisposed)
             {
-                "<Disposed>".AsSpan().CopyTo(buffer);
+                "<Disposed>".AsUSpan().CopyTo(buffer);
                 return 10;
             }
             else

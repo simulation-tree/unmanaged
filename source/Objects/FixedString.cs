@@ -52,7 +52,7 @@ namespace Unmanaged
 
         public FixedString(string text)
         {
-            CopyFrom(text.AsSpan());
+            CopyFrom(text.AsUSpan());
         }
 
         public FixedString(USpan<char> text)
