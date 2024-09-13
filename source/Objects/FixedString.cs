@@ -646,6 +646,20 @@ namespace Unmanaged
             chars[255] = (byte)(length + 1);
         }
 
+        public void Append<T>(T formattable) where T : ISpanFormattable
+        {
+            uint length = Length;
+            Span<char> buffer = stackalloc char[256];
+            formattable.TryFormat(buffer, out int charsWritten, default, default);
+            ThrowIfLengthExceedsMax(length + (uint)charsWritten);
+            for (uint i = 0; i < charsWritten; i++)
+            {
+                chars[length + i] = (byte)buffer[(int)i];
+            }
+
+            chars[255] = (byte)(length + charsWritten);
+        }
+
         public void Append(USpan<char> text)
         {
             uint length = Length;
@@ -708,6 +722,26 @@ namespace Unmanaged
 
             chars[index] = (byte)c;
             chars[255] = (byte)(length + 1);
+        }
+
+        public void Insert<T>(uint index, T formattable) where T : ISpanFormattable
+        {
+            uint length = Length;
+            Span<char> buffer = stackalloc char[256];
+            formattable.TryFormat(buffer, out int charsWritten, default, default);
+            ThrowIfLengthExceedsMax(length + (uint)charsWritten);
+            ThrowIfIndexOutOfRange(index);
+            for (uint i = length; i > index; i--)
+            {
+                chars[i + charsWritten - 1] = chars[i - 1];
+            }
+
+            for (uint i = 0; i < charsWritten; i++)
+            {
+                chars[index + i] = (byte)buffer[(int)i];
+            }
+
+            chars[255] = (byte)(length + charsWritten);
         }
 
         public void Insert(uint index, USpan<char> text)
