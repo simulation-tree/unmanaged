@@ -70,7 +70,7 @@ namespace Unmanaged.Collections
 
         public static UnsafeArray* Allocate<T>(USpan<T> span) where T : unmanaged
         {
-            UnsafeArray* array = Allocate<T>(span.length);
+            UnsafeArray* array = Allocate<T>(span.Length);
             span.CopyTo(array->items.AsSpan<T>(0, array->length));
             return array;
         }

@@ -17,10 +17,7 @@ namespace Unmanaged
 
         public readonly T* pointer;
 
-        /// <summary>
-        /// Amount of <typeparamref name="T"/> elements in this span.
-        /// </summary>
-        public readonly uint length;
+        private readonly uint length;
 
         public ref T this[uint index]
         {
@@ -32,6 +29,11 @@ namespace Unmanaged
         }
 
         public readonly nint Address => (nint)pointer;
+
+        /// <summary>
+        /// Amount of <typeparamref name="T"/> elements in this span.
+        /// </summary>
+        public readonly uint Length => length;
 
         /// <summary>
         /// Creates a reference to memory at this address with the given element length.
@@ -72,12 +74,12 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         private readonly void ThrowIfAccessingOutOfRange(uint index)
         {
-            if (index == default && length == default)
+            if (index == default && Length == default)
             {
                 return;
             }
 
-            if (index >= length)
+            if (index >= Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index must be less than the length of the span");
             }
@@ -86,7 +88,7 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         private readonly void ThrowIfDestinationTooSmall(uint length)
         {
-            if (length < this.length)
+            if (length < this.Length)
             {
                 throw new ArgumentOutOfRangeException("Destination span is too small", nameof(length));
             }
@@ -96,7 +98,7 @@ namespace Unmanaged
         {
             if (typeof(T) == typeof(char)) //special case
             {
-                return new string((char*)pointer, 0, (int)length);
+                return new string((char*)pointer, 0, (int)Length);
             }
             else
             {
@@ -125,7 +127,7 @@ namespace Unmanaged
             buffer[length++] = '>';
             buffer[length++] = '[';
 
-            length += this.length.ToString(buffer.Slice(length));
+            length += this.Length.ToString(buffer.Slice(length));
 
             buffer[length++] = ']';
             return length;
@@ -136,8 +138,8 @@ namespace Unmanaged
             unchecked
             {
                 uint seed = 0x9E377;
-                uint hash = seed + length;
-                for (uint i = 0; i < length; i++)
+                uint hash = seed + Length;
+                for (uint i = 0; i < Length; i++)
                 {
                     hash ^= (uint)this[i].GetHashCode() + seed + i;
                     hash = (hash << 13) | (hash >> 19);
@@ -150,7 +152,7 @@ namespace Unmanaged
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine((nint)pointer, length);
+            return HashCode.Combine((nint)pointer, Length);
         }
 
         public readonly USpan<T> Slice(uint start, uint length)
@@ -162,12 +164,12 @@ namespace Unmanaged
         public readonly USpan<T> Slice(uint start)
         {
             ThrowIfAccessingOutOfRange(start);
-            return new USpan<T>(pointer + start, length - start);
+            return new USpan<T>(pointer + start, Length - start);
         }
 
         public readonly uint IndexOf(T value)
         {
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
                 if (this[i].Equals(value))
                 {
@@ -180,7 +182,7 @@ namespace Unmanaged
 
         public readonly uint LastIndexOf(T value)
         {
-            for (uint i = length - 1; i != uint.MaxValue; i--)
+            for (uint i = Length - 1; i != uint.MaxValue; i--)
             {
                 if (this[i].Equals(value))
                 {
@@ -193,7 +195,7 @@ namespace Unmanaged
 
         public readonly bool TryIndexOf(T value, out uint index)
         {
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
                 if (this[i].Equals(value))
                 {
@@ -208,7 +210,7 @@ namespace Unmanaged
 
         public readonly bool TryLastIndexOf(T value, out uint index)
         {
-            for (uint i = length - 1; i != uint.MaxValue; i--)
+            for (uint i = Length - 1; i != uint.MaxValue; i--)
             {
                 if (this[i].Equals(value))
                 {
@@ -223,9 +225,9 @@ namespace Unmanaged
 
         public readonly uint IndexOf(USpan<T> span)
         {
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
-                USpan<T> left = Slice(i, span.length);
+                USpan<T> left = Slice(i, span.Length);
                 if (left.SequenceEqual(span))
                 {
                     return i;
@@ -237,9 +239,9 @@ namespace Unmanaged
 
         public readonly bool TryIndexOf(USpan<T> span, out uint index)
         {
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
-                if (Slice(i, span.length).SequenceEqual(span))
+                if (Slice(i, span.Length).SequenceEqual(span))
                 {
                     index = i;
                     return true;
@@ -252,7 +254,7 @@ namespace Unmanaged
 
         public readonly bool Contains(T value)
         {
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
                 if (pointer[i].Equals(value))
                 {
@@ -265,9 +267,9 @@ namespace Unmanaged
 
         public readonly bool Contains(USpan<T> span)
         {
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
-                if (Slice(i, span.length).SequenceEqual(span))
+                if (Slice(i, span.Length).SequenceEqual(span))
                 {
                     return true;
                 }
@@ -278,8 +280,8 @@ namespace Unmanaged
 
         public readonly T[] ToArray()
         {
-            T[] array = new T[length];
-            for (uint i = 0; i < length; i++)
+            T[] array = new T[Length];
+            for (uint i = 0; i < Length; i++)
             {
                 array[i] = pointer[i];
             }
@@ -289,12 +291,12 @@ namespace Unmanaged
 
         public readonly bool SequenceEqual(USpan<T> other)
         {
-            if (length != other.length)
+            if (Length != other.Length)
             {
                 return false;
             }
 
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
                 if (!pointer[i].Equals(other.pointer[i]))
                 {
@@ -312,12 +314,12 @@ namespace Unmanaged
 
         public readonly void Clear()
         {
-            Unsafe.InitBlockUnaligned(pointer, 0, length * ElementSize);
+            Unsafe.InitBlockUnaligned(pointer, 0, Length * ElementSize);
         }
 
         public readonly void Fill(T value)
         {
-            for (uint i = 0; i < length; i++)
+            for (uint i = 0; i < Length; i++)
             {
                 pointer[i] = value;
             }
@@ -327,13 +329,13 @@ namespace Unmanaged
         {
             //todo: efficiency: to remove this branch, spans cant be allowed to contain default values at all...
             //because stackalloc of 0 will give a blank pointer (undefined)
-            if (length == 0)
+            if (Length == 0)
             {
                 return;
             }
 
-            ThrowIfDestinationTooSmall(otherSpan.length);
-            Unsafe.CopyBlockUnaligned(otherSpan.pointer, pointer, length * ElementSize);
+            ThrowIfDestinationTooSmall(otherSpan.Length);
+            Unsafe.CopyBlockUnaligned(otherSpan.pointer, pointer, Length * ElementSize);
         }
 
         public static implicit operator USpan<T>(Span<T> span)
@@ -367,7 +369,7 @@ namespace Unmanaged
             public bool MoveNext()
             {
                 int index = this.index + 1;
-                if (index < span.length)
+                if (index < span.Length)
                 {
                     this.index = index;
                     return true;

@@ -74,9 +74,9 @@ public static class ByteSpanFunctions
     {
         uint t = 0;
         uint i = 0;
-        if (length > bytes.length)
+        if (length > bytes.Length)
         {
-            length = bytes.length;
+            length = bytes.Length;
         }
 
         while (i < length)
@@ -111,7 +111,7 @@ public static class ByteSpanFunctions
     public static uint GetUTF8Length(this USpan<byte> bytes)
     {
         uint position = 0;
-        while (position < bytes.length)
+        while (position < bytes.Length)
         {
             byte next = bytes[position];
             if (next == default)

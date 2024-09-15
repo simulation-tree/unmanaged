@@ -241,7 +241,7 @@ namespace Unmanaged
         /// </summary>
         public static int CombineHash(USpan<RuntimeType> types)
         {
-            uint typeCount = types.length;
+            uint typeCount = types.Length;
             if (typeCount == 0)
             {
                 return 0;
@@ -331,7 +331,7 @@ namespace Unmanaged
             {
                 uint salt = 174440041u * attempt;
                 uint hash = 0;
-                for (uint i = 0; i < text.length; i++)
+                for (uint i = 0; i < text.Length; i++)
                 {
                     char c = text[i];
                     hash = (hash << 5) - hash + (c * salt);

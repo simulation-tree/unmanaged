@@ -9,7 +9,7 @@ namespace Tests
         public void CreatingUsingStackalloc()
         {
             USpan<byte> data = stackalloc byte[8];
-            Assert.That(data.length, Is.EqualTo(8));
+            Assert.That(data.Length, Is.EqualTo(8));
             data[0] = 1;
             data[1] = 2;
 
@@ -50,7 +50,7 @@ namespace Tests
             USpan<byte> slice = data.Slice(2, 4);
             Span<byte> referenceSlice = referenceData.Slice(2, 4);
 
-            Assert.That(slice.length, Is.EqualTo(referenceSlice.Length));
+            Assert.That(slice.Length, Is.EqualTo(referenceSlice.Length));
             Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
 
             using RandomGenerator rng = new();
@@ -74,7 +74,7 @@ namespace Tests
 
                 USpan<byte> slice = data.Slice(sliceStart, sliceLength);
                 Span<byte> referenceSlice = referenceData.Slice((int)sliceStart, (int)sliceLength);
-                Assert.That(slice.length, Is.EqualTo(referenceSlice.Length));
+                Assert.That(slice.Length, Is.EqualTo(referenceSlice.Length));
                 Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
             }
         }
@@ -84,7 +84,7 @@ namespace Tests
         {
             USpan<char> text = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'];
             USpan<char> slice = text.Slice(0, 5);
-            Assert.That(slice.length, Is.EqualTo(5));
+            Assert.That(slice.Length, Is.EqualTo(5));
             Assert.That(slice[0], Is.EqualTo('H'));
             Assert.That(slice[1], Is.EqualTo('e'));
             Assert.That(slice[2], Is.EqualTo('l'));
@@ -92,7 +92,7 @@ namespace Tests
             Assert.That(slice[4], Is.EqualTo('o'));
 
             slice = text.Slice(2, 2);
-            Assert.That(slice.length, Is.EqualTo(2));
+            Assert.That(slice.Length, Is.EqualTo(2));
             Assert.That(slice[0], Is.EqualTo('l'));
             Assert.That(slice[1], Is.EqualTo('l'));
         }
@@ -177,7 +177,7 @@ namespace Tests
         public void CreateFromCollectionExpression()
         {
             USpan<byte> data = [1, 2, 3, 4, 5];
-            Assert.That(data.length, Is.EqualTo(5));
+            Assert.That(data.Length, Is.EqualTo(5));
             Assert.That(data[0], Is.EqualTo(1));
             Assert.That(data[1], Is.EqualTo(2));
             Assert.That(data[2], Is.EqualTo(3));

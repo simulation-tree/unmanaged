@@ -81,9 +81,9 @@ namespace Unmanaged
 
         public void CopyFrom(USpan<char> text)
         {
-            ThrowIfLengthExceedsMax(text.length);
+            ThrowIfLengthExceedsMax(text.Length);
             byte length = 0;
-            for (uint i = 0; i < text.length; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 char c = text.pointer[i];
                 if (c == '\0')
@@ -101,7 +101,7 @@ namespace Unmanaged
         public void CopyFrom(USpan<byte> utf8Bytes)
         {
             uint index = 0;
-            while (index < utf8Bytes.length)
+            while (index < utf8Bytes.Length)
             {
                 byte firstByte = utf8Bytes[index];
                 byte byteCount;
@@ -235,7 +235,7 @@ namespace Unmanaged
                 if (chars[i] == text[0])
                 {
                     bool found = true;
-                    for (uint j = 1; j < text.length; j++)
+                    for (uint j = 1; j < text.Length; j++)
                     {
                         if (i + j >= length || chars[i + j] != text[j])
                         {
@@ -317,7 +317,7 @@ namespace Unmanaged
                 if (chars[i] == text[0])
                 {
                     bool found = true;
-                    for (uint j = 1; j < text.length; j++)
+                    for (uint j = 1; j < text.Length; j++)
                     {
                         if (i + j >= length || chars[i + j] != text[j])
                         {
@@ -344,7 +344,7 @@ namespace Unmanaged
                 if (chars[i] == text[0])
                 {
                     bool found = true;
-                    for (uint j = 1; j < text.length; j++)
+                    for (uint j = 1; j < text.Length; j++)
                     {
                         if (i + j >= length || chars[i + j] != text[j])
                         {
@@ -454,12 +454,12 @@ namespace Unmanaged
             uint length = Length;
             for (uint i = length - 1; i >= 0; i--)
             {
-                if (chars[i] == text[text.length - 1])
+                if (chars[i] == text[text.Length - 1])
                 {
                     bool found = true;
-                    for (uint j = 1; j < text.length; j++)
+                    for (uint j = 1; j < text.Length; j++)
                     {
-                        if (i - j < 0 || chars[i - j] != text[text.length - j])
+                        if (i - j < 0 || chars[i - j] != text[text.Length - j])
                         {
                             found = false;
                             break;
@@ -468,7 +468,7 @@ namespace Unmanaged
 
                     if (found)
                     {
-                        return i - text.length + 1;
+                        return i - text.Length + 1;
                     }
                 }
             }
@@ -481,12 +481,12 @@ namespace Unmanaged
             uint length = Length;
             for (uint i = length - 1; i >= 0; i--)
             {
-                if (chars[i] == text[text.length - 1])
+                if (chars[i] == text[text.Length - 1])
                 {
                     bool found = true;
-                    for (uint j = 1; j < text.length; j++)
+                    for (uint j = 1; j < text.Length; j++)
                     {
-                        if (i - j < 0 || chars[i - j] != text[text.length - j])
+                        if (i - j < 0 || chars[i - j] != text[text.Length - j])
                         {
                             found = false;
                             break;
@@ -495,7 +495,7 @@ namespace Unmanaged
 
                     if (found)
                     {
-                        index = i - text.length + 1;
+                        index = i - text.Length + 1;
                         return true;
                     }
                 }
@@ -563,12 +563,12 @@ namespace Unmanaged
 
         public readonly bool StartsWith(USpan<char> text)
         {
-            if (text.length > Length)
+            if (text.Length > Length)
             {
                 return false;
             }
 
-            for (uint i = 0; i < text.length; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 if (chars[i] != text[i])
                 {
@@ -599,14 +599,14 @@ namespace Unmanaged
 
         public readonly bool EndsWith(USpan<char> text)
         {
-            if (text.length > Length)
+            if (text.Length > Length)
             {
                 return false;
             }
 
-            for (uint i = 0; i < text.length; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
-                if (chars[Length - text.length + i] != text[i])
+                if (chars[Length - text.Length + i] != text[i])
                 {
                     return false;
                 }
@@ -663,13 +663,13 @@ namespace Unmanaged
         public void Append(USpan<char> text)
         {
             uint length = Length;
-            ThrowIfLengthExceedsMax(length + text.length);
-            for (uint i = 0; i < text.length; i++)
+            ThrowIfLengthExceedsMax(length + text.Length);
+            for (uint i = 0; i < text.Length; i++)
             {
                 chars[length + i] = (byte)text[i];
             }
 
-            chars[255] = (byte)(length + text.length);
+            chars[255] = (byte)(length + text.Length);
         }
 
         public void Append(FixedString text)
@@ -747,19 +747,19 @@ namespace Unmanaged
         public void Insert(uint index, USpan<char> text)
         {
             uint length = Length;
-            ThrowIfLengthExceedsMax(length + text.length);
+            ThrowIfLengthExceedsMax(length + text.Length);
             ThrowIfIndexOutOfRange(index);
             for (uint i = length; i > index; i--)
             {
-                chars[i + text.length - 1] = chars[i - 1];
+                chars[i + text.Length - 1] = chars[i - 1];
             }
 
-            for (uint i = 0; i < text.length; i++)
+            for (uint i = 0; i < text.Length; i++)
             {
                 chars[index + i] = (byte)text[i];
             }
 
-            chars[255] = (byte)(length + text.length);
+            chars[255] = (byte)(length + text.Length);
         }
 
         public void Insert(uint index, FixedString text)
@@ -799,7 +799,7 @@ namespace Unmanaged
                 if (chars[i] == oldValue[0])
                 {
                     bool found = true;
-                    for (uint j = 1; j < oldValue.length; j++)
+                    for (uint j = 1; j < oldValue.Length; j++)
                     {
                         if (i + j >= length || chars[i + j] != oldValue[j])
                         {
@@ -810,27 +810,27 @@ namespace Unmanaged
 
                     if (found)
                     {
-                        if (oldValue.length == newValue.length)
+                        if (oldValue.Length == newValue.Length)
                         {
-                            for (uint j = 0; j < newValue.length; j++)
+                            for (uint j = 0; j < newValue.Length; j++)
                             {
                                 chars[i + j] = (byte)newValue[j];
                             }
                         }
                         else
                         {
-                            uint difference = newValue.length - oldValue.length;
+                            uint difference = newValue.Length - oldValue.Length;
                             if (difference > 0)
                             {
                                 ThrowIfLengthExceedsMax(length + difference);
                             }
 
-                            for (uint j = length; j > i + oldValue.length; j--)
+                            for (uint j = length; j > i + oldValue.Length; j--)
                             {
                                 chars[j + difference - 1] = chars[j - 1];
                             }
 
-                            for (uint j = 0; j < newValue.length; j++)
+                            for (uint j = 0; j < newValue.Length; j++)
                             {
                                 chars[i + j] = (byte)newValue[j];
                             }
@@ -923,7 +923,7 @@ namespace Unmanaged
         public readonly bool Equals(USpan<char> other)
         {
             uint length = Length;
-            if (length != other.length)
+            if (length != other.Length)
             {
                 return false;
             }

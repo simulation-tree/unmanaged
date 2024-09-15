@@ -44,7 +44,7 @@ namespace Tests
         {
             using Container a = Container.Create(1337);
             USpan<byte> bytes = a.AsSpan();
-            Assert.That(bytes.length, Is.EqualTo(sizeof(int)));
+            Assert.That(bytes.Length, Is.EqualTo(sizeof(int)));
             Assert.That(BitConverter.ToInt32(bytes.AsSystemSpan()), Is.EqualTo(1337));
         }
 

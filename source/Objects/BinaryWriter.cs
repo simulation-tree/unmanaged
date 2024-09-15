@@ -49,7 +49,7 @@ namespace Unmanaged
 
         public void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            UnsafeBinaryWriter.Write(ref value, span.pointer, span.length * USpan<T>.ElementSize);
+            UnsafeBinaryWriter.Write(ref value, span.pointer, span.Length * USpan<T>.ElementSize);
         }
 
         public void WriteUTF8Character(char value)

@@ -85,7 +85,7 @@ namespace Unmanaged
         public readonly void Write<T>(uint start, USpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            Write(span.pointer, start, span.length * USpan<T>.ElementSize);
+            Write(span.pointer, start, span.Length * USpan<T>.ElementSize);
         }
 
         public readonly void Write(void* data, uint start, uint length)
@@ -224,9 +224,9 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>(USpan<T> span) where T : unmanaged
         {
-            uint length = span.length * USpan<T>.ElementSize;
+            uint length = span.Length * USpan<T>.ElementSize;
             Allocation allocation = new(length);
-            span.CopyTo(allocation.AsSpan<T>(0, span.length));
+            span.CopyTo(allocation.AsSpan<T>(0, span.Length));
             return allocation;
         }
 

@@ -170,7 +170,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            uint length = items.length;
+            uint length = items.Length;
             if (index == count)
             {
                 AddRange(items);

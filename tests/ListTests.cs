@@ -220,7 +220,7 @@ namespace Tests
             UnsafeList.Add(data, 4);
 
             USpan<byte> span = UnsafeList.AsSpan<byte>(data);
-            Assert.That(span.length, Is.EqualTo(sizeof(int) * 4));
+            Assert.That(span.Length, Is.EqualTo(sizeof(int) * 4));
             int value1 = BitConverter.ToInt32(span.Slice(0, 4).AsSystemSpan());
             int value2 = BitConverter.ToInt32(span.Slice(4, 4).AsSystemSpan());
             int value3 = BitConverter.ToInt32(span.Slice(8, 4).AsSystemSpan());

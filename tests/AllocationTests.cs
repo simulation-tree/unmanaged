@@ -26,7 +26,7 @@ namespace Tests
             allocation.Write(3 * sizeof(uint), 50);
 
             USpan<uint> bufferSpan = allocation.AsSpan<uint>(0, 4);
-            Assert.That(bufferSpan.length, Is.EqualTo(4));
+            Assert.That(bufferSpan.Length, Is.EqualTo(4));
             Assert.That(bufferSpan[0], Is.EqualTo(5));
             Assert.That(bufferSpan[1], Is.EqualTo(15));
             Assert.That(bufferSpan[2], Is.EqualTo(25));
@@ -94,7 +94,7 @@ namespace Tests
             Assert.That(obj.IsDisposed, Is.False);
 
             USpan<byte> data = obj.AsSpan<byte>(0, sizeof(long));
-            Assert.That(data.length, Is.EqualTo(sizeof(long)));
+            Assert.That(data.Length, Is.EqualTo(sizeof(long)));
             ulong value = BitConverter.ToUInt64(data.AsSystemSpan());
             Assert.That(value, Is.EqualTo(0));
         }
@@ -118,7 +118,7 @@ namespace Tests
             Assert.That(obj.AsSpan<int>(0, 1)[0], Is.EqualTo(0));
 
             USpan<int> bufferSpan = obj.AsSpan<int>(0, 4);
-            Assert.That(bufferSpan.length, Is.EqualTo(4));
+            Assert.That(bufferSpan.Length, Is.EqualTo(4));
             Assert.That(bufferSpan[0], Is.EqualTo(0));
             Assert.That(bufferSpan[1], Is.EqualTo(0));
             Assert.That(bufferSpan[2], Is.EqualTo(0));
@@ -183,7 +183,7 @@ namespace Tests
             b.Write((4 + 2) * sizeof(int), 7);
             b.Write((4 + 3) * sizeof(int), 8);
             USpan<int> bufferSpan = b.AsSpan<int>(0, 8);
-            Assert.That(bufferSpan.length, Is.EqualTo(8));
+            Assert.That(bufferSpan.Length, Is.EqualTo(8));
             Assert.That(bufferSpan[0], Is.EqualTo(1));
             Assert.That(bufferSpan[1], Is.EqualTo(2));
             Assert.That(bufferSpan[2], Is.EqualTo(3));

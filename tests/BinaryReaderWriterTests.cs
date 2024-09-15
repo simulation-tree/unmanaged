@@ -238,7 +238,7 @@ namespace Tests
             Assert.That(values, Contains.Item(32));
             Assert.That(values, Contains.Item(64));
             Assert.That(values, Contains.Item(128));
-            Assert.That(writer.AsSpan<int>().length, Is.EqualTo(0));
+            Assert.That(writer.AsSpan<int>().Length, Is.EqualTo(0));
 
             writer.Dispose();
         }

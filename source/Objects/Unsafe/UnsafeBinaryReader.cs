@@ -42,7 +42,7 @@ namespace Unmanaged.Serialization.Unsafe
         public static UnsafeBinaryReader* Allocate(USpan<byte> bytes, uint position = 0)
         {
             UnsafeBinaryReader* reader = Allocations.Allocate<UnsafeBinaryReader>();
-            reader[0] = new(position, Allocation.Create(bytes), bytes.length, false);
+            reader[0] = new(position, Allocation.Create(bytes), bytes.Length, false);
             return reader;
         }
 

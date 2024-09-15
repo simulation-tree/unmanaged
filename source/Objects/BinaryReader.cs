@@ -235,7 +235,7 @@ namespace Unmanaged
         {
             ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
             uint start = position;
-            uint read = PeekUTF8Span(start, buffer.length, buffer);
+            uint read = PeekUTF8Span(start, buffer.Length, buffer);
             position += read;
             return read;
         }

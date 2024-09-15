@@ -55,7 +55,7 @@ namespace Unmanaged.Collections
         {
             RuntimeType type = RuntimeType.Get<T>();
             UnsafeList* list = Allocations.Allocate<UnsafeList>();
-            list->count = span.length;
+            list->count = span.Length;
             list->type = type;
             list->capacity = list->count;
             list->items = Allocation.Create(span);
@@ -196,7 +196,7 @@ namespace Unmanaged.Collections
         {
             ThrowIfDisposed(list);
             uint capacity = GetCapacity(list);
-            uint addLength = (uint)items.length;
+            uint addLength = (uint)items.Length;
             uint newCount = list->count + addLength;
             if (newCount >= capacity)
             {
@@ -443,7 +443,7 @@ namespace Unmanaged.Collections
                 throw new IndexOutOfRangeException();
             }
 
-            if (destinationIndex + source->count - sourceIndex > destination.length)
+            if (destinationIndex + source->count - sourceIndex > destination.Length)
             {
                 throw new ArgumentException("Destination span is too small to fit destination index.");
             }

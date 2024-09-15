@@ -223,7 +223,7 @@ namespace Unmanaged
         {
             ulong* t = (ulong*)pointer;
             ulong value = *t;
-            for (uint i = 0; i < bytes.length; i++)
+            for (uint i = 0; i < bytes.Length; i++)
             {
                 value ^= value >> 13;
                 value ^= value << 7;

@@ -17,7 +17,7 @@ namespace Unmanaged
 
         public static int Get<T>(USpan<T> span) where T : unmanaged
         {
-            if (span.length == 0)
+            if (span.Length == 0)
             {
                 return 0;
             }
@@ -25,7 +25,7 @@ namespace Unmanaged
             //djb2 implementation from CommunityToolkit.HighPerformance/SpanHelper.Hash.cs
             //todo: this could be xor hash instead, and shorter?????
             ref T first = ref span[0];
-            uint length = span.length;
+            uint length = span.Length;
             int hash = 5381;
             nint offset = 0;
             while (length >= 8)

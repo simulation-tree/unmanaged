@@ -72,7 +72,7 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
 
             USpan<byte> sourceBuffer = AsSpan();
-            uint length = Math.Min(sourceBuffer.length, destinationBuffer.length);
+            uint length = Math.Min(sourceBuffer.Length, destinationBuffer.Length);
             sourceBuffer.Slice(0, length).CopyTo(destinationBuffer);
             return length;
         }
