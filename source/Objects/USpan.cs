@@ -312,11 +312,17 @@ namespace Unmanaged
             return new(this);
         }
 
+        /// <summary>
+        /// Clears the span to default values.
+        /// </summary>
         public readonly void Clear()
         {
             Unsafe.InitBlockUnaligned(pointer, 0, Length * ElementSize);
         }
 
+        /// <summary>
+        /// Fills the span with the given value.
+        /// </summary>
         public readonly void Fill(T value)
         {
             for (uint i = 0; i < Length; i++)
