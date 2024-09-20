@@ -30,6 +30,11 @@ public unsafe static class SpanFunctions
         return new(span.pointer, (int)span.Length);
     }
 
+    public static Span<V> AsSystemSpan<T, V>(this USpan<T> span) where T : unmanaged where V : unmanaged
+    {
+        return new(span.pointer, (int)span.Length);
+    }
+
     public static uint ToString(this byte value, USpan<char> buffer)
     {
         Span<char> systemSpan = buffer.AsSystemSpan();

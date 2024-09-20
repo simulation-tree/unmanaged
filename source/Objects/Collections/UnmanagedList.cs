@@ -338,7 +338,7 @@ namespace Unmanaged.Collections
         readonly int IList<T>.IndexOf(T item)
         {
             USpan<T> values = AsSpan();
-            if (values.TryIndexOf(item, out uint index))
+            if (values.TryIndexOfSlow(item, out uint index))
             {
                 return (int)index;
             }
@@ -361,7 +361,7 @@ namespace Unmanaged.Collections
         readonly bool ICollection<T>.Contains(T item)
         {
             USpan<T> values = AsSpan();
-            return values.Contains(item);
+            return values.ContainsSlow(item);
         }
 
         readonly void ICollection<T>.CopyTo(T[] array, int arrayIndex)
@@ -372,7 +372,7 @@ namespace Unmanaged.Collections
         readonly bool ICollection<T>.Remove(T item)
         {
             USpan<T> values = AsSpan();
-            if (values.TryIndexOf(item, out uint index))
+            if (values.TryIndexOfSlow(item, out uint index))
             {
                 RemoveAt(index);
                 return true;

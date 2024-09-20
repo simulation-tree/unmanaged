@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -94,6 +95,24 @@ namespace Unmanaged
             }
         }
 
+        [Conditional("DEBUG")]
+        private static void ThrowIfIndexNotFound(int i)
+        {
+            if (i == -1)
+            {
+                throw new ArgumentException("Value not found in span");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private static void ThrowIfTypeSizeMismatches<V>() where V : unmanaged
+        {
+            if (sizeof(T) != sizeof(V))
+            {
+                throw new ArgumentException("Size of type mismatch");
+            }
+        }
+
         public override string ToString()
         {
             if (typeof(T) == typeof(char)) //special case
@@ -167,37 +186,28 @@ namespace Unmanaged
             return new USpan<T>(pointer + start, Length - start);
         }
 
-        public readonly uint IndexOf(T value)
+        public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
-            for (uint i = 0; i < Length; i++)
-            {
-                if (this[i].Equals(value))
-                {
-                    return i;
-                }
-            }
-
-            throw new ArgumentException("Value not found in span", nameof(value));
+            ThrowIfTypeSizeMismatches<V>();
+            int i = MemoryExtensions.IndexOf(this.AsSystemSpan<T, V>(), value);
+            ThrowIfIndexNotFound(i);
+            return (uint)i;
         }
 
-        public readonly uint LastIndexOf(T value)
+        public readonly uint LastIndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
-            for (uint i = Length - 1; i != uint.MaxValue; i--)
-            {
-                if (this[i].Equals(value))
-                {
-                    return i;
-                }
-            }
-
-            throw new ArgumentException("Value not found in span", nameof(value));
+            ThrowIfTypeSizeMismatches<V>();
+            int i = MemoryExtensions.LastIndexOf(this.AsSystemSpan<T, V>(), value);
+            ThrowIfIndexNotFound(i);
+            return (uint)i;
         }
 
-        public readonly bool TryIndexOf(T value, out uint index)
+        public readonly bool TryIndexOfSlow(T value, out uint index)
         {
+            //slow
             for (uint i = 0; i < Length; i++)
             {
-                if (this[i].Equals(value))
+                if (pointer[i].Equals(value))
                 {
                     index = i;
                     return true;
@@ -208,19 +218,36 @@ namespace Unmanaged
             return false;
         }
 
-        public readonly bool TryLastIndexOf(T value, out uint index)
+        public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
-            for (uint i = Length - 1; i != uint.MaxValue; i--)
+            ThrowIfTypeSizeMismatches<V>();
+            int i = MemoryExtensions.IndexOf(this.AsSystemSpan<T, V>(), value);
+            if (i != -1)
             {
-                if (this[i].Equals(value))
-                {
-                    index = i;
-                    return true;
-                }
+                index = (uint)i;
+                return true;
             }
+            else
+            {
+                index = 0;
+                return false;
+            }
+        }
 
-            index = 0;
-            return false;
+        public readonly bool TryLastIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
+        {
+            ThrowIfTypeSizeMismatches<V>();
+            int i = MemoryExtensions.LastIndexOf(this.AsSystemSpan<T, V>(), value);
+            if (i != -1)
+            {
+                index = (uint)i;
+                return true;
+            }
+            else
+            {
+                index = 0;
+                return false;
+            }
         }
 
         public readonly uint IndexOf(USpan<T> span)
@@ -252,8 +279,9 @@ namespace Unmanaged
             return false;
         }
 
-        public readonly bool Contains(T value)
+        public readonly bool ContainsSlow(T value)
         {
+            //slow
             for (uint i = 0; i < Length; i++)
             {
                 if (pointer[i].Equals(value))
@@ -263,6 +291,12 @@ namespace Unmanaged
             }
 
             return false;
+        }
+
+        public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
+        {
+            ThrowIfTypeSizeMismatches<V>();
+            return MemoryExtensions.Contains(this.AsSystemSpan<T, V>(), value);
         }
 
         public readonly bool Contains(USpan<T> span)
