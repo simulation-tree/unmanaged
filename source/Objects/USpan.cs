@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -189,7 +188,7 @@ namespace Unmanaged
         public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = MemoryExtensions.IndexOf(this.AsSystemSpan<T, V>(), value);
+            int i = this.AsSystemSpan<T, V>().IndexOf(value);
             ThrowIfIndexNotFound(i);
             return (uint)i;
         }
@@ -197,7 +196,7 @@ namespace Unmanaged
         public readonly uint LastIndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = MemoryExtensions.LastIndexOf(this.AsSystemSpan<T, V>(), value);
+            int i = this.AsSystemSpan<T, V>().LastIndexOf(value);
             ThrowIfIndexNotFound(i);
             return (uint)i;
         }
@@ -221,7 +220,7 @@ namespace Unmanaged
         public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = MemoryExtensions.IndexOf(this.AsSystemSpan<T, V>(), value);
+            int i = this.AsSystemSpan<T, V>().IndexOf(value);
             if (i != -1)
             {
                 index = (uint)i;
@@ -237,7 +236,7 @@ namespace Unmanaged
         public readonly bool TryLastIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = MemoryExtensions.LastIndexOf(this.AsSystemSpan<T, V>(), value);
+            int i = this.AsSystemSpan<T, V>().LastIndexOf(value);
             if (i != -1)
             {
                 index = (uint)i;
@@ -296,7 +295,7 @@ namespace Unmanaged
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            return MemoryExtensions.Contains(this.AsSystemSpan<T, V>(), value);
+            return this.AsSystemSpan<T, V>().Contains(value);
         }
 
         public readonly bool Contains(USpan<T> span)
@@ -359,10 +358,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Fill(T value)
         {
-            for (uint i = 0; i < Length; i++)
-            {
-                pointer[i] = value;
-            }
+            this.AsSystemSpan().Fill(value);
         }
 
         public readonly void CopyTo(USpan<T> otherSpan)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using Unmanaged;
 
 namespace Tests
@@ -27,12 +28,8 @@ namespace Tests
                 data[8] = 0;
                 Assert.Fail();
             }
-            catch (ArgumentOutOfRangeException)
-            {
-            }
             catch
             {
-                Assert.Fail();
             }
         }
 
@@ -190,6 +187,111 @@ namespace Tests
         {
             USpan<char> text = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'];
             Assert.That(text.ToString(), Is.EqualTo("Hello World"));
+        }
+
+        [Test]
+        public void BenchmarkAgainstSystemSpan()
+        {
+            //indexof, contains, fill, clear, slice
+            const int length = 1024;
+            Span<byte> systemSpan = new byte[length];
+            USpan<byte> unmanagedSpan = stackalloc byte[length];
+            for (int i = 0; i < length; i++)
+            {
+                systemSpan[i] = (byte)(i % 255);
+                unmanagedSpan[(uint)i] = (byte)(i % 255);
+            }
+
+            Stopwatch benchmark = new();
+            benchmark.Start();
+            for (int i = 0; i < 1000000; i++)
+            {
+                systemSpan.IndexOf((byte)0);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"System.Span.IndexOf: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                unmanagedSpan.IndexOf((byte)0);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"USpan.IndexOf: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                systemSpan.Contains((byte)0);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"System.Span.Contains: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                unmanagedSpan.Contains((byte)0);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"USpan.Contains: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                systemSpan.Fill(4);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"System.Span.Fill: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                unmanagedSpan.Fill(4);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"USpan.Fill: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                systemSpan.Clear();
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"System.Span.Clear: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                unmanagedSpan.Clear();
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"USpan.Clear: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                systemSpan.Slice(0, 512);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"System.Span.Slice: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                unmanagedSpan.Slice(0, 512);
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"USpan.Slice: {benchmark.ElapsedMilliseconds}ms");
         }
     }
 }

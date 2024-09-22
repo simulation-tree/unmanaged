@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Unmanaged;
 
 public unsafe static class SpanFunctions
@@ -27,12 +29,24 @@ public unsafe static class SpanFunctions
 
     public static Span<T> AsSystemSpan<T>(this USpan<T> span) where T : unmanaged
     {
-        return new(span.pointer, (int)span.Length);
+        if (span.Length == 0)
+        {
+            return default;
+        }
+
+        ref T first = ref span[0];
+        return MemoryMarshal.CreateSpan(ref first, (int)span.Length);
     }
 
     public static Span<V> AsSystemSpan<T, V>(this USpan<T> span) where T : unmanaged where V : unmanaged
     {
-        return new(span.pointer, (int)span.Length);
+        if (span.Length == 0)
+        {
+            return default;
+        }
+
+        ref V first = ref Unsafe.As<T, V>(ref span[0]);
+        return MemoryMarshal.CreateSpan(ref first, (int)span.Length);
     }
 
     public static uint ToString(this byte value, USpan<char> buffer)
