@@ -43,6 +43,11 @@ namespace Unmanaged.Collections
             value = UnsafeDictionary.Allocate<K, V>();
         }
 #endif
+
+        /// <summary>
+        /// Disposes the dictionary.
+        /// <para>Keys and values need to be disposed manually beforehand.</para>
+        /// </summary>
         public void Dispose()
         {
             UnsafeDictionary.Free(ref value);

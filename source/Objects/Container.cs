@@ -106,6 +106,9 @@ namespace Unmanaged
             return type == RuntimeType.Get<T>();
         }
 
+        /// <summary>
+        /// Creates a new copy of this container.
+        /// </summary>
         public readonly Container Clone()
         {
             Allocations.ThrowIfNull(pointer);

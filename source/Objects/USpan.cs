@@ -74,11 +74,6 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         private readonly void ThrowIfAccessingOutOfRange(uint index)
         {
-            if (index == default && Length == default)
-            {
-                return;
-            }
-
             if (index >= Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(index), "Index must be less than the length of the span");
@@ -145,7 +140,7 @@ namespace Unmanaged
             buffer[length++] = '>';
             buffer[length++] = '[';
 
-            length += this.Length.ToString(buffer.Slice(length));
+            length += Length.ToString(buffer.Slice(length));
 
             buffer[length++] = ']';
             return length;
@@ -175,30 +170,48 @@ namespace Unmanaged
 
         public readonly USpan<T> Slice(uint start, uint length)
         {
+            if (length == 0)
+            {
+                //todo: get rid of this ugly branch
+                return default;
+            }
+
             ThrowIfAccessingOutOfRange(start);
-            return new USpan<T>(pointer + start, length);
+            unchecked
+            {
+                return new USpan<T>(pointer + start, length);
+            }
         }
 
         public readonly USpan<T> Slice(uint start)
         {
             ThrowIfAccessingOutOfRange(start);
-            return new USpan<T>(pointer + start, Length - start);
+            unchecked
+            {
+                return new USpan<T>(pointer + start, Length - start);
+            }
         }
 
         public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = this.AsSystemSpan<T, V>().IndexOf(value);
-            ThrowIfIndexNotFound(i);
-            return (uint)i;
+            unchecked
+            {
+                int i = this.AsSystemSpan<T, V>().IndexOf(value);
+                ThrowIfIndexNotFound(i);
+                return (uint)i;
+            }
         }
 
         public readonly uint LastIndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = this.AsSystemSpan<T, V>().LastIndexOf(value);
-            ThrowIfIndexNotFound(i);
-            return (uint)i;
+            unchecked
+            {
+                int i = this.AsSystemSpan<T, V>().LastIndexOf(value);
+                ThrowIfIndexNotFound(i);
+                return (uint)i;
+            }
         }
 
         public readonly bool TryIndexOfSlow(T value, out uint index)
@@ -220,32 +233,38 @@ namespace Unmanaged
         public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = this.AsSystemSpan<T, V>().IndexOf(value);
-            if (i != -1)
+            unchecked
             {
-                index = (uint)i;
-                return true;
-            }
-            else
-            {
-                index = 0;
-                return false;
+                int i = this.AsSystemSpan<T, V>().IndexOf(value);
+                if (i != -1)
+                {
+                    index = (uint)i;
+                    return true;
+                }
+                else
+                {
+                    index = 0;
+                    return false;
+                }
             }
         }
 
         public readonly bool TryLastIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            int i = this.AsSystemSpan<T, V>().LastIndexOf(value);
-            if (i != -1)
+            unchecked
             {
-                index = (uint)i;
-                return true;
-            }
-            else
-            {
-                index = 0;
-                return false;
+                int i = this.AsSystemSpan<T, V>().LastIndexOf(value);
+                if (i != -1)
+                {
+                    index = (uint)i;
+                    return true;
+                }
+                else
+                {
+                    index = 0;
+                    return false;
+                }
             }
         }
 
