@@ -72,35 +72,43 @@ namespace Unmanaged
         /// <summary>
         /// Writes a single given value into the memory into this byte position.
         /// </summary>
-        public readonly void Write<T>(uint start, T value) where T : unmanaged
+        public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             void* ptr = &value;
-            Write(ptr, start, USpan<T>.ElementSize);
+            Write(ptr, bytePosition, USpan<T>.ElementSize);
+        }
+
+        /// <summary>
+        /// Writes a single given value into the memory starting at the beginning.
+        /// </summary>
+        public readonly void Write<T>(T value) where T : unmanaged
+        {
+            Write(0, value);
         }
 
         /// <summary>
         /// Writes the given span into the memory starting at this position in bytes.
         /// </summary>
-        public readonly void Write<T>(uint start, USpan<T> span) where T : unmanaged
+        public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            Write(span.pointer, start, span.Length * USpan<T>.ElementSize);
+            Write(span.pointer, bytePosition, span.Length * USpan<T>.ElementSize);
         }
 
-        public readonly void Write(void* data, uint start, uint length)
+        public readonly void Write(void* data, uint bytePosition, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
-            Unsafe.CopyBlock((void*)((nint)pointer + start), data, length);
+            Unsafe.CopyBlock((void*)((nint)pointer + bytePosition), data, byteLength);
         }
 
         /// <summary>
         /// Retrieves a span slice of the bytes in this allocation.
         /// </summary>
-        public readonly USpan<byte> AsSpan(uint start, uint byteLength)
+        public readonly USpan<byte> AsSpan(uint bytePosition, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
-            return new USpan<byte>((void*)((nint)pointer + start), byteLength);
+            return new USpan<byte>((void*)((nint)pointer + bytePosition), byteLength);
         }
 
         /// <summary>
@@ -118,10 +126,10 @@ namespace Unmanaged
         /// <summary>
         /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
         /// </summary>
-        public readonly ref T Read<T>(uint start = 0) where T : unmanaged
+        public readonly ref T Read<T>(uint bytePosition = 0) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            return ref Unsafe.AsRef<T>((void*)((nint)pointer + start));
+            return ref Unsafe.AsRef<T>((void*)((nint)pointer + bytePosition));
         }
 
         /// <summary>
@@ -136,10 +144,10 @@ namespace Unmanaged
         /// <summary>
         /// Resets a range of memory to <c>default</c> state.
         /// </summary>
-        public readonly void Clear(uint start, uint byteLength)
+        public readonly void Clear(uint bytePosition, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
-            nint address = (nint)((nint)pointer + start);
+            nint address = (nint)((nint)pointer + bytePosition);
             NativeMemory.Clear((void*)address, byteLength);
         }
 
