@@ -93,7 +93,7 @@ namespace Unmanaged
         public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            Write(span.pointer, bytePosition, span.Length * USpan<T>.ElementSize);
+            Write((void*)span.Address, bytePosition, span.Length * USpan<T>.ElementSize);
         }
 
         public readonly void Write(void* data, uint bytePosition, uint byteLength)

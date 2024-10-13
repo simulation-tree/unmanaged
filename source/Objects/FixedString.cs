@@ -74,9 +74,9 @@ namespace Unmanaged
         public readonly override string ToString()
         {
             uint length = Length;
-            USpan<char> temp = stackalloc char[(int)length];
-            CopyTo(temp);
-            return new string(temp.pointer, 0, (int)length);
+            USpan<char> buffer = stackalloc char[(int)length];
+            CopyTo(buffer);
+            return buffer.ToString();
         }
 
         public void CopyFrom(USpan<char> text)
@@ -85,7 +85,7 @@ namespace Unmanaged
             byte length = 0;
             for (uint i = 0; i < text.Length; i++)
             {
-                char c = text.pointer[i];
+                char c = text[i];
                 if (c == '\0')
                 {
                     break;

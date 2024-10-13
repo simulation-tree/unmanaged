@@ -15,8 +15,7 @@ namespace Unmanaged
     {
         public readonly static uint ElementSize = (uint)sizeof(T);
 
-        public readonly T* pointer;
-
+        private readonly T* pointer;
         private readonly uint length;
 
         public ref T this[uint index]
@@ -166,6 +165,16 @@ namespace Unmanaged
         public readonly override int GetHashCode()
         {
             return HashCode.Combine((nint)pointer, Length);
+        }
+
+        /// <summary>
+        /// Retrieves this span as a span of another type of
+        /// the same size.
+        /// </summary>
+        public readonly USpan<X> As<X>() where X : unmanaged
+        {
+            ThrowIfTypeSizeMismatches<X>();
+            return new(pointer, Length);
         }
 
         public readonly USpan<T> Slice(uint start, uint length)
