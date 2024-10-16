@@ -79,6 +79,9 @@ namespace Unmanaged
             return buffer.ToString();
         }
 
+        /// <summary>
+        /// Copies the state of another text span.
+        /// </summary>
         public void CopyFrom(USpan<char> text)
         {
             ThrowIfLengthExceedsMax(text.Length);
