@@ -328,19 +328,6 @@ namespace Unmanaged.Collections
             return removed;
         }
 
-        public static int GetContentHashCode(UnsafeList* list)
-        {
-            unchecked
-            {
-                int hash = 17;
-                uint byteCount = list->type.Size * list->count;
-                hash = hash * 23 + list->type.GetHashCode();
-                hash = hash * 23 + list->count.GetHashCode();
-                hash = hash * 23 + Djb2Hash.Get(list->items.AsSpan<byte>(0, byteCount));
-                return hash;
-            }
-        }
-
         public static void Clear(UnsafeList* list)
         {
             ThrowIfDisposed(list);

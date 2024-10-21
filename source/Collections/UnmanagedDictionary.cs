@@ -37,7 +37,7 @@ namespace Unmanaged.Collections
             value = UnsafeDictionary.Allocate<K, V>(initialCapacity);
         }
 
-#if NET5_0_OR_GREATER
+#if NET
         public UnmanagedDictionary()
         {
             value = UnsafeDictionary.Allocate<K, V>();

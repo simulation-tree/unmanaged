@@ -61,7 +61,7 @@ namespace Unmanaged.Collections
             }
         }
 
-#if NET5_0_OR_GREATER
+#if NET
         /// <summary>
         /// Creates a new empty list.
         /// </summary>
@@ -246,9 +246,15 @@ namespace Unmanaged.Collections
             }
         }
 
-        public readonly void RemoveAt(uint index)
+        /// <summary>
+        /// Removes the element at the given index.
+        /// </summary>
+        /// <returns>The removed element.</returns>
+        public readonly T RemoveAt(uint index)
         {
+            T removed = this[index];
             UnsafeList.RemoveAt(value, index);
+            return removed;
         }
 
         public readonly void RemoveAtBySwapping(uint index)
@@ -293,11 +299,6 @@ namespace Unmanaged.Collections
         {
             nint ptr = (nint)value;
             return HashCode.Combine(ptr, 7);
-        }
-
-        public readonly int GetContentHashCode()
-        {
-            return UnsafeList.GetContentHashCode(value);
         }
 
         public readonly void CopyTo(USpan<T> destination)

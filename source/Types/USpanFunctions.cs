@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unmanaged;
 
-public unsafe static class SpanFunctions
+public unsafe static class USpanFunctions
 {
     [Conditional("DEBUG")]
     private static void ThrowIfStringObjectIsNull(string text)
@@ -151,5 +152,60 @@ public unsafe static class SpanFunctions
     {
         Span<char> systemSpan = buffer.AsSystemSpan();
         return timeSpan.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
+    }
+
+    public static uint ToString(this Vector2 vector, USpan<char> buffer)
+    {
+        uint length = 0;
+        length += vector.X.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += vector.Y.ToString(buffer.Slice(length));
+        return length;
+    }
+
+    public static uint ToString(this Vector3 vector, USpan<char> buffer)
+    {
+        uint length = 0;
+        length += vector.X.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += vector.Y.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += vector.Z.ToString(buffer.Slice(length));
+        return length;
+    }
+
+    public static uint ToString(this Vector4 vector, USpan<char> buffer)
+    {
+        uint length = 0;
+        length += vector.X.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += vector.Y.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += vector.Z.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += vector.W.ToString(buffer.Slice(length));
+        return length;
+    }
+
+    public static uint ToString(this Quaternion quaternion, USpan<char> buffer)
+    {
+        uint length = 0;
+        length += quaternion.X.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += quaternion.Y.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += quaternion.Z.ToString(buffer.Slice(length));
+        buffer[length++] = ',';
+        buffer[length++] = ' ';
+        length += quaternion.W.ToString(buffer.Slice(length));
+        return length;
     }
 }

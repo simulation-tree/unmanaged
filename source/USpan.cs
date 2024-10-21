@@ -201,6 +201,12 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Retrieves the index of the first occurrence of the given value.
+        /// <para>
+        /// In debug, may throw <see cref="ArgumentException"/> if the value is not found.
+        /// </para>
+        /// </summary>
         public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
@@ -212,6 +218,12 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Retrieves the index of the last occurrence of the given value.
+        /// <para>
+        /// In debug, may throw <see cref="ArgumentException"/> if the value is not found.
+        /// </para>
+        /// </summary>
         public readonly uint LastIndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
@@ -389,17 +401,18 @@ namespace Unmanaged
             this.AsSystemSpan().Fill(value);
         }
 
-        public readonly void CopyTo(USpan<T> otherSpan)
+        public readonly uint CopyTo(USpan<T> otherSpan)
         {
             //todo: efficiency: to remove this branch, spans cant be allowed to contain default values at all...
             //because stackalloc of 0 will give a blank pointer (undefined)
             if (Length == 0)
             {
-                return;
+                return 0;
             }
 
             ThrowIfDestinationTooSmall(otherSpan.Length);
             Unsafe.CopyBlockUnaligned(otherSpan.pointer, pointer, Length * ElementSize);
+            return Length;
         }
 
         public static implicit operator USpan<T>(Span<T> span)

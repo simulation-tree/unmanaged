@@ -285,13 +285,5 @@ namespace Tests
             UnsafeList.Free(ref a);
             UnsafeList.Free(ref b);
         }
-
-        [Test]
-        public void CompareContentHashCodes()
-        {
-            using UnmanagedList<char> a = new("fourth page");
-            using UnmanagedList<char> b = new("fourth page");
-            Assert.That(a.GetContentHashCode(), Is.EqualTo(b.GetContentHashCode()));
-        }
     }
 }
