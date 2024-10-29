@@ -2,16 +2,10 @@
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class DictionaryTests
+    public class DictionaryTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void CreatingAndDisposingDictionary()
         {

@@ -14,7 +14,7 @@ namespace Unmanaged.Collections
         {
             if (index >= array->length)
             {
-                throw new IndexOutOfRangeException($"Index {index} is out of range for array of length {array->length}.");
+                throw new IndexOutOfRangeException($"Index {index} is out of range for array of length {array->length}");
             }
         }
 
@@ -23,7 +23,7 @@ namespace Unmanaged.Collections
         {
             if (IsDisposed(array))
             {
-                throw new ObjectDisposedException("Array is disposed.");
+                throw new ObjectDisposedException(nameof(UnsafeArray));
             }
         }
 

@@ -179,8 +179,8 @@ namespace Unmanaged
                 }
                 else if (c <= 0x7FF)
                 {
-                    utf8Bytes[byteIndex++] = (byte)(0xC0 | (c >> 6)); // First 5 bits
-                    utf8Bytes[byteIndex++] = (byte)(0x80 | (c & 0x3F)); // Last 6 bits
+                    utf8Bytes[byteIndex++] = (byte)(0xC0 | (c >> 6)); //first 5 bits
+                    utf8Bytes[byteIndex++] = (byte)(0x80 | (c & 0x3F)); //last 6 bits
                 }
             }
 

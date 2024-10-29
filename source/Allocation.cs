@@ -69,6 +69,19 @@ namespace Unmanaged
             Allocations.Free(ref pointer);
         }
 
+        public readonly override string ToString()
+        {
+            USpan<char> buffer = stackalloc char[16];
+            uint length = ToString(buffer);
+            return buffer.Slice(0, length).ToString();
+        }
+
+        public readonly uint ToString(USpan<char> buffer)
+        {
+            Allocations.ThrowIfNull(pointer);
+            return Address.ToString(buffer);
+        }
+
         /// <summary>
         /// Writes a single given value into the memory into this byte position.
         /// </summary>
@@ -76,7 +89,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             void* ptr = &value;
-            Write(ptr, bytePosition, USpan<T>.ElementSize);
+            Write(bytePosition, USpan<T>.ElementSize, ptr);
         }
 
         /// <summary>
@@ -93,10 +106,10 @@ namespace Unmanaged
         public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            Write((void*)span.Address, bytePosition, span.Length * USpan<T>.ElementSize);
+            Write(bytePosition, span.Length * USpan<T>.ElementSize, (void*)span.Address);
         }
 
-        public readonly void Write(void* data, uint bytePosition, uint byteLength)
+        public readonly void Write(uint bytePosition, uint byteLength, void* data)
         {
             Allocations.ThrowIfNull(pointer);
             Unsafe.CopyBlock((void*)((nint)pointer + bytePosition), data, byteLength);
@@ -132,6 +145,12 @@ namespace Unmanaged
             return ref Unsafe.AsRef<T>((void*)((nint)pointer + bytePosition));
         }
 
+        public readonly void* Read(uint bytePosition, uint byteLength)
+        {
+            Allocations.ThrowIfNull(pointer);
+            return (void*)((nint)pointer + bytePosition);
+        }
+
         /// <summary>
         /// Resets the memory to <c>default</c> state.
         /// </summary>
@@ -149,6 +168,25 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             nint address = (nint)((nint)pointer + bytePosition);
             NativeMemory.Clear((void*)address, byteLength);
+        }
+
+        /// <summary>
+        /// Fills the memory with the given byte value.
+        /// </summary>
+        public readonly void Fill(uint byteLength, byte value)
+        {
+            Allocations.ThrowIfNull(pointer);
+            NativeMemory.Fill(pointer, byteLength, value);
+        }
+
+        /// <summary>
+        /// Fills the memory with the given byte value.
+        /// </summary>
+        public readonly void Fill(uint bytePosition, uint byteLength, byte value)
+        {
+            Allocations.ThrowIfNull(pointer);
+            nint address = (nint)((nint)pointer + bytePosition);
+            NativeMemory.Fill((void*)address, byteLength, value);
         }
 
         /// <summary>

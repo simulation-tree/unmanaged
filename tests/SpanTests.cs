@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using Unmanaged;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class SpanTests
+    public class SpanTests : UnmanagedTests
     {
         [Test]
         public void CreatingUsingStackalloc()

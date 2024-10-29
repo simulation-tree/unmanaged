@@ -1,9 +1,9 @@
 ﻿using System;
 using Unmanaged;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class AllocationTests
+    public class AllocationTests : UnmanagedTests
     {
         [Test]
         public void DefaultSizelessAllocation()

@@ -230,7 +230,6 @@ namespace Unmanaged
         /// </summary>
         public static uint GetAlignment(uint size)
         {
-            //todo: cases for 16, 32 and 64 is a bit too aggressive for absolutely all invokes
             if (size % 8 == 0)
             {
                 return 8;

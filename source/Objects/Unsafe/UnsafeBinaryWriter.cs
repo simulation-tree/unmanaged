@@ -73,7 +73,7 @@ namespace Unmanaged.Serialization.Unsafe
                 Allocation.Resize(ref writer->items, writer->capacity);
             }
 
-            writer->items.Write(data, writer->position, length);
+            writer->items.Write(writer->position, length, data);
             writer->position = endPosition;
         }
     }

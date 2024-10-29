@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using Unmanaged;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class IterationSpeedTests
+    public class BenchmarkTests : UnmanagedTests
     {
         private const uint Scale = 5931428;
         private const double Attempts = 8;

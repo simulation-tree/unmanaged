@@ -9,7 +9,13 @@ namespace Unmanaged.Collections
         private UnsafeArray* value;
 
         public readonly bool IsDisposed => UnsafeArray.IsDisposed(value);
-        public readonly uint Length => UnsafeArray.GetLength(value);
+
+        public readonly uint Length
+        {
+            get => UnsafeArray.GetLength(value);
+            set => UnsafeArray.Resize(this.value, value);
+        }
+
         public readonly ref T this[uint index] => ref UnsafeArray.GetRef<T>(value, index);
 
         readonly int IReadOnlyCollection<T>.Count => (int)Length;
@@ -111,16 +117,6 @@ namespace Unmanaged.Collections
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
         {
             return TryIndexOf(value, out _);
-        }
-
-        /// <summary>
-        /// Resizes the array to match the given length and
-        /// optionally initializes new elements to <c>default</c> state.
-        /// </summary>
-        //todo: remove this Resize and use the setter in length?
-        public readonly void Resize(uint length, bool initialize = false)
-        {
-            UnsafeArray.Resize(value, length, initialize);
         }
 
         public readonly void CopyTo(USpan<T> span)

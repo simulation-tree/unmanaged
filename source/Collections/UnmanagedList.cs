@@ -395,8 +395,7 @@ namespace Unmanaged.Collections
             private int index;
 
             public readonly T Current => UnsafeList.Get<T>(list, (uint)index);
-
-            readonly object IEnumerator.Current => UnsafeList.Get<T>(list, (uint)index);
+            readonly object IEnumerator.Current => Current;
 
             public Enumerator(UnsafeList* list)
             {
@@ -415,7 +414,7 @@ namespace Unmanaged.Collections
                 index = -1;
             }
 
-            public void Dispose()
+            readonly void IDisposable.Dispose()
             {
             }
         }

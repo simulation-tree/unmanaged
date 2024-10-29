@@ -2,16 +2,10 @@ using System;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class ArrayTests
+    public class ArrayTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void EmptyArray()
         {
@@ -40,15 +34,15 @@ namespace Tests
         public void ResizeArray()
         {
             using UnmanagedArray<int> array = new(4);
-            array.Resize(8);
+            array.Length = 8;
             Assert.That(array.Length, Is.EqualTo(8));
 
             array[array.Length - 1] = 1;
 
-            array.Resize(4);
+            array.Length = 4;
             Assert.That(array.Length, Is.EqualTo(4));
 
-            array.Resize(12);
+            array.Length = 12;
             Assert.That(array.Length, Is.EqualTo(12));
         }
 

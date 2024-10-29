@@ -3,16 +3,10 @@ using System.Diagnostics;
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class RandomnessTests
+    public class RandomnessTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public void UniformDistribution()
         {

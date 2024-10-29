@@ -11,21 +11,44 @@ namespace Unmanaged.Collections
         private Allocation items;
 
         [Conditional("DEBUG")]
-        private static void ThrowIfLengthIsZero(uint value)
+        public static void ThrowIfLengthIsZero(uint value)
         {
             if (value == 0)
             {
-                throw new InvalidOperationException("List capacity cannot be zero.");
+                throw new InvalidOperationException("List capacity cannot be zero");
             }
         }
 
         [Conditional("DEBUG")]
-        private static void ThrowIfDisposed(UnsafeList* list)
+        public static void ThrowIfDisposed(UnsafeList* list)
         {
             if (IsDisposed(list))
             {
-                throw new ObjectDisposedException("UnsafeList");
+                throw new ObjectDisposedException(nameof(UnsafeList));
             }
+        }
+
+        [Conditional("DEBUG")]
+        public static void ThrowIfOutOfRange(UnsafeList* list, uint index)
+        {
+            if (index >= list->count)
+            {
+                throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        public static void ThrowIfPastRange(UnsafeList* list, uint index)
+        {
+            if (index > list->count)
+            {
+                throw new IndexOutOfRangeException($"Trying to insert at index {index} that is out of range, count: {list->count}");
+            }
+        }
+
+        public static bool IsDisposed(UnsafeList* list)
+        {
+            return Allocations.IsNull(list);
         }
 
         public static void Free(ref UnsafeList* list)
@@ -65,11 +88,7 @@ namespace Unmanaged.Collections
         public static ref T GetRef<T>(UnsafeList* list, uint index) where T : unmanaged
         {
             ThrowIfDisposed(list);
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
-            }
-
+            ThrowIfOutOfRange(list, index);
             T* ptr = (T*)GetStartAddress(list);
             return ref ptr[index];
         }
@@ -77,11 +96,7 @@ namespace Unmanaged.Collections
         public static T Get<T>(UnsafeList* list, uint index) where T : unmanaged
         {
             ThrowIfDisposed(list);
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException($"Trying to access index {index} that is out of range, count: {list->count}");
-            }
-
+            ThrowIfOutOfRange(list, index);
             T* ptr = (T*)GetStartAddress(list);
             return ptr[index];
         }
@@ -89,11 +104,7 @@ namespace Unmanaged.Collections
         public static void Set<T>(UnsafeList* list, uint index, T value) where T : unmanaged
         {
             ThrowIfDisposed(list);
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
+            ThrowIfOutOfRange(list, index);
             T* ptr = (T*)GetStartAddress(list);
             ptr[index] = value;
         }
@@ -104,11 +115,7 @@ namespace Unmanaged.Collections
         public static USpan<byte> GetElementBytes(UnsafeList* list, uint index)
         {
             ThrowIfDisposed(list);
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
+            ThrowIfOutOfRange(list, index);
             uint elementSize = list->type.Size;
             return list->items.AsSpan<byte>(index * elementSize, elementSize);
         }
@@ -123,11 +130,7 @@ namespace Unmanaged.Collections
         public static void Insert(UnsafeList* list, uint index, USpan<byte> elementBytes)
         {
             ThrowIfDisposed(list);
-            if (index > list->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
+            ThrowIfPastRange(list, index);
             uint elementSize = list->type.Size;
             uint capacity = GetCapacity(list);
             if (list->count == capacity)
@@ -244,7 +247,7 @@ namespace Unmanaged.Collections
             }
             else
             {
-                throw new NullReferenceException($"Item {item} not found in list.");
+                throw new NullReferenceException($"Item {item} not found in list");
             }
         }
 
@@ -265,12 +268,8 @@ namespace Unmanaged.Collections
         public static void RemoveAt(UnsafeList* list, uint index)
         {
             ThrowIfDisposed(list);
+            ThrowIfOutOfRange(list, index);
             uint count = list->count;
-            if (index >= count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
             uint size = list->type.Size;
             while (index < count - 1)
             {
@@ -286,12 +285,8 @@ namespace Unmanaged.Collections
         public static void RemoveAtBySwapping(UnsafeList* list, uint index)
         {
             ThrowIfDisposed(list);
+            ThrowIfOutOfRange(list, index);
             uint count = list->count;
-            if (index >= count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
             uint lastIndex = count - 1;
             uint size = list->type.Size;
             USpan<byte> lastElement = list->items.AsSpan<byte>(lastIndex * size, size);
@@ -303,11 +298,7 @@ namespace Unmanaged.Collections
         public static T RemoveAt<T>(UnsafeList* list, uint index) where T : unmanaged, IEquatable<T>
         {
             ThrowIfDisposed(list);
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
+            ThrowIfOutOfRange(list, index);
             USpan<T> span = list->items.AsSpan<T>(0, list->count);
             T removed = span[index];
             RemoveAt(list, index);
@@ -317,11 +308,7 @@ namespace Unmanaged.Collections
         public static T RemoveAtBySwapping<T>(UnsafeList* list, uint index) where T : unmanaged, IEquatable<T>
         {
             ThrowIfDisposed(list);
-            if (index >= list->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
+            ThrowIfOutOfRange(list, index);
             USpan<T> span = list->items.AsSpan<T>(0, list->count);
             T removed = span[index];
             RemoveAtBySwapping(list, index);
@@ -345,13 +332,9 @@ namespace Unmanaged.Collections
         public static USpan<T> AsSpan<T>(UnsafeList* list, uint start) where T : unmanaged
         {
             ThrowIfDisposed(list);
+            ThrowIfOutOfRange(list, start);
             uint size = list->type.Size;
             uint count = size / USpan<T>.ElementSize * list->count;
-            if (start >= count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
             return list->items.AsSpan<T>(start, count - start);
         }
 
@@ -366,11 +349,6 @@ namespace Unmanaged.Collections
             }
 
             return list->items.AsSpan<T>(start, length);
-        }
-
-        public static bool IsDisposed(UnsafeList* list)
-        {
-            return Allocations.IsNull(list);
         }
 
         public static ref uint GetCountRef(UnsafeList* list)
@@ -407,16 +385,8 @@ namespace Unmanaged.Collections
 
         public static void CopyElementTo(UnsafeList* source, uint sourceIndex, UnsafeList* destination, uint destinationIndex)
         {
-            if (sourceIndex >= source->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
-            if (destinationIndex >= destination->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
+            ThrowIfOutOfRange(source, sourceIndex);
+            ThrowIfOutOfRange(destination, destinationIndex);
             uint elementSize = source->type.Size;
             USpan<byte> sourceElement = source->items.AsSpan<byte>(sourceIndex * elementSize, elementSize);
             USpan<byte> destinationElement = destination->items.AsSpan<byte>((destinationIndex) * elementSize, elementSize);
@@ -425,14 +395,10 @@ namespace Unmanaged.Collections
 
         public static void CopyTo<T>(UnsafeList* source, uint sourceIndex, USpan<T> destination, uint destinationIndex) where T : unmanaged
         {
-            if (sourceIndex >= source->count)
-            {
-                throw new IndexOutOfRangeException();
-            }
-
+            ThrowIfOutOfRange(source, sourceIndex);
             if (destinationIndex + source->count - sourceIndex > destination.Length)
             {
-                throw new ArgumentException("Destination span is too small to fit destination index.");
+                throw new ArgumentException("Destination span is too small to fit destination");
             }
 
             USpan<T> sourceSpan = AsSpan<T>(source, sourceIndex);

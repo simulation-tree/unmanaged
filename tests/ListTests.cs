@@ -2,16 +2,10 @@
 using Unmanaged;
 using Unmanaged.Collections;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class ListTests
+    public class ListTests : UnmanagedTests
     {
-        [TearDown]
-        public void CleanUp()
-        {
-            Allocations.ThrowIfAny();
-        }
-
         [Test]
         public unsafe void EmptyList()
         {

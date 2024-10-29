@@ -2,9 +2,9 @@
 using System.Text;
 using Unmanaged;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class FixedStringTests
+    public class FixedStringTests : UnmanagedTests
     {
         [Test]
         public void CheckEquality()

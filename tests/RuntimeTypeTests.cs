@@ -8,9 +8,9 @@ using System.Reflection;
 using System.Text;
 using Unmanaged;
 
-namespace Tests
+namespace Unmanaged
 {
-    public class RuntimeTypeTests
+    public class RuntimeTypeTests : UnmanagedTests
     {
         [Test]
         public void CheckEquality()
