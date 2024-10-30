@@ -1,83 +1,9 @@
 ﻿using System;
-using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Unmanaged
 {
     public class BinaryReaderWriterTests : UnmanagedTests
     {
-        [Test]
-        public void CloneBigObject()
-        {
-            using BigObject bigObject = new(1);
-            bigObject.Add("Apple");
-            bigObject.Add("Boo");
-            bigObject.Add("Cherry");
-
-            Assert.That(bigObject.Get(0).ToString(), Is.EqualTo("Apple"));
-            Assert.That(bigObject.Get(1).ToString(), Is.EqualTo("Boo"));
-            Assert.That(bigObject.Get(2).ToString(), Is.EqualTo("Cherry"));
-
-            using BigObject bigObjectAgain = bigObject.Clone();
-            Assert.That(bigObject.Count, Is.EqualTo(bigObjectAgain.Count));
-            Assert.That(bigObject.Get(0).ToString(), Is.EqualTo(bigObjectAgain.Get(0).ToString()));
-            Assert.That(bigObject.Get(1).ToString(), Is.EqualTo(bigObjectAgain.Get(1).ToString()));
-            Assert.That(bigObject.Get(2).ToString(), Is.EqualTo(bigObjectAgain.Get(2).ToString()));
-        }
-
-        public struct BigObject : ISerializable, IDisposable
-        {
-            private UnmanagedList<Something> items;
-
-            public readonly uint Count => items.Count;
-
-            public BigObject(uint capacity)
-            {
-                items = UnmanagedList<Something>.Create(capacity);
-            }
-
-            public readonly void Add(string name)
-            {
-                items.Add(new Something(name));
-            }
-
-            public readonly FixedString Get(uint index)
-            {
-                return items[index].Name;
-            }
-
-            public void Dispose()
-            {
-                items.Dispose();
-            }
-
-            void ISerializable.Read(BinaryReader reader)
-            {
-                if (items.IsDisposed)
-                {
-                    items = UnmanagedList<Something>.Create();
-                }
-
-                items.Clear();
-                uint count = reader.ReadValue<uint>();
-                for (uint i = 0; i < count; i++)
-                {
-                    Something item = reader.ReadObject<Something>();
-                    items.Add(item);
-                }
-            }
-
-            void ISerializable.Write(BinaryWriter writer)
-            {
-                writer.WriteValue(items.Count);
-                foreach (Something item in items)
-                {
-                    writer.WriteObject(item);
-                    writer.WriteValue<byte>(0);
-                }
-            }
-        }
-
         [Test]
         public void CloneSomething()
         {

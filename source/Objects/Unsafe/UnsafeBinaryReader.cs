@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using Unmanaged.Collections;
+﻿using System.IO;
 
 namespace Unmanaged.Serialization.Unsafe
 {
@@ -48,8 +46,9 @@ namespace Unmanaged.Serialization.Unsafe
 
         public static UnsafeBinaryReader* Allocate(Stream stream, uint position = 0)
         {
-            using UnmanagedArray<byte> buffer = new((uint)stream.Length + 4);
-            USpan<byte> span = buffer.AsSpan();
+            uint bufferLength = (uint)stream.Length + 4;
+            using Allocation buffer = new(bufferLength);
+            USpan<byte> span = buffer.AsSpan(0, bufferLength);
             uint length = (uint)stream.Read(span.AsSystemSpan());
             USpan<byte> bytes = span.Slice(0, length);
             return Allocate(bytes, position);

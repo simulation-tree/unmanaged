@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using Unmanaged.Collections;
 
 namespace Unmanaged
 {
@@ -232,13 +231,6 @@ namespace Unmanaged
             }
 
             *t = value;
-        }
-
-        public readonly UnmanagedArray<byte> GetBytes(uint length)
-        {
-            UnmanagedArray<byte> list = new(length);
-            NextBytes(list.AsSpan());
-            return list;
         }
 
         /// <summary>

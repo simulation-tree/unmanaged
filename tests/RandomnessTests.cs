@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using Unmanaged;
-using Unmanaged.Collections;
 
 namespace Unmanaged
 {
@@ -114,7 +112,8 @@ namespace Unmanaged
         public void GenerateBytes()
         {
             using RandomGenerator rng = new(1337);
-            using UnmanagedArray<byte> data = rng.GetBytes(30000);
+            USpan<byte> data = stackalloc byte[30000];
+            rng.NextBytes(data);
             byte min = byte.MaxValue;
             byte max = byte.MinValue;
             uint total = 0;

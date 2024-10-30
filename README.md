@@ -1,15 +1,7 @@
 # Unmanaged
 Library containing primitive definitions for working with unmanaged C#.
 
-### Types
-- `UnmanagedList<T>`
-- `UnmanagedArray<T>`
-- `UnmanagedDictionary<K, V>`
-- `RuntimeType`
-- `Allocation`
-- `Container`
-
-### Allocations and Containers
+### Allocations
 `Allocation`s are a reference to unmanaged memory, and they must be disposed manually.
 The equivalent of `alloc` and `free`:
 ```cs
@@ -26,21 +18,8 @@ using (Allocation allocation = Allocation.Create(3.14f))
 }
 ```
 
-`Container`s extend a bit further by being aware of the type they store.
-```cs
-using (Container floatContainer = Container.Create(3.14f))
-{
-    RuntimeType type = floatContainer.type;
-    ref float floatValue = ref floatContainer.Read<float>();
-    Assert.Throws(floatContainer.Read<int>()); //type not the same
-}
-```
-
-> The equality condition between two containers is different from allocations.
-Allocations check for address equality, while containers check for memory equality.
-
 ### Fixed String
-The `FixedString` type can store up to 256 `char` values. Useful for when text is known
+The `FixedString` value type can store up to 256 `char` values. Useful for when text is known
 to be short enough until a list/array is needed:
 ```cs
 FixedString text = new("Hello World");
@@ -90,6 +69,6 @@ Allocations are not aligned by default, this can be toggled with the `#ALIGNED` 
 This library is developed to provide the building blocks that a `System` namespace might,
 but exclusively through unmanaged code. In order to minimize runtime cost and to expose more
 efficiency that was always there with C#. Commonly putting the author in a position where they
-need to excerise more control, because _with great power comes great responsibility_.
+need to exercise more control, because _with great power comes great responsibility_.
 
 Contributions that fit this are welcome.

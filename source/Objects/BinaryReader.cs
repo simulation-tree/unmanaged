@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using Unmanaged.Collections;
 using Unmanaged.Serialization.Unsafe;
 
 namespace Unmanaged
@@ -32,16 +31,6 @@ namespace Unmanaged
         public BinaryReader(USpan<byte> data, uint position = 0)
         {
             value = UnsafeBinaryReader.Allocate(data, position);
-        }
-
-        public BinaryReader(UnmanagedArray<byte> data, uint position = 0)
-        {
-            value = UnsafeBinaryReader.Allocate(data.AsSpan(), position);
-        }
-
-        public BinaryReader(UnmanagedList<byte> data, uint position = 0)
-        {
-            value = UnsafeBinaryReader.Allocate(data.AsSpan(), position);
         }
 
         /// <summary>

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using Unmanaged;
 
 namespace Unmanaged
 {
