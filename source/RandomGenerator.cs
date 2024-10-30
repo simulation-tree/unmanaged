@@ -36,10 +36,18 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(USpan<byte> seed)
         {
-            long hash = Djb2Hash.Get(seed) * 0x9E3779B9;
-            pointer = Allocations.Allocate(sizeof(ulong));
-            ulong* t = (ulong*)pointer;
-            *t = (ulong)hash;
+            unchecked
+            {
+                long hash = 17;
+                for (uint i = 0; i < seed.Length; i++)
+                {
+                    hash = hash * 31 + seed[i];
+                }
+
+                pointer = Allocations.Allocate(sizeof(ulong));
+                ulong* t = (ulong*)pointer;
+                *t = (ulong)hash;
+            }
         }
 
         /// <summary>
@@ -48,18 +56,22 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(USpan<char> seed)
         {
-            long hash = Djb2Hash.Get(seed) * 0x9E3779B9;
-            pointer = Allocations.Allocate(sizeof(ulong));
-            ulong* t = (ulong*)pointer;
-            *t = (ulong)hash;
+            unchecked
+            {
+                long hash = 17;
+                for (uint i = 0; i < seed.Length; i++)
+                {
+                    hash = hash * 31 + seed[i];
+                }
+
+                pointer = Allocations.Allocate(sizeof(ulong));
+                ulong* t = (ulong*)pointer;
+                *t = (ulong)hash;
+            }
         }
 
-        public RandomGenerator(string seed)
+        public RandomGenerator(string seed) : this(seed.AsSpan())
         {
-            long hash = Djb2Hash.Get(seed) * 0x9E3779B9;
-            pointer = Allocations.Allocate(sizeof(ulong));
-            ulong* t = (ulong*)pointer;
-            *t = (ulong)hash;
         }
 
         public void Dispose()

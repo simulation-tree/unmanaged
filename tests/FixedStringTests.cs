@@ -16,14 +16,6 @@ namespace Unmanaged
         }
 
         [Test]
-        public void HashEquality()
-        {
-            FixedString a = "Hello World!";
-            string b = "Hello World!";
-            Assert.That(a.GetHashCode(), Is.EqualTo(Djb2Hash.Get(b)));
-        }
-
-        [Test]
         public void CheckLengths()
         {
             FixedString a = "Hello World!";
@@ -177,7 +169,7 @@ namespace Unmanaged
         public void HittingTheLimit()
         {
             FixedString a = default;
-            for (uint i = 0; i < FixedString.MaxLength; i++)
+            for (uint i = 0; i < FixedString.Capacity; i++)
             {
                 a.Append('x');
             }

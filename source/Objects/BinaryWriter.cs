@@ -94,7 +94,7 @@ namespace Unmanaged
         /// </summary>
         public void WriteUTF8Text(FixedString text)
         {
-            USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
+            USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
             uint length = text.CopyTo(buffer);
             WriteUTF8Text(buffer.Slice(0, length));
         }

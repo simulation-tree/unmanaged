@@ -30,7 +30,7 @@ namespace Unmanaged
 
             void ISerializable.Read(BinaryReader reader)
             {
-                USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
+                USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
                 uint length = reader.ReadUTF8Span(buffer);
                 name = new FixedString(buffer.Slice(0, length));
             }
