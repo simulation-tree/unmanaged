@@ -75,7 +75,7 @@ namespace Unmanaged
         {
             if (index >= Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(index), "Index must be less than the length of the span");
+                throw new ArgumentOutOfRangeException(nameof(index), $"Index {index} must be less than length {length} of the span");
             }
         }
 
@@ -84,7 +84,7 @@ namespace Unmanaged
         {
             if (length < this.Length)
             {
-                throw new ArgumentOutOfRangeException("Destination span is too small", nameof(length));
+                throw new ArgumentOutOfRangeException(nameof(length), $"Destination span is too small to fit within {length}");
             }
         }
 
