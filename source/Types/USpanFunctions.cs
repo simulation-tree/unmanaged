@@ -28,28 +28,6 @@ public unsafe static class USpanFunctions
         }
     }
 
-    public static Span<T> AsSystemSpan<T>(this USpan<T> span) where T : unmanaged
-    {
-        if (span.Length == 0)
-        {
-            return default;
-        }
-
-        ref T first = ref span[0];
-        return MemoryMarshal.CreateSpan(ref first, (int)span.Length);
-    }
-
-    public static Span<V> AsSystemSpan<T, V>(this USpan<T> span) where T : unmanaged where V : unmanaged
-    {
-        if (span.Length == 0)
-        {
-            return default;
-        }
-
-        ref V first = ref Unsafe.As<T, V>(ref span[0]);
-        return MemoryMarshal.CreateSpan(ref first, (int)span.Length);
-    }
-
     public static uint ToString(this byte value, USpan<char> buffer)
     {
         Span<char> systemSpan = buffer.AsSystemSpan();

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
@@ -15,7 +14,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator()
         {
-            pointer = Allocations.Allocate(sizeof(ulong));
+            pointer = Allocations.Allocate(TypeInfo<ulong>.size);
             ulong* t = (ulong*)pointer;
             *t = GetRandomSeed();
         }
@@ -25,7 +24,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(ulong seed)
         {
-            pointer = Allocations.Allocate(sizeof(ulong));
+            pointer = Allocations.Allocate(TypeInfo<ulong>.size);
             ulong* t = (ulong*)pointer;
             *t = seed;
         }
@@ -44,7 +43,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(sizeof(ulong));
+                pointer = Allocations.Allocate(TypeInfo<ulong>.size);
                 ulong* t = (ulong*)pointer;
                 *t = (ulong)hash;
             }
@@ -64,7 +63,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(sizeof(ulong));
+                pointer = Allocations.Allocate(TypeInfo<ulong>.size);
                 ulong* t = (ulong*)pointer;
                 *t = (ulong)hash;
             }
@@ -256,8 +255,8 @@ namespace Unmanaged
                 DateTime now = DateTime.UtcNow;
                 long ticks = now.Ticks;
 
-#if NET5_0_OR_GREATER
-                int pid = Environment.ProcessId;
+#if NET
+                int pid = Environment.ProcessId * Environment.TickCount;
 #else
                 int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 #endif
@@ -266,11 +265,6 @@ namespace Unmanaged
                 baseSeed ^= baseSeed >> 13;
                 baseSeed ^= baseSeed << 3;
                 baseSeed ^= baseSeed >> 27;
-                void* tempAlloc = NativeMemory.Alloc((uint)((pid + ticks) % 3 + 1));
-                ulong tempAddress = (ulong)tempAlloc;
-                NativeMemory.Free(tempAlloc);
-                tempAddress *= (ulong)Environment.TickCount;
-                baseSeed *= tempAddress - baseSeed * 2;
                 return baseSeed;
             }
         }

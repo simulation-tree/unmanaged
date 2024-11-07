@@ -71,9 +71,9 @@ namespace Unmanaged
         public unsafe void AllocateAndFree()
         {
             void* pointer = Allocations.Allocate(sizeof(int));
-            Assert.That(Allocations.IsNull(pointer), Is.False);
+            Assert.That(pointer is null, Is.False);
             Allocations.Free(ref pointer);
-            Assert.That(Allocations.IsNull(pointer), Is.True);
+            Assert.That(pointer is null, Is.True);
         }
 
         [Test]
@@ -104,6 +104,14 @@ namespace Unmanaged
             Allocation obj = new(sizeof(int));
             obj.Dispose();
             Assert.Throws<NullReferenceException>(() => obj.Dispose());
+        }
+
+        [Test]
+        public void ThrowIfLeaks()
+        {
+            Allocation obj = new(sizeof(int));
+            Assert.Throws<Exception>(() => Allocations.ThrowIfAny());
+            obj.Dispose();
         }
 
         [Test]

@@ -44,12 +44,12 @@ namespace Unmanaged
         public void WriteValue<T>(T value) where T : unmanaged
         {
             T* ptr = &value;
-            UnsafeBinaryWriter.Write(ref this.value, ptr, USpan<T>.ElementSize);
+            UnsafeBinaryWriter.Write(ref this.value, ptr, TypeInfo<T>.size);
         }
 
         public void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            UnsafeBinaryWriter.Write(ref value, (void*)span.Address, span.Length * USpan<T>.ElementSize);
+            UnsafeBinaryWriter.Write(ref value, (void*)span.Address, span.Length * TypeInfo<T>.size);
         }
 
         public void WriteUTF8Character(char value)
@@ -134,7 +134,7 @@ namespace Unmanaged
 
         public readonly USpan<T> AsSpan<T>() where T : unmanaged
         {
-            return new((void*)Address, Position / USpan<T>.ElementSize);
+            return new((void*)Address, Position / TypeInfo<T>.size);
         }
 
         public static BinaryWriter Create()

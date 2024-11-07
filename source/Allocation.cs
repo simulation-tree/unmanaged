@@ -14,7 +14,7 @@ namespace Unmanaged
         /// <summary>
         /// Has this allocation been disposed? Also counts for instances that weren't allocated.
         /// </summary>
-        public readonly bool IsDisposed => Allocations.IsNull(pointer);
+        public readonly bool IsDisposed => pointer is null;
 
         public readonly nint Address => (nint)pointer;
 
@@ -89,7 +89,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             void* ptr = &value;
-            Write(bytePosition, USpan<T>.ElementSize, ptr);
+            Write(bytePosition, TypeInfo<T>.size, ptr);
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Unmanaged
         public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            Write(bytePosition, span.Length * USpan<T>.ElementSize, (void*)span.Address);
+            Write(bytePosition, span.Length * TypeInfo<T>.size, (void*)span.Address);
         }
 
         public readonly void Write(uint bytePosition, uint byteLength, void* data)
@@ -132,7 +132,7 @@ namespace Unmanaged
         public readonly USpan<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
-            uint position = start * USpan<T>.ElementSize;
+            uint position = start * TypeInfo<T>.size;
             return new USpan<T>((void*)((nint)pointer + position), length);
         }
 
@@ -235,7 +235,7 @@ namespace Unmanaged
         /// </summary>
         public static void Resize<T>(ref Allocation allocation) where T : unmanaged
         {
-            Resize(ref allocation, USpan<T>.ElementSize);
+            Resize(ref allocation, TypeInfo<T>.size);
         }
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>(T value) where T : unmanaged
         {
-            Allocation allocation = new(USpan<T>.ElementSize);
+            Allocation allocation = new(TypeInfo<T>.size);
             allocation.Write(0, value);
             return allocation;
         }
@@ -261,7 +261,7 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>() where T : unmanaged
         {
-            Allocation allocation = new(USpan<T>.ElementSize);
+            Allocation allocation = new(TypeInfo<T>.size);
             return allocation;
         }
 
@@ -270,7 +270,7 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>(USpan<T> span) where T : unmanaged
         {
-            uint length = span.Length * USpan<T>.ElementSize;
+            uint length = span.Length * TypeInfo<T>.size;
             Allocation allocation = new(length);
             span.CopyTo(allocation.AsSpan<T>(0, span.Length));
             return allocation;

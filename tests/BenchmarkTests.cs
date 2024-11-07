@@ -35,9 +35,9 @@ namespace Unmanaged
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
-            Console.WriteLine($"{ms / Attempts}");
-            Console.WriteLine(min);
-            Console.WriteLine(max);
+            Console.WriteLine($"avg: {ms / Attempts}");
+            Console.WriteLine($"min: {min}");
+            Console.WriteLine($"max: {max}");
         }
 
         [Test]
@@ -67,9 +67,9 @@ namespace Unmanaged
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
-            Console.WriteLine($"{ms / Attempts}");
-            Console.WriteLine(min);
-            Console.WriteLine(max);
+            Console.WriteLine($"avg: {ms / Attempts}");
+            Console.WriteLine($"min: {min}");
+            Console.WriteLine($"max: {max}");
         }
 
         [Test]
@@ -99,9 +99,9 @@ namespace Unmanaged
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
-            Console.WriteLine($"{ms / Attempts}");
-            Console.WriteLine(min);
-            Console.WriteLine(max);
+            Console.WriteLine($"avg: {ms / Attempts}");
+            Console.WriteLine($"min: {min}");
+            Console.WriteLine($"max: {max}");
         }
 
         [Test]
@@ -131,9 +131,9 @@ namespace Unmanaged
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
-            Console.WriteLine($"{ms / Attempts}");
-            Console.WriteLine(min);
-            Console.WriteLine(max);
+            Console.WriteLine($"avg: {ms / Attempts}");
+            Console.WriteLine($"min: {min}");
+            Console.WriteLine($"max: {max}");
         }
 
         [Test]
@@ -163,9 +163,9 @@ namespace Unmanaged
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
-            Console.WriteLine($"{ms / Attempts}");
-            Console.WriteLine(min);
-            Console.WriteLine(max);
+            Console.WriteLine($"avg: {ms / Attempts}");
+            Console.WriteLine($"min: {min}");
+            Console.WriteLine($"max: {max}");
         }
 
         [Test]
@@ -198,9 +198,9 @@ namespace Unmanaged
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
-            Console.WriteLine($"{ms / Attempts}");
-            Console.WriteLine(min);
-            Console.WriteLine(max);
+            Console.WriteLine($"avg: {ms / Attempts}");
+            Console.WriteLine($"min: {min}");
+            Console.WriteLine($"max: {max}");
         }
     }
 }

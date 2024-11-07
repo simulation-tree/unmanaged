@@ -1,80 +1,42 @@
-﻿#if DEBUG
-#define TRACK
-#endif
-
-using System;
-using System.Runtime.InteropServices;
-
-#if TRACK
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-#endif
+using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
     public static unsafe class Allocations
     {
-#if TRACK
-        private static readonly HashSet<nint> addresses = new();
-        private static readonly Dictionary<nint, StackTrace> allocations = new();
-        private static readonly Dictionary<nint, StackTrace> disposals = new();
+        private static uint count;
 
         /// <summary>
         /// Amount of allocations made that have not been freed.
-        /// This value is always 0 in release builds.
         /// </summary>
-        public static uint Count => (uint)addresses.Count;
-#else
-        public const uint Count = 0;
-#endif
+        public static uint Count => count;
 
         static Allocations()
         {
-#if TRACK
             AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
             {
                 ThrowIfAny();
+                Tracker.FreeAll();
             };
-#endif
         }
 
         /// <summary>
         /// Throws an <see cref="Exception"/> if there are any memory leaks.
-        /// <para>No effect in release builds.</para>
         /// </summary>
-#if TRACK
         public static void ThrowIfAny()
         {
-            if (addresses.Count > 0)
+            if (Count > 0)
             {
                 List<char> exceptionBuilder = new();
                 Append("Leaked ");
-                Append(addresses.Count.ToString());
-                AppendLine(" allocation(s):");
-                foreach (nint address in addresses)
-                {
-                    Append("    ");
-                    if (allocations.TryGetValue(address, out StackTrace? allocation))
-                    {
-                        Append(address.ToString());
-                        Append(" from ");
-                        AppendLine(allocation.ToString());
-                    }
-                    else
-                    {
-                        AppendLine(address.ToString());
-                    }
-                }
+                Append(Count.ToString());
+                AppendLine(" allocation(s)");
 
-                string exceptionMessage = new(exceptionBuilder.ToArray());
-                foreach (nint address in addresses)
-                {
-#if ALIGNED
-                    NativeMemory.AlignedFree((void*)address);
-#else
-                    NativeMemory.Free((void*)address);
-#endif
-                }
+                Tracker.AppendAllocations(exceptionBuilder);
 
                 void Append(string str)
                 {
@@ -90,27 +52,24 @@ namespace Unmanaged
                     exceptionBuilder.Add('\n');
                 }
 
+                string exceptionMessage = new(exceptionBuilder.ToArray());
                 throw new Exception(exceptionMessage);
             }
         }
-#else
-        public static void ThrowIfAny() { }
-#endif
 
         public static void* Allocate(uint size)
         {
-#if ALIGNED
-            void* pointer = NativeMemory.AlignedAlloc(size, GetAlignment(size));
-#else
             void* pointer = NativeMemory.Alloc(size);
-#endif
+            Tracker.Track(pointer);
+            count++;
+            return pointer;
+        }
 
-#if TRACK
-            nint address = (nint)pointer;
-            addresses.Add(address);
-            allocations[address] = new StackTrace(1, true);
-            disposals.Remove(address);
-#endif
+        public static void* AllocateAligned(uint size, uint alignment)
+        {
+            void* pointer = NativeMemory.AlignedAlloc(size, alignment);
+            Tracker.TrackAligned(pointer);
+            count++;
             return pointer;
         }
 
@@ -122,77 +81,233 @@ namespace Unmanaged
         /// </summary>
         public static T* Allocate<T>() where T : unmanaged
         {
-            return (T*)Allocate((uint)sizeof(T));
+            void* pointer = NativeMemory.Alloc(TypeInfo<T>.size);
+            Tracker.Track(pointer);
+            count++;
+            return (T*)pointer;
         }
 
         public static void Free(ref void* pointer)
         {
-#if ALIGNED
-            NativeMemory.AlignedFree(pointer);
-#else
             NativeMemory.Free(pointer);
-#endif
-#if TRACK
-            nint address = (nint)pointer;
-            addresses.Remove(address);
-            disposals[address] = new StackTrace(1, true);
-#endif
+            Tracker.Untrack(pointer);
+            count--;
+            pointer = null;
+        }
+
+        public static void FreeAligned(ref void* pointer)
+        {
+            NativeMemory.AlignedFree(pointer);
+            Tracker.UntrackAligned(pointer);
+            count--;
             pointer = null;
         }
 
         public static void Free<T>(ref T* pointer) where T : unmanaged
         {
-            void* voidPointer = pointer;
-            Free(ref voidPointer);
+            NativeMemory.Free(pointer);
+            Tracker.Untrack(pointer);
+            count--;
+            pointer = null;
+        }
+
+        public static void FreeAligned<T>(ref T* pointer) where T : unmanaged
+        {
+            NativeMemory.AlignedFree(pointer);
+            Tracker.UntrackAligned(pointer);
+            count--;
             pointer = null;
         }
 
         public static void* Reallocate(void* pointer, uint newSize)
         {
-#if TRACK
-            nint oldAddress = (nint)pointer;
-            addresses.Remove(oldAddress);
-#endif
-
-#if ALIGNED
-            void* newPointer = NativeMemory.AlignedRealloc(pointer, newSize, GetAlignment(newSize));
-#else
+            Tracker.Untrack(pointer);
             void* newPointer = NativeMemory.Realloc(pointer, newSize);
-#endif
-
-#if TRACK
-            nint newAddress = (nint)newPointer;
-            addresses.Add(newAddress);
-#endif
+            Tracker.Track(newPointer);
             return newPointer;
         }
 
-        public static T* Reallocate<T>(T* pointer, uint newSize) where T : unmanaged
+        public static void* ReallocateAligned(void* pointer, uint newSize, uint alignment)
         {
-            void* voidPointer = pointer;
-            void* newPointer = Reallocate(voidPointer, newSize);
-            return (T*)newPointer;
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if the pointer is null.
-        /// </summary>
-        public static bool IsNull(void* pointer)
-        {
-            if (pointer is null)
-            {
-                return true;
-            }
-
-            return false;
+            Tracker.UntrackAligned(pointer);
+            void* newPointer = NativeMemory.AlignedRealloc(pointer, newSize, alignment);
+            Tracker.TrackAligned(newPointer);
+            return newPointer;
         }
 
         public static void ThrowIfNull(void* pointer)
         {
-            if (IsNull(pointer))
+            if (pointer is null)
             {
                 nint address = (nint)pointer;
-#if TRACK
+                Tracker.ThrowIfNull(address);
+                throw new NullReferenceException($"Unknown pointer at {address}");
+            }
+        }
+
+        public static uint GetAlignment<T>() where T : unmanaged
+        {
+            return GetAlignment(TypeInfo<T>.size);
+        }
+
+        /// <summary>
+        /// Returns an alignment that is able to contain the size.
+        /// </summary>
+        public static uint GetAlignment(uint stride)
+        {
+            if ((stride & 7) == 0)
+            {
+                return 8u;
+            }
+
+            if ((stride & 3) == 0)
+            {
+                return 4u;
+            }
+
+            return (stride & 1) == 0 ? 2u : 1u;
+        }
+
+        public static uint CeilAlignment(uint stride, uint alignment)
+        {
+            return alignment switch
+            {
+                1 => stride,
+                2 => ((stride + 1) >> 1) * 2,
+                4 => ((stride + 3) >> 2) * 4,
+                8 => ((stride + 7) >> 3) * 8,
+                _ => throw new ArgumentException($"Invalid alignment {alignment}"),
+            };
+        }
+
+        private static class Tracker
+        {
+            private static readonly ConcurrentStack<nint> addresses = new();
+            private static readonly ConcurrentStack<nint> alignedAddresses = new();
+            private static readonly Dictionary<nint, StackTrace> allocations = new();
+            private static readonly Dictionary<nint, StackTrace> disposals = new();
+
+            [Conditional("DEBUG")]
+            public static void AppendAllocations(List<char> exceptionBuilder)
+            {
+                nint[] leakedAddresses = addresses.ToArray();
+                foreach (nint address in leakedAddresses)
+                {
+                    Append("    ");
+                    if (allocations.TryGetValue(address, out StackTrace? allocation))
+                    {
+                        Append(address.ToString());
+                        Append(" from ");
+                        AppendLine(allocation.ToString());
+                    }
+                    else
+                    {
+                        AppendLine(address.ToString());
+                    }
+                }
+
+                nint[] leakedAlignedAddresses = alignedAddresses.ToArray();
+                foreach (nint address in leakedAlignedAddresses)
+                {
+                    Append("    ");
+                    if (allocations.TryGetValue(address, out StackTrace? allocation))
+                    {
+                        Append(address.ToString());
+                        Append(" from ");
+                        AppendLine(allocation.ToString());
+                    }
+                    else
+                    {
+                        AppendLine(address.ToString());
+                    }
+                }
+
+                void Append(string str)
+                {
+                    for (uint i = 0; i < str.Length; i++)
+                    {
+                        exceptionBuilder.Add(str[(int)i]);
+                    }
+                }
+
+                void AppendLine(string str)
+                {
+                    Append(str);
+                    exceptionBuilder.Add('\n');
+                }
+            }
+
+            [Conditional("DEBUG")]
+            public static void FreeAll()
+            {
+                nint[] leakedAddresses = addresses.ToArray();
+                foreach (nint address in leakedAddresses)
+                {
+                    NativeMemory.Free((void*)address);
+                }
+
+                nint[] leakedAlignedAddresses = alignedAddresses.ToArray();
+                foreach (nint address in leakedAlignedAddresses)
+                {
+                    NativeMemory.AlignedFree((void*)address);
+                }
+            }
+
+            [Conditional("DEBUG")]
+            public static void Track(void* pointer)
+            {
+                nint address = (nint)pointer;
+                addresses.Push(address);
+                allocations[address] = new StackTrace(2, true);
+                disposals.Remove(address);
+            }
+
+            [Conditional("DEBUG")]
+            public static void TrackAligned(void* pointer)
+            {
+                nint address = (nint)pointer;
+                alignedAddresses.Push(address);
+                allocations[address] = new StackTrace(2, true);
+                disposals.Remove(address);
+            }
+
+            [Conditional("DEBUG")]
+            public static void Untrack(void* pointer)
+            {
+                nint address = (nint)pointer;
+                nint[] currentAddresses = addresses.ToArray();
+                int index = Array.IndexOf(currentAddresses, address);
+                if (index != -1)
+                {
+                    currentAddresses[index] = currentAddresses[^1];
+                    Array.Resize(ref currentAddresses, currentAddresses.Length - 1);
+                    addresses.Clear();
+                    addresses.PushRange(currentAddresses);
+                }
+
+                disposals[address] = new StackTrace(2, true);
+            }
+
+            [Conditional("DEBUG")]
+            public static void UntrackAligned(void* pointer)
+            {
+                nint address = (nint)pointer;
+                nint[] currentAddresses = alignedAddresses.ToArray();
+                int index = Array.IndexOf(currentAddresses, address);
+                if (index != -1)
+                {
+                    currentAddresses[index] = currentAddresses[^1];
+                    Array.Resize(ref currentAddresses, currentAddresses.Length - 1);
+                    alignedAddresses.Clear();
+                    alignedAddresses.PushRange(currentAddresses);
+                }
+
+                disposals[address] = new StackTrace(2, true);
+            }
+
+            [Conditional("DEBUG")]
+            public static void ThrowIfNull(nint address)
+            {
                 if (allocations.TryGetValue(address, out StackTrace? stackTrace))
                 {
                     if (disposals.TryGetValue(address, out StackTrace? disposedStackTrace))
@@ -212,39 +327,9 @@ namespace Unmanaged
                     }
                     else
                     {
-                        throw new NullReferenceException($"Unknown pointer at `{address}` that hasn't ever been allocated or disposed.");
+                        throw new NullReferenceException($"Unknown pointer at `{address}` that hasn't ever been allocated or disposed");
                     }
                 }
-#endif
-                throw new NullReferenceException($"Unknown pointer at {address}.");
-            }
-        }
-
-        public static uint GetAlignment<T>() where T : unmanaged
-        {
-            return GetAlignment((uint)sizeof(T));
-        }
-
-        /// <summary>
-        /// Returns an alignment that is able to contain the size.
-        /// </summary>
-        public static uint GetAlignment(uint size)
-        {
-            if (size % 8 == 0)
-            {
-                return 8;
-            }
-            else if (size % 4 == 0)
-            {
-                return 4;
-            }
-            else if (size % 2 == 0)
-            {
-                return 2;
-            }
-            else
-            {
-                return 1;
             }
         }
     }

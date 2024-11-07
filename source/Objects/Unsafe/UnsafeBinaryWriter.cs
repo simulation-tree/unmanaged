@@ -36,7 +36,7 @@ namespace Unmanaged.Serialization.Unsafe
 
         public static bool IsDisposed(UnsafeBinaryWriter* writer)
         {
-            return Allocations.IsNull(writer);
+            return writer is null;
         }
 
         public static void Free(ref UnsafeBinaryWriter* writer)

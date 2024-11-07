@@ -634,7 +634,7 @@ namespace Unmanaged
 
         public void Append(char c)
         {
-            ThrowIfLengthExceedsCapacity((uint)(length + 1));
+            ThrowIfLengthExceedsCapacity(length + 1u);
             characters[length] = (byte)c;
             length = (byte)(length + 1);
         }
@@ -701,7 +701,7 @@ namespace Unmanaged
 
         public void Insert(uint index, char c)
         {
-            ThrowIfLengthExceedsCapacity((uint)(length + 1));
+            ThrowIfLengthExceedsCapacity(length + 1u);
             ThrowIfIndexOutOfRange(index);
             for (uint i = length; i > index; i--)
             {

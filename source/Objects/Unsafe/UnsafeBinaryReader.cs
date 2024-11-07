@@ -56,7 +56,7 @@ namespace Unmanaged.Serialization.Unsafe
 
         public static bool IsDisposed(UnsafeBinaryReader* reader)
         {
-            return Allocations.IsNull(reader);
+            return reader is null;
         }
 
         public static ref uint GetPositionRef(UnsafeBinaryReader* reader)

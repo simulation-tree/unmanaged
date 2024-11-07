@@ -5,6 +5,7 @@
 		<ImplicitUsings>disable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Optimize>true</Optimize>
 		<PublishAot>true</PublishAot>
 		<IsAotCompatible>true</IsAotCompatible>
 		<NoStdLib>true</NoStdLib>

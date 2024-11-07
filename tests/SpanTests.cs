@@ -189,6 +189,22 @@ namespace Unmanaged
         }
 
         [Test]
+        public void GetDefaultSpanFromEmpty()
+        {
+            USpan<char> emptyUnmanaged = default;
+            Span<char> emptySystem = emptyUnmanaged.AsSystemSpan();
+            Assert.That(emptySystem.IsEmpty, Is.True);
+        }
+
+        [Test]
+        public void CopyEmptySpan()
+        {
+            USpan<char> empty = default;
+            USpan<char> destination = stackalloc char[5];
+            empty.CopyTo(destination);
+        }
+
+        [Test]
         public void BenchmarkAgainstSystemSpan()
         {
             //indexof, contains, fill, clear, slice
