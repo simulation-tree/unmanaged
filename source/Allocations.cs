@@ -180,6 +180,17 @@ namespace Unmanaged
             };
         }
 
+        public static uint GetNextPowerOf2(uint value)
+        {
+            value--;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            return ++value;
+        }
+
         private static class Tracker
         {
             private static readonly ConcurrentStack<nint> addresses = new();
