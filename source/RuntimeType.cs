@@ -70,6 +70,12 @@ namespace Unmanaged
             }
         }
 
+        [Obsolete("Default constructor not supported", true)]
+        public RuntimeType()
+        {
+            throw new NotSupportedException();
+        }
+
         public RuntimeType(uint value)
         {
             this.value = value;
