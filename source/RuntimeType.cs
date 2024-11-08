@@ -4,10 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
-
-#if DEBUG
 using System.Diagnostics;
-#endif
 
 namespace Unmanaged
 {
@@ -90,7 +87,6 @@ namespace Unmanaged
 
         public readonly uint ToString(USpan<char> buffer)
         {
-#if DEBUG
             if (types.TryGetValue(value, out Type? systemType))
             {
                 string? str = systemType?.Name;
@@ -100,7 +96,6 @@ namespace Unmanaged
                     return (uint)str.Length;
                 }
             }
-#endif
 
             return value.ToString(buffer);
         }
@@ -131,15 +126,19 @@ namespace Unmanaged
         /// </summary>
         public unsafe static RuntimeType Get<T>() where T : unmanaged
         {
-#if DEBUG
-            if (sizeof(T) > MaxSize)
-            {
-                throw new InvalidOperationException($"The type {typeof(T)} is too large to be used as a RuntimeType.");
-            }
-#endif
+            ThrowIfTypeIsTooLarge<T>();
 
             uint value = GenericHasher<T>.value;
             return new(value);
+        }
+
+        [Conditional("DEBUG")]
+        private static unsafe void ThrowIfTypeIsTooLarge<T>() where T : unmanaged
+        {
+            if (sizeof(T) > MaxSize)
+            {
+                throw new InvalidOperationException($"The type {typeof(T)} is too large to be used as a RuntimeType, exceeds {MaxSize}");
+            }
         }
 
         /// <summary>
@@ -373,9 +372,8 @@ namespace Unmanaged
                             types.Add(value, type);
                             break;
                         }
-#if DEBUG
-                        Debug.WriteLine($"Collision hash detected between {type} and {types[value]}");
-#endif
+
+                        Trace.WriteLine($"Collision hash detected between {type} and {types[value]}");
                     }
                 }
             }
