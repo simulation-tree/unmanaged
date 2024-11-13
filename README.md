@@ -40,16 +40,6 @@ using RandomGenerator random = new();
 int fairDiceRoll = random.NextInt(0, 6);
 ```
 
-### Runtime Type
-The `RuntimeType` itself is 4 bytes big, and it stores the hash built from the type's full name
-with its size embedded:
-```cs
-RuntimeType intType = RuntimeType.Get<byte>();
-RuntimeType floatType = RuntimeType.Get<float>();
-Assert.That(intType.Size, Is.EqualTo(sizeof(byte)));
-Assert.That(intType == floatType, Is.False);
-```
-
 ### Safety checks
 When compiling without release settings (where a `#DEBUG` flag is set), all allocations
 originating from `Allocations` or `Allocation` will be tracked. This is so that, when debugging

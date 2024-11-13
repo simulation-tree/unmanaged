@@ -6,12 +6,15 @@ using System.Runtime.InteropServices;
 
 namespace Unmanaged
 {
+    /// <summary>
+    /// Contains functions for allocating, freeing and tracking unmanaged memory.
+    /// </summary>
     public static unsafe class Allocations
     {
         private static uint count;
 
         /// <summary>
-        /// Amount of allocations made that have not been freed.
+        /// Amount of allocations made that have not been freed yet.
         /// </summary>
         public static uint Count => count;
 
@@ -57,6 +60,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Allocates unmanaged memory of the given size.
+        /// </summary>
         public static void* Allocate(uint size)
         {
             void* pointer = NativeMemory.Alloc(size);
@@ -65,6 +71,9 @@ namespace Unmanaged
             return pointer;
         }
 
+        /// <summary>
+        /// Allocates unmanaged memory of the given size with the given alignment.
+        /// </summary>
         public static void* AllocateAligned(uint size, uint alignment)
         {
             void* pointer = NativeMemory.AlignedAlloc(size, alignment);
@@ -75,9 +84,6 @@ namespace Unmanaged
 
         /// <summary>
         /// Allocates unmanaged memory for a single instance of the given type.
-        /// <para>
-        /// Requires to be disposed with <see cref="Free(ref void*)"/>
-        /// </para>
         /// </summary>
         public static T* Allocate<T>() where T : unmanaged
         {
@@ -87,6 +93,9 @@ namespace Unmanaged
             return (T*)pointer;
         }
 
+        /// <summary>
+        /// Free the memory at the given pointer.
+        /// </summary>
         public static void Free(ref void* pointer)
         {
             NativeMemory.Free(pointer);
@@ -95,6 +104,9 @@ namespace Unmanaged
             pointer = null;
         }
 
+        /// <summary>
+        /// Frees the aligned memory at the given pointer.
+        /// </summary>
         public static void FreeAligned(ref void* pointer)
         {
             NativeMemory.AlignedFree(pointer);
@@ -103,6 +115,9 @@ namespace Unmanaged
             pointer = null;
         }
 
+        /// <summary>
+        /// Frees the memory at the given pointer.
+        /// </summary>
         public static void Free<T>(ref T* pointer) where T : unmanaged
         {
             NativeMemory.Free(pointer);
@@ -111,6 +126,9 @@ namespace Unmanaged
             pointer = null;
         }
 
+        /// <summary>
+        /// Frees the aligned memory at the given pointer.
+        /// </summary>
         public static void FreeAligned<T>(ref T* pointer) where T : unmanaged
         {
             NativeMemory.AlignedFree(pointer);
@@ -119,6 +137,9 @@ namespace Unmanaged
             pointer = null;
         }
 
+        /// <summary>
+        /// Reallocates the memory at the given pointer to the new size.
+        /// </summary>
         public static void* Reallocate(void* pointer, uint newSize)
         {
             Tracker.Untrack(pointer);
@@ -127,6 +148,9 @@ namespace Unmanaged
             return newPointer;
         }
 
+        /// <summary>
+        /// Reallocates the aligned memory at the given pointer to the new size.
+        /// </summary>
         public static void* ReallocateAligned(void* pointer, uint newSize, uint alignment)
         {
             Tracker.UntrackAligned(pointer);
@@ -135,6 +159,9 @@ namespace Unmanaged
             return newPointer;
         }
 
+        /// <summary>
+        /// Throws an <see cref="NullReferenceException"/> if the pointer is null.
+        /// </summary>
         public static void ThrowIfNull(void* pointer)
         {
             if (pointer is null)
@@ -145,6 +172,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Retrieves an alignment for the given type.
+        /// </summary>
         public static uint GetAlignment<T>() where T : unmanaged
         {
             return GetAlignment(TypeInfo<T>.size);
@@ -168,6 +198,9 @@ namespace Unmanaged
             return (stride & 1) == 0 ? 2u : 1u;
         }
 
+        /// <summary>
+        /// Retrieves the upper bound of the given stride and alignment.
+        /// </summary>
         public static uint CeilAlignment(uint stride, uint alignment)
         {
             return alignment switch
@@ -180,6 +213,9 @@ namespace Unmanaged
             };
         }
 
+        /// <summary>
+        /// Retrieves the next power of 2 for the given value.
+        /// </summary>
         public static uint GetNextPowerOf2(uint value)
         {
             value--;

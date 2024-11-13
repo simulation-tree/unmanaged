@@ -11,12 +11,22 @@ namespace Unmanaged
     [StructLayout(LayoutKind.Sequential, Size = 256)]
     public unsafe struct FixedString : IEquatable<FixedString>
     {
+        /// <summary>
+        /// Maximum number of characters that can be stored.
+        /// </summary>
         public const uint Capacity = 255;
+
+        /// <summary>
+        /// Maximum value of a single <see cref="char"/>.
+        /// </summary>
         public const uint MaxCharacterValue = 256;
 
         private fixed byte characters[(int)Capacity];
         private byte length;
 
+        /// <summary>
+        /// Number of characters in this string.
+        /// </summary>
         public uint Length
         {
             readonly get => length;
@@ -35,6 +45,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Accesses a character in this string.
+        /// </summary>
         public char this[uint index]
         {
             readonly get
@@ -50,30 +63,45 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Creates a new fixed string from a <see cref="string"/> value.
+        /// </summary>
         public FixedString(string text)
         {
             CopyFrom(text.AsUSpan());
         }
 
+        /// <summary>
+        /// Creates a new fixed string from a <see cref="USpan{T}"/> of characters.
+        /// </summary>
         public FixedString(USpan<char> text)
         {
             CopyFrom(text);
         }
 
+        /// <summary>
+        /// Creates a new fixed string from a <see cref="USpan{T}"/> of UTF8 bytes.
+        /// </summary>
         public FixedString(USpan<byte> utf8Bytes)
         {
             CopyFrom(utf8Bytes);
         }
 
+        /// <summary>
+        /// Creates a new fixed string from a pointer to a null-terminated UTF8 string/bytes.
+        /// </summary>
         public FixedString(void* utf8Bytes)
         {
             USpan<byte> span = new(utf8Bytes, Capacity);
             CopyFrom(span);
         }
 
+        /// <summary>
+        /// Retrieves the <see cref="string"/> representation of this string.
+        /// </summary>
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[(int)length];
+            USpan<char> buffer = stackalloc char[length];
             CopyTo(buffer);
             return buffer.ToString();
         }
@@ -98,6 +126,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Copies the state from a UTF8 byte span.
+        /// </summary>
         public void CopyFrom(USpan<byte> utf8Bytes)
         {
             uint index = 0;
@@ -123,7 +154,7 @@ namespace Unmanaged
                 }
                 else
                 {
-                    throw new ArgumentException("Invalid UTF-8 byte sequence.");
+                    throw new ArgumentException("Invalid UTF-8 byte sequence");
                 }
 
                 int codePoint;
@@ -139,7 +170,7 @@ namespace Unmanaged
                         byte b = utf8Bytes[index + i];
                         if ((b & 0xC0) != 0x80)
                         {
-                            throw new ArgumentException("Invalid UTF-8 byte sequence.");
+                            throw new ArgumentException("Invalid UTF-8 byte sequence");
                         }
 
                         codePoint = (codePoint << 6) | (b & 0x3F);
@@ -163,6 +194,10 @@ namespace Unmanaged
             length = (byte)index;
         }
 
+        /// <summary>
+        /// Copies the state of this string to the given buffer of UTF8 bytes.
+        /// </summary>
+        /// <returns>Amount of <see cref="byte"/>s copied.</returns>
         public readonly uint CopyTo(USpan<byte> utf8Bytes)
         {
             uint byteIndex = 0;
@@ -183,6 +218,10 @@ namespace Unmanaged
             return byteIndex;
         }
 
+        /// <summary>
+        /// Copies the state of this string to the given buffer of characters.
+        /// </summary>
+        /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public readonly uint CopyTo(USpan<char> buffer)
         {
             for (uint i = 0; i < length; i++)
@@ -193,10 +232,14 @@ namespace Unmanaged
             return length;
         }
 
+        /// <summary>
+        /// Slice this string from the given start index and length.
+        /// </summary>
         public readonly FixedString Slice(uint start, uint length)
         {
             ThrowIfIndexOutOfRange(start);
             ThrowIfLengthExceedsCapacity(start + length);
+
             FixedString result = default;
             for (uint i = 0; i < length; i++)
             {
@@ -207,11 +250,17 @@ namespace Unmanaged
             return result;
         }
 
+        /// <summary>
+        /// Slice this string from the given start index to the end.
+        /// </summary>
         public readonly FixedString Slice(uint start)
         {
             return Slice(start, length - start);
         }
 
+        /// <summary>
+        /// Checks if this string contains the given character.
+        /// </summary>
         public readonly bool Contains(char c)
         {
             for (uint i = 0; i < length; i++)
@@ -225,6 +274,9 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Checks if this string contains the given text.
+        /// </summary>
         public readonly bool Contains(USpan<char> text)
         {
             for (uint i = 0; i < length; i++)
@@ -251,6 +303,9 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Checks if this string contains the given text.
+        /// </summary>
         public readonly bool Contains(FixedString text)
         {
             for (uint i = 0; i < length; i++)
@@ -277,6 +332,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the first index of the given character.
+        /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
+        /// </summary>
         public readonly uint IndexOf(char value)
         {
             for (uint i = 0; i < length; i++)
@@ -287,9 +346,13 @@ namespace Unmanaged
                 }
             }
 
-            throw new IndexOutOfRangeException();
+            throw new ArgumentException($"The character {value} was not found in this string");
         }
 
+        /// <summary>
+        /// Attempts to retrieve the first index of the given character.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryIndexOf(char value, out uint index)
         {
             for (uint i = 0; i < length; i++)
@@ -305,6 +368,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the first index of the given text.
+        /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
+        /// </summary>
         public readonly uint IndexOf(USpan<char> text)
         {
             for (uint i = 0; i < length; i++)
@@ -328,9 +395,13 @@ namespace Unmanaged
                 }
             }
 
-            throw new IndexOutOfRangeException();
+            throw new ArgumentException($"The text {text.ToString()} was not found in this string");
         }
 
+        /// <summary>
+        /// Attempts to retrieve the first index of the given text.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryIndexOf(USpan<char> text, out uint index)
         {
             for (uint i = 0; i < length; i++)
@@ -359,6 +430,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the first index of the given text.
+        /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
+        /// </summary>
         public readonly uint IndexOf(FixedString text)
         {
             for (uint i = 0; i < length; i++)
@@ -382,9 +457,13 @@ namespace Unmanaged
                 }
             }
 
-            throw new IndexOutOfRangeException();
+            throw new ArgumentException($"The text {text.ToString()} was not found in this string");
         }
 
+        /// <summary>
+        /// Attempts to retrieve the first index of the given text.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryIndexOf(FixedString text, out uint index)
         {
             for (uint i = 0; i < length; i++)
@@ -413,6 +492,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the last index of the given character.
+        /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
+        /// </summary>
         public readonly uint LastIndexOf(char value)
         {
             uint thisLength = Length;
@@ -424,9 +507,13 @@ namespace Unmanaged
                 }
             }
 
-            throw new IndexOutOfRangeException();
+            throw new ArgumentException($"The character {value} was not found in this string");
         }
 
+        /// <summary>
+        /// Attempts to retrieve the last index of the given character.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryLastIndexOf(char value, out uint index)
         {
             uint thisLength = Length;
@@ -443,6 +530,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the last index of the given text.
+        /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
+        /// </summary>
         public readonly uint LastIndexOf(USpan<char> text)
         {
             uint thisLength = Length;
@@ -467,9 +558,13 @@ namespace Unmanaged
                 }
             }
 
-            throw new IndexOutOfRangeException();
+            throw new ArgumentException($"The text {text.ToString()} was not found in this string");
         }
 
+        /// <summary>
+        /// Attempts to retrieve the last index of the given text.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryLastIndexOf(USpan<char> text, out uint index)
         {
             uint thisLength = Length;
@@ -499,6 +594,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the last index of the given text.
+        /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
+        /// </summary>
         public readonly uint LastIndexOf(FixedString text)
         {
             uint thisLength = Length;
@@ -523,9 +622,13 @@ namespace Unmanaged
                 }
             }
 
-            throw new IndexOutOfRangeException();
+            throw new ArgumentException($"The text {text.ToString()} was not found in this string");
         }
 
+        /// <summary>
+        /// Attempts to retrieve the last index of the given text.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryLastIndexOf(FixedString text, out uint index)
         {
             uint thisLength = Length;
@@ -555,6 +658,9 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Checks if this string starts with the given text.
+        /// </summary>
         public readonly bool StartsWith(USpan<char> text)
         {
             if (text.Length > length)
@@ -573,6 +679,9 @@ namespace Unmanaged
             return true;
         }
 
+        /// <summary>
+        /// Checks if this string starts with the given text.
+        /// </summary>
         public readonly bool StartsWith(FixedString text)
         {
             if (text.length > length)
@@ -591,6 +700,9 @@ namespace Unmanaged
             return true;
         }
 
+        /// <summary>
+        /// Checks if this string ends with the given text.
+        /// </summary>
         public readonly bool EndsWith(USpan<char> text)
         {
             if (text.Length > length)
@@ -609,6 +721,9 @@ namespace Unmanaged
             return true;
         }
 
+        /// <summary>
+        /// Checks if this string ends with the given text.
+        /// </summary>
         public readonly bool EndsWith(FixedString text)
         {
             if (text.length > length)
@@ -627,11 +742,17 @@ namespace Unmanaged
             return true;
         }
 
+        /// <summary>
+        /// Clears the contents of this string.
+        /// </summary>
         public void Clear()
         {
             length = 0;
         }
 
+        /// <summary>
+        /// Appends a character to the end of this string.
+        /// </summary>
         public void Append(char c)
         {
             ThrowIfLengthExceedsCapacity(length + 1u);
@@ -639,6 +760,9 @@ namespace Unmanaged
             length = (byte)(length + 1);
         }
 
+        /// <summary>
+        /// Appends a formattable object to the end of this string.
+        /// </summary>
         public void Append<T>(T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[256];
@@ -652,6 +776,9 @@ namespace Unmanaged
             length = (byte)(length + charsWritten);
         }
 
+        /// <summary>
+        /// Appends a text span to the end of this string.
+        /// </summary>
         public void Append(USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(length + text.Length);
@@ -663,6 +790,9 @@ namespace Unmanaged
             length = (byte)(length + text.Length);
         }
 
+        /// <summary>
+        /// Appends a text span to the end of this string.
+        /// </summary>
         public void Append(FixedString text)
         {
             uint textLength = text.Length;
@@ -675,9 +805,13 @@ namespace Unmanaged
             length = (byte)(length + textLength);
         }
 
+        /// <summary>
+        /// Removes the character at the given index.
+        /// </summary>
         public void RemoveAt(uint index)
         {
             ThrowIfIndexOutOfRange(index);
+
             for (uint i = index; i < length - 1; i++)
             {
                 characters[i] = characters[i + 1];
@@ -686,6 +820,9 @@ namespace Unmanaged
             length = (byte)(length - 1);
         }
 
+        /// <summary>
+        /// Removes a range of characters starting at the given index.
+        /// </summary>
         public void RemoveRange(uint start, uint length)
         {
             uint thisLength = Length;
@@ -699,6 +836,9 @@ namespace Unmanaged
             this.length = (byte)(thisLength - length);
         }
 
+        /// <summary>
+        /// Inserts a character at the given index.
+        /// </summary>
         public void Insert(uint index, char c)
         {
             ThrowIfLengthExceedsCapacity(length + 1u);
@@ -712,6 +852,9 @@ namespace Unmanaged
             length = (byte)(length + 1);
         }
 
+        /// <summary>
+        /// Inserts a formattable object at the given index.
+        /// </summary>
         public void Insert<T>(uint index, T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[256];
@@ -731,6 +874,9 @@ namespace Unmanaged
             length = (byte)(length + charsWritten);
         }
 
+        /// <summary>
+        /// Inserts a text span at the given index.
+        /// </summary>
         public void Insert(uint index, USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(length + text.Length);
@@ -748,6 +894,9 @@ namespace Unmanaged
             length = (byte)(length + text.Length);
         }
 
+        /// <summary>
+        /// Inserts a text span at the given index.
+        /// </summary>
         public void Insert(uint index, FixedString text)
         {
             uint textLength = text.Length;
@@ -765,17 +914,30 @@ namespace Unmanaged
             length = (byte)(length + textLength);
         }
 
-        public void Replace(char oldValue, char newValue)
+        /// <summary>
+        /// Replaces all instances of the given character with another.
+        /// </summary>
+        /// <returns><c>true</c> if a replacement was done.</returns>
+        public bool TryReplace(char oldValue, char newValue)
         {
+            bool done = false;
             for (uint i = 0; i < length; i++)
             {
-                if (characters[i] == oldValue)
+                ref byte c = ref characters[i];
+                if (c == oldValue)
                 {
-                    characters[i] = (byte)newValue;
+                    c = (byte)newValue;
+                    done |= true;
                 }
             }
+
+            return done;
         }
 
+        /// <summary>
+        /// Attempts to replace all instances of the given text with another.
+        /// </summary>
+        /// <returns><c>true</c> if a replacement was done.</returns>
         public bool TryReplace(USpan<char> oldValue, USpan<char> newValue)
         {
             for (uint i = 0; i < length; i++)
@@ -830,6 +992,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Attempts to replace all instances of the given text with another.
+        /// </summary>
+        /// <returns><c>true</c> if a replacement was done.</returns>
         public bool TryReplace(FixedString oldValue, FixedString newValue)
         {
             for (uint i = 0; i < length; i++)
@@ -884,6 +1050,7 @@ namespace Unmanaged
             return false;
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(FixedString other)
         {
             if (length != other.length)
@@ -902,6 +1069,7 @@ namespace Unmanaged
             return true;
         }
 
+        /// <inheritdoc/>
         public readonly bool Equals(USpan<char> other)
         {
             if (length != other.Length)
@@ -920,11 +1088,13 @@ namespace Unmanaged
             return true;
         }
 
+        /// <inheritdoc/>
         public readonly override bool Equals([NotNullWhen(true)] object? obj)
         {
             return obj is FixedString other && Equals(other);
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             unchecked
@@ -939,6 +1109,10 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Only in debug, throws if the given index is out of range.
+        /// </summary>
+        /// <exception cref="IndexOutOfRangeException"></exception>
         [Conditional("DEBUG")]
         private readonly void ThrowIfIndexOutOfRange(uint index)
         {
@@ -948,6 +1122,10 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Only in debug, throws if the given length exceeds the capacity.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfLengthExceedsCapacity(uint length)
         {
@@ -957,6 +1135,10 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Only in debug, throws if the given character is out of range.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
         [Conditional("DEBUG")]
         public static void ThrowIfCharacterIsOutOfRange(char c)
         {
@@ -966,16 +1148,19 @@ namespace Unmanaged
             }
         }
 
+        /// <inheritdoc/>
         public static implicit operator FixedString(string text)
         {
             return new(text);
         }
 
+        /// <inheritdoc/>
         public static bool operator ==(FixedString a, FixedString b)
         {
             return a.Equals(b);
         }
 
+        /// <inheritdoc/>
         public static bool operator !=(FixedString a, FixedString b)
         {
             return !a.Equals(b);

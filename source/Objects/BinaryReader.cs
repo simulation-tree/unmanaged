@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using Unmanaged.Serialization.Unsafe;
 
 namespace Unmanaged
 {
+    /// <summary>
+    /// Reads binary data from a byte stream.
+    /// </summary>
     public unsafe struct BinaryReader : IDisposable
     {
         private UnsafeBinaryReader* value;
@@ -23,6 +25,9 @@ namespace Unmanaged
         /// </summary>
         public readonly uint Length => UnsafeBinaryReader.GetLength(value);
 
+        /// <summary>
+        /// Has this reader been disposed?
+        /// </summary>
         public readonly bool IsDisposed => UnsafeBinaryReader.IsDisposed(value);
 
         /// <summary>
@@ -67,19 +72,29 @@ namespace Unmanaged
             this.value = value;
         }
 
-#if NET5_0_OR_GREATER
+#if NET
+        /// <summary>
+        /// Creates an empty binary reader.
+        /// </summary>
         public BinaryReader()
         {
             this.value = UnsafeBinaryReader.Allocate(Array.Empty<byte>());
         }
 #endif
+
+        /// <summary>
+        /// Disposes the reader and frees the data.
+        /// </summary>
         public void Dispose()
         {
             ThrowIfDisposed();
             UnsafeBinaryReader.Free(ref value);
         }
 
-        public override string ToString()
+        /// <summary>
+        /// Retrieves the string representation of the reader.
+        /// </summary>
+        public readonly override string ToString()
         {
             return $"Position: {Position}, Length: {Length}";
         }
@@ -147,6 +162,9 @@ namespace Unmanaged
             return PeekValue<T>(Position);
         }
 
+        /// <summary>
+        /// Peeks a <typeparamref name="T"/> value at the specified position.
+        /// </summary>
         public readonly T PeekValue<T>(uint position) where T : unmanaged
         {
             if (position + TypeInfo<T>.size > Length)
@@ -158,6 +176,10 @@ namespace Unmanaged
             return *(T*)address;
         }
 
+        /// <summary>
+        /// Reads a <typeparamref name="T"/> value at the current position and
+        /// advances forward.
+        /// </summary>
         public readonly T ReadValue<T>() where T : unmanaged
         {
             T value = PeekValue<T>();
@@ -165,6 +187,9 @@ namespace Unmanaged
             return value;
         }
 
+        /// <summary>
+        /// Advances the reader by the specified amount of bytes.
+        /// </summary>
         public readonly void Advance(uint size)
         {
             ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
@@ -172,6 +197,9 @@ namespace Unmanaged
             position += size;
         }
 
+        /// <summary>
+        /// Advances the reader by the size of the specified type.
+        /// </summary>
         public readonly void Advance<T>(uint length = 1) where T : unmanaged
         {
             Advance(TypeInfo<T>.size * length);
@@ -188,6 +216,9 @@ namespace Unmanaged
             return span;
         }
 
+        /// <summary>
+        /// Peeks a span of values from the reader with the specified length.
+        /// </summary>
         public readonly USpan<T> PeekSpan<T>(uint length) where T : unmanaged
         {
             return PeekSpan<T>(Position, length);
@@ -203,12 +234,18 @@ namespace Unmanaged
             return new(address, length);
         }
 
+        /// <summary>
+        /// Peeks UTF8 bytes as characters into the given buffer
+        /// </summary>
         public readonly uint PeekUTF8Span(uint position, uint length, USpan<char> buffer)
         {
             USpan<byte> bytes = GetBytes();
             return bytes.PeekUTF8Span(position, length, buffer);
         }
 
+        /// <summary>
+        /// Peeks a UTF8 character from the stream.
+        /// </summary>
         public readonly byte ReadUTF8(out char low, out char high)
         {
             byte length = PeekUTF8(out low, out high);
@@ -229,6 +266,9 @@ namespace Unmanaged
             return read;
         }
 
+        /// <summary>
+        /// Reads a <see cref="ISerializable"/> object and advances the reader forward.
+        /// </summary>
         public readonly T ReadObject<T>() where T : unmanaged, ISerializable
         {
             T value = default;
@@ -236,6 +276,9 @@ namespace Unmanaged
             return value;
         }
 
+        /// <summary>
+        /// Creates a new binary reader from the given text.
+        /// </summary>
         public static BinaryReader CreateFromUTF8(USpan<char> text)
         {
             using BinaryWriter writer = BinaryWriter.Create();
@@ -243,6 +286,9 @@ namespace Unmanaged
             return new BinaryReader(writer.GetBytes());
         }
 
+        /// <summary>
+        /// Creates a new binary reader from the given text.
+        /// </summary>
         public static BinaryReader CreateFromUTF8(FixedString text)
         {
             using BinaryWriter writer = BinaryWriter.Create();
@@ -250,6 +296,9 @@ namespace Unmanaged
             return new BinaryReader(writer.GetBytes());
         }
 
+        /// <summary>
+        /// Creates a new binary reader from the given text.
+        /// </summary>
         public static BinaryReader CreateFromUTF8(string text)
         {
             using BinaryWriter writer = BinaryWriter.Create();
@@ -257,10 +306,92 @@ namespace Unmanaged
             return new BinaryReader(writer.GetBytes());
         }
 
+        /// <summary>
+        /// Creates a new empty binary reader.
+        /// </summary>
         public static BinaryReader Create()
         {
             UnsafeBinaryReader* value = UnsafeBinaryReader.Allocate(Array.Empty<byte>());
             return new BinaryReader(value);
+        }
+
+        internal unsafe struct UnsafeBinaryReader
+        {
+            private uint position;
+            private readonly bool clone;
+            private readonly Allocation data;
+            private readonly uint length;
+
+            private UnsafeBinaryReader(uint position, Allocation data, uint length, bool clone)
+            {
+                this.position = position;
+                this.data = data;
+                this.length = length;
+                this.clone = clone;
+            }
+
+            public static Allocation GetData(UnsafeBinaryReader* reader)
+            {
+                return reader->data;
+            }
+
+            public static UnsafeBinaryReader* Allocate(UnsafeBinaryReader* reader, uint position = 0)
+            {
+                UnsafeBinaryReader* copy = Allocations.Allocate<UnsafeBinaryReader>();
+                copy[0] = new(position, reader->data, reader->length, true);
+                return copy;
+            }
+
+            public static UnsafeBinaryReader* Allocate(BinaryWriter.UnsafeBinaryWriter* writer, uint position = 0)
+            {
+                UnsafeBinaryReader* copy = Allocations.Allocate<UnsafeBinaryReader>();
+                Allocation data = new((Allocation*)BinaryWriter.UnsafeBinaryWriter.GetStartAddress(writer));
+                copy[0] = new(position, data, BinaryWriter.UnsafeBinaryWriter.GetPosition(writer), true);
+                return copy;
+            }
+
+            public static UnsafeBinaryReader* Allocate(USpan<byte> bytes, uint position = 0)
+            {
+                UnsafeBinaryReader* reader = Allocations.Allocate<UnsafeBinaryReader>();
+                reader[0] = new(position, Allocation.Create(bytes), bytes.Length, false);
+                return reader;
+            }
+
+            public static UnsafeBinaryReader* Allocate(Stream stream, uint position = 0)
+            {
+                uint bufferLength = (uint)stream.Length + 4;
+                using Allocation buffer = new(bufferLength);
+                USpan<byte> span = buffer.AsSpan(0, bufferLength);
+                uint length = (uint)stream.Read(span.AsSystemSpan());
+                USpan<byte> bytes = span.Slice(0, length);
+                return Allocate(bytes, position);
+            }
+
+            public static bool IsDisposed(UnsafeBinaryReader* reader)
+            {
+                return reader is null;
+            }
+
+            public static ref uint GetPositionRef(UnsafeBinaryReader* reader)
+            {
+                return ref reader->position;
+            }
+
+            public static uint GetLength(UnsafeBinaryReader* reader)
+            {
+                return reader->length;
+            }
+
+            public static void Free(ref UnsafeBinaryReader* reader)
+            {
+                Allocations.ThrowIfNull(reader);
+                if (!reader->clone)
+                {
+                    reader->data.Dispose();
+                }
+
+                Allocations.Free(ref reader);
+            }
         }
     }
 }

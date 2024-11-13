@@ -2,10 +2,16 @@
 
 namespace Unmanaged
 {
+    /// <summary>
+    /// Pseudo-random number generator using XORshift.
+    /// </summary>
     public unsafe struct RandomGenerator : IDisposable
     {
         private void* pointer;
 
+        /// <summary>
+        /// The current state of the generator.
+        /// </summary>
         public readonly ulong State => *(ulong*)pointer;
 
 #if NET
@@ -69,16 +75,26 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Creates a new disposable randomness generator using the given
+        /// text input as the initialization seed.
+        /// </summary>
         public RandomGenerator(string seed) : this(seed.AsSpan())
         {
         }
 
+        /// <summary>
+        /// Disposes the generator and releases the memory used by it.
+        /// </summary>
         public void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
             Allocations.Free(ref pointer);
         }
 
+        /// <summary>
+        /// Generates a new <see cref="byte"/>.
+        /// </summary>
         public readonly byte NextByte()
         {
             unchecked
@@ -87,6 +103,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Generates a new signed <see cref="sbyte"/>.
+        /// </summary>
         public readonly sbyte NextSByte()
         {
             unchecked
@@ -95,6 +114,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Generates a new unsigned <see cref="ulong"/>.
+        /// </summary>
         public readonly ulong NextULong()
         {
             ulong t = *(ulong*)pointer;
@@ -105,6 +127,9 @@ namespace Unmanaged
             return t;
         }
 
+        /// <summary>
+        /// Generates a new unsigned <see cref="uint"/>.
+        /// </summary>
         public readonly uint NextUInt()
         {
             uint t = *(uint*)pointer;
@@ -115,16 +140,25 @@ namespace Unmanaged
             return t;
         }
 
+        /// <summary>
+        /// Generates a new <see cref="bool"/> value.
+        /// </summary>
         public readonly bool NextBool()
         {
             return NextUInt() % 2 == 0;
         }
 
+        /// <summary>
+        /// Generates a new unsigned <see cref="ulong"/> value between 0 and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly ulong NextULong(ulong maxExclusive)
         {
             return NextULong() % maxExclusive;
         }
 
+        /// <summary>
+        /// Generates a new unsigned <see cref="ulong"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly ulong NextULong(ulong minInclusive, ulong maxExclusive)
         {
             ulong range = maxExclusive - minInclusive;
@@ -132,16 +166,25 @@ namespace Unmanaged
             return value + minInclusive;
         }
 
+        /// <summary>
+        /// Generates a new <see cref="long"/>.
+        /// </summary>
         public readonly long NextLong()
         {
             return (long)NextULong();
         }
 
+        /// <summary>
+        /// Generates a new <see cref="long"/> value between 0 and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly long NextLong(long maxExclusive)
         {
             return (long)(NextULong() % (ulong)maxExclusive);
         }
 
+        /// <summary>
+        /// Generates a new <see cref="long"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly long NextLong(long minInclusive, long maxExclusive)
         {
             long range = maxExclusive - minInclusive;
@@ -149,16 +192,25 @@ namespace Unmanaged
             return value + minInclusive;
         }
 
+        /// <summary>
+        /// Generates a new <see cref="int"/>.
+        /// </summary>
         public readonly int NextInt()
         {
             return (int)NextUInt();
         }
 
+        /// <summary>
+        /// Generates a new <see cref="int"/> value between 0 and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly int NextInt(int maxExclusive)
         {
             return (int)(NextULong() % (ulong)maxExclusive);
         }
 
+        /// <summary>
+        /// Generates a new <see cref="int"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly int NextInt(int minInclusive, int maxExclusive)
         {
             int range = maxExclusive - minInclusive;
@@ -166,11 +218,17 @@ namespace Unmanaged
             return value + minInclusive;
         }
 
+        /// <summary>
+        /// Generates a new unsigned <see cref="uint"/> value between 0 and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly uint NextUInt(uint maxExclusive)
         {
             return NextUInt() % maxExclusive;
         }
 
+        /// <summary>
+        /// Generates a new unsigned <see cref="uint"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly uint NextUInt(uint minInclusive, uint maxExclusive)
         {
             uint range = maxExclusive - minInclusive;
@@ -179,7 +237,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Generates a 0-1 unit value.
+        /// Generates a 0-1 unit <see cref="float"/> value.
         /// </summary>
         public readonly float NextFloat()
         {
@@ -191,11 +249,17 @@ namespace Unmanaged
             return t / (float)uint.MaxValue;
         }
 
+        /// <summary>
+        /// Generates a new <see cref="float"/> between 0 and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly float NextFloat(float maxExclusive)
         {
             return NextFloat() * maxExclusive;
         }
 
+        /// <summary>
+        /// Generates a new <see cref="float"/> between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly float NextFloat(float minInclusive, float maxExclusive)
         {
             float range = maxExclusive - minInclusive;
@@ -203,6 +267,9 @@ namespace Unmanaged
             return value + minInclusive;
         }
 
+        /// <summary>
+        /// Generates a 0-1 unit <see cref="double"/> value.
+        /// </summary>
         public readonly double NextDouble()
         {
             ulong t = *(ulong*)pointer;
@@ -213,11 +280,18 @@ namespace Unmanaged
             return t / (double)ulong.MaxValue;
         }
 
+        /// <summary>
+        /// Generates a new <see cref="double"/> between 0 and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly double NextDouble(double maxExclusive)
         {
             return NextDouble() * maxExclusive;
         }
 
+
+        /// <summary>
+        /// Generates a new <see cref="double"/> between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
+        /// </summary>
         public readonly double NextDouble(double minInclusive, double maxExclusive)
         {
             double range = maxExclusive - minInclusive;
@@ -226,9 +300,8 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Fills the given span with random bytes.
+        /// Fills the given span buffer with random bytes.
         /// </summary>
-        /// <param name="bytes"></param>
         public readonly void NextBytes(USpan<byte> bytes)
         {
             ulong* t = (ulong*)pointer;
@@ -269,6 +342,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Creates a new random generator initialized with a random seed.
+        /// </summary>
         public static RandomGenerator Create()
         {
             ulong seed = GetRandomSeed();

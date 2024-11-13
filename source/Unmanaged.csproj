@@ -10,18 +10,20 @@
 		<IsAotCompatible>true</IsAotCompatible>
 		<NoStdLib>true</NoStdLib>
 		<NoStandardLibraries>true</NoStandardLibraries>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<SignAssembly>False</SignAssembly>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningLevel>7</WarningLevel>
+		<WarningLevel>8</WarningLevel>
 		<IsAotCompatible>true</IsAotCompatible>
 		<Optimize>false</Optimize>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningLevel>7</WarningLevel>
+		<WarningLevel>8</WarningLevel>
 		<IsAotCompatible>true</IsAotCompatible>
 		<Optimize>true</Optimize>
 	</PropertyGroup>

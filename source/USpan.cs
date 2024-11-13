@@ -20,6 +20,9 @@ namespace Unmanaged
         private readonly ref T pointer;
         private readonly uint length;
 
+        /// <summary>
+        /// Ref access to the element at the given index.
+        /// </summary>
         public ref T this[uint index]
         {
             get
@@ -30,6 +33,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Native address of the first element in this span.
+        /// </summary>
         public readonly nint Address
         {
             get
@@ -47,7 +53,7 @@ namespace Unmanaged
         public readonly uint Length => length;
 
         /// <summary>
-        /// Creates a reference to memory at this address with the given element length.
+        /// Creates a new span from the given pointer with specified element length.
         /// </summary>
         public unsafe USpan(void* pointer, uint length)
         {
@@ -55,6 +61,9 @@ namespace Unmanaged
             this.length = length;
         }
 
+        /// <summary>
+        /// Creates a new span starting at the given reference with specified element length.
+        /// </summary>
         public USpan(ref T pointer, uint length)
         {
             this.pointer = ref pointer;
@@ -62,7 +71,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a reference to memory at this address with the given element length.
+        /// Creates a new span from the given native address with specified element length.
         /// </summary>
         public unsafe USpan(nint address, uint length)
         {
@@ -70,6 +79,9 @@ namespace Unmanaged
             this.length = length;
         }
 
+        /// <summary>
+        /// Creates a new span from a <see cref="Span{T}"/> value.
+        /// </summary>
         public USpan(Span<T> span)
         {
             length = (uint)span.Length;
@@ -79,6 +91,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Creates a new span from a <see cref="ReadOnlySpan{T}"/> value.
+        /// </summary>
         public USpan(ReadOnlySpan<T> span)
         {
             length = (uint)span.Length;
@@ -124,6 +139,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Retrieves a string representation of this span.
+        /// </summary>
         public unsafe override string ToString()
         {
             if (typeof(T) == typeof(char)) //special case
@@ -139,6 +157,9 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Retrieves a string representation of this span.
+        /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
             uint length = 0;
@@ -164,12 +185,18 @@ namespace Unmanaged
             return length;
         }
 
+        /// <summary>
+        /// Retrieves this span as a <see cref="Span{T}"/> value.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe readonly Span<T> AsSystemSpan()
         {
             return new Span<T>((void*)Address, (int)length);
         }
 
+        /// <summary>
+        /// Retrieves this span as a <see cref="Span{T}"/> value.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe readonly Span<V> AsSystemSpan<V>() where V : unmanaged
         {
@@ -177,6 +204,7 @@ namespace Unmanaged
             return new Span<V>((void*)Address, (int)length);
         }
 
+        /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
             unchecked
@@ -198,6 +226,9 @@ namespace Unmanaged
             return new(Address, Length);
         }
 
+        /// <summary>
+        /// Retrieves a slice of this span starting at the given index with a specified length.
+        /// </summary>
         public readonly USpan<T> Slice(uint start, uint length)
         {
             ThrowIfAccessingPastRange(start + length);
@@ -205,6 +236,9 @@ namespace Unmanaged
             return new USpan<T>(ref Unsafe.Add(ref pointer, start), length);
         }
 
+        /// <summary>
+        /// Retrieves a slice of this span starting at the given index.
+        /// </summary>
         public readonly USpan<T> Slice(uint start)
         {
             ThrowIfAccessingPastRange(start);
@@ -260,6 +294,10 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Attempts to retrieve the index of the first occurrence of the given value.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryIndexOfSlow(T value, out uint index)
         {
             EqualityComparer<T> comparer = EqualityComparer<T>.Default;
@@ -277,6 +315,10 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Attempts to retrieve the index of the first occurrence of the given value.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
@@ -297,6 +339,10 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Attempts to retrieve the index of the last occurrence of the given value.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryLastIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
@@ -317,6 +363,11 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Retrieves the index of the first occurrence of the given value.
+        /// <para>May throw <see cref="ArgumentException"/> if not found.</para>
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
         public readonly uint IndexOf(USpan<T> span)
         {
             for (uint i = 0; i < Length; i++)
@@ -331,6 +382,10 @@ namespace Unmanaged
             throw new ArgumentException($"Span `{span.ToString()}` not found", nameof(span));
         }
 
+        /// <summary>
+        /// Attempts to retrieve the index of the first occurrence of the given value.
+        /// </summary>
+        /// <returns><c>true</c> if found.</returns>
         public readonly bool TryIndexOf(USpan<T> span, out uint index)
         {
             for (uint i = 0; i < Length; i++)
@@ -346,11 +401,17 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Checks if the span contains the given value.
+        /// </summary>
         public readonly bool ContainsSlow(T value)
         {
             return TryIndexOfSlow(value, out _);
         }
 
+        /// <summary>
+        /// Checks if the span contains the given value.
+        /// </summary>
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
@@ -366,6 +427,9 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Checks if the span contains the given span.
+        /// </summary>
         public readonly bool Contains(USpan<T> span)
         {
             if (span.Length > Length)
@@ -385,6 +449,9 @@ namespace Unmanaged
             return false;
         }
 
+        /// <summary>
+        /// Retrieves this span as a managed array.
+        /// </summary>
         public readonly T[] ToArray()
         {
             T[] array = new T[Length];
@@ -396,6 +463,9 @@ namespace Unmanaged
             return array;
         }
 
+        /// <summary>
+        /// Checks if the span is equal to the given span.
+        /// </summary>
         public readonly bool SequenceEqual(USpan<T> other)
         {
             if (Length != other.Length)
@@ -415,6 +485,7 @@ namespace Unmanaged
             return true;
         }
 
+        /// <inheritdoc/>
         public readonly Enumerator GetEnumerator()
         {
             return new(this);
@@ -436,6 +507,9 @@ namespace Unmanaged
             AsSystemSpan().Fill(value);
         }
 
+        /// <summary>
+        /// Copies this entire span to the given span.
+        /// </summary>
         public unsafe readonly uint CopyTo(USpan<T> otherSpan)
         {
             ThrowIfDestinationTooSmall(otherSpan.Length);
@@ -443,26 +517,35 @@ namespace Unmanaged
             return Length;
         }
 
+        /// <inheritdoc/>
         public static implicit operator USpan<T>(Span<T> span)
         {
             return new(span);
         }
 
+        /// <inheritdoc/>
         public static implicit operator USpan<T>(ReadOnlySpan<T> span)
         {
             return new(span);
         }
 
+        /// <inheritdoc/>
         public static implicit operator USpan<T>(T[] array)
         {
             return new(array);
         }
 
+        /// <summary>
+        /// Enumerator for <see cref="USpan{T}"/>.
+        /// </summary>
         public ref struct Enumerator
         {
             private readonly USpan<T> span;
             private int index;
 
+            /// <summary>
+            /// Current element in the span.
+            /// </summary>
             public readonly ref T Current => ref span[(uint)index];
 
             internal Enumerator(USpan<T> span)
@@ -471,6 +554,9 @@ namespace Unmanaged
                 index = -1;
             }
 
+            /// <summary>
+            /// Iterates to the next element in the span.
+            /// </summary>
             public bool MoveNext()
             {
                 int index = this.index + 1;
@@ -485,8 +571,12 @@ namespace Unmanaged
         }
     }
 
+    /// <summary>
+    /// Allows for the creation of <see cref="USpan{T}"/> instances using the collection expression.
+    /// </summary>
     public static class USpanBuilder
     {
+        /// <inheritdoc/>
         public static USpan<T> Create<T>(ReadOnlySpan<T> values) where T : unmanaged
         {
             return values;
