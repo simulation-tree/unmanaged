@@ -1,8 +1,8 @@
 # Unmanaged
-Library containing primitive definitions for working with unmanaged C#.
+Library containing primitive definitions for working with native C#.
 
 ### Allocations
-`Allocation`s are a reference to unmanaged memory, and they must be disposed manually.
+`Allocation`s are a reference to native memory, and they must be disposed manually.
 The equivalent of `alloc` and `free`:
 ```cs
 using (Allocation allocation = new(sizeof(char) * 5))
@@ -23,7 +23,7 @@ The `FixedString` value type can store up to 256 `char` values. Useful for when 
 to be short enough until a list/array is needed:
 ```cs
 FixedString text = new("Hello World");
-USpan<char> textBuffer = stackalloc char[(int)FixedString.MaxLength];
+USpan<char> textBuffer = stackalloc char[256];
 uint length = text.CopyTo(textBuffer);
 
 USpan<byte> utf8bytes = stackalloc char[256];
@@ -41,24 +41,16 @@ int fairDiceRoll = random.NextInt(0, 6);
 ```
 
 ### Safety checks
-When compiling without release settings (where a `#DEBUG` flag is set), all allocations
-originating from `Allocations` or `Allocation` will be tracked. This is so that, when debugging
-is finished and the program exists, an exception can be thrown if there are any allocations
-that would leak in a release build.
+When compiling with `#DEBUG` or `#TRACK` flag set, all allocations originating from `Allocations` or
+`Allocation` will be tracked. Providing for development time null checks through a thrown exception
+when the current domain exits and there are still allocations present (leaks).
 
-With release settings, all checks are dropped. The executing program is expected to dispose all
-of the allocations it has made. The `#TRACK` flag is used to re-enabled allocation tracking,
-at the cost of performance.
-
-> It's the program's responsibility, and choice for when and how allocations are disposed.
-
-### Memory alignment
-Allocations are not aligned by default, this can be toggled with the `#ALIGNED` flag.
+> It's the programmers responsibility and decision for when, and how allocations should be disposed.
 
 ### Contributing and direction
-This library is developed to provide the building blocks that a `System` namespace might,
-but exclusively through unmanaged code. In order to minimize runtime cost and to expose more
-efficiency that was always there with C#. Commonly putting the author in a position where they
+This library is made to provide the building blocks that a `System` namespace might,
+but exclusively through and for native code. This is to minimize runtime cost and to expose
+efficiency that was always available with C#. Commonly putting the author in a position where they
 need to exercise more control, because _with great power comes great responsibility_.
 
 Contributions that fit this are welcome.

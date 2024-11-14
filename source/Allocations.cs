@@ -1,4 +1,8 @@
-﻿using System;
+﻿#if DEBUG
+#define TRACK
+#endif
+
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -234,7 +238,7 @@ namespace Unmanaged
             private static readonly Dictionary<nint, StackTrace> allocations = new();
             private static readonly Dictionary<nint, StackTrace> disposals = new();
 
-            [Conditional("DEBUG")]
+            [Conditional("TRACK")]
             public static void AppendAllocations(List<char> exceptionBuilder)
             {
                 nint[] leakedAddresses = addresses.ToArray();
@@ -284,7 +288,7 @@ namespace Unmanaged
                 }
             }
 
-            [Conditional("DEBUG")]
+            [Conditional("TRACK")]
             public static void FreeAll()
             {
                 nint[] leakedAddresses = addresses.ToArray();
@@ -300,7 +304,7 @@ namespace Unmanaged
                 }
             }
 
-            [Conditional("DEBUG")]
+            [Conditional("TRACK")]
             public static void Track(void* pointer)
             {
                 nint address = (nint)pointer;
@@ -309,7 +313,7 @@ namespace Unmanaged
                 disposals.Remove(address);
             }
 
-            [Conditional("DEBUG")]
+            [Conditional("TRACK")]
             public static void TrackAligned(void* pointer)
             {
                 nint address = (nint)pointer;
@@ -318,7 +322,7 @@ namespace Unmanaged
                 disposals.Remove(address);
             }
 
-            [Conditional("DEBUG")]
+            [Conditional("TRACK")]
             public static void Untrack(void* pointer)
             {
                 nint address = (nint)pointer;
@@ -335,7 +339,7 @@ namespace Unmanaged
                 disposals[address] = new StackTrace(2, true);
             }
 
-            [Conditional("DEBUG")]
+            [Conditional("TRACK")]
             public static void UntrackAligned(void* pointer)
             {
                 nint address = (nint)pointer;
@@ -352,7 +356,7 @@ namespace Unmanaged
                 disposals[address] = new StackTrace(2, true);
             }
 
-            [Conditional("DEBUG")]
+            [Conditional("TRACK")]
             public static void ThrowIfNull(nint address)
             {
                 if (allocations.TryGetValue(address, out StackTrace? stackTrace))
