@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Unmanaged
+namespace Unmanaged.Tests
 {
     public class SpanTests : UnmanagedTests
     {

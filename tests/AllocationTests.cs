@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Unmanaged
+namespace Unmanaged.Tests
 {
     public class AllocationTests : UnmanagedTests
     {

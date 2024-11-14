@@ -1,4 +1,4 @@
-﻿namespace Unmanaged
+﻿namespace Unmanaged.Tests
 {
     public abstract class UnmanagedTests
     {

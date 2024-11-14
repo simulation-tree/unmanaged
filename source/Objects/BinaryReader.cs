@@ -281,7 +281,7 @@ namespace Unmanaged
         /// </summary>
         public static BinaryReader CreateFromUTF8(USpan<char> text)
         {
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new(4);
             writer.WriteUTF8Text(text);
             return new BinaryReader(writer.GetBytes());
         }
@@ -291,7 +291,7 @@ namespace Unmanaged
         /// </summary>
         public static BinaryReader CreateFromUTF8(FixedString text)
         {
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new(4);
             writer.WriteUTF8Text(text);
             return new BinaryReader(writer.GetBytes());
         }
@@ -301,18 +301,9 @@ namespace Unmanaged
         /// </summary>
         public static BinaryReader CreateFromUTF8(string text)
         {
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new(4);
             writer.WriteUTF8Text(text);
             return new BinaryReader(writer.GetBytes());
-        }
-
-        /// <summary>
-        /// Creates a new empty binary reader.
-        /// </summary>
-        public static BinaryReader Create()
-        {
-            UnsafeBinaryReader* value = UnsafeBinaryReader.Allocate(Array.Empty<byte>());
-            return new BinaryReader(value);
         }
 
         internal unsafe struct UnsafeBinaryReader
@@ -332,6 +323,8 @@ namespace Unmanaged
 
             public static Allocation GetData(UnsafeBinaryReader* reader)
             {
+                Allocations.ThrowIfNull(reader);
+
                 return reader->data;
             }
 
@@ -374,17 +367,22 @@ namespace Unmanaged
 
             public static ref uint GetPositionRef(UnsafeBinaryReader* reader)
             {
+                Allocations.ThrowIfNull(reader);
+
                 return ref reader->position;
             }
 
             public static uint GetLength(UnsafeBinaryReader* reader)
             {
+                Allocations.ThrowIfNull(reader);
+
                 return reader->length;
             }
 
             public static void Free(ref UnsafeBinaryReader* reader)
             {
                 Allocations.ThrowIfNull(reader);
+
                 if (!reader->clone)
                 {
                     reader->data.Dispose();

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace Unmanaged
+namespace Unmanaged.Tests
 {
     public class FixedStringTests : UnmanagedTests
     {

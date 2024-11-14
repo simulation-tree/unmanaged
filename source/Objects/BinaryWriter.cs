@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection.PortableExecutable;
 
 namespace Unmanaged
 {
@@ -31,7 +32,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary writer with the specified capacity.
         /// </summary>
-        public BinaryWriter(uint capacity = 1)
+        public BinaryWriter(uint capacity = 4)
         {
             value = UnsafeBinaryWriter.Allocate(capacity);
         }
@@ -49,7 +50,7 @@ namespace Unmanaged
         /// </summary>
         public BinaryWriter()
         {
-            value = UnsafeBinaryWriter.Allocate();
+            value = UnsafeBinaryWriter.Allocate(4);
         }
 #endif
         private BinaryWriter(UnsafeBinaryWriter* value)
@@ -174,15 +175,6 @@ namespace Unmanaged
             return new((void*)Address, Position / TypeInfo<T>.size);
         }
 
-        /// <summary>
-        /// Creates a new binary writer.
-        /// </summary>
-        public static BinaryWriter Create()
-        {
-            UnsafeBinaryWriter* value = UnsafeBinaryWriter.Allocate();
-            return new BinaryWriter(value);
-        }
-
         internal unsafe struct UnsafeBinaryWriter
         {
             private Allocation items;
@@ -198,13 +190,15 @@ namespace Unmanaged
 
             public static nint GetStartAddress(UnsafeBinaryWriter* writer)
             {
+                Allocations.ThrowIfNull(writer);
+
                 return writer->items.Address;
             }
 
-            public static UnsafeBinaryWriter* Allocate(uint capacity = 1)
+            public static UnsafeBinaryWriter* Allocate(uint initialCapacity)
             {
                 UnsafeBinaryWriter* ptr = Allocations.Allocate<UnsafeBinaryWriter>();
-                ptr[0] = new(new(capacity), 0, capacity);
+                ptr[0] = new(new(initialCapacity), 0, initialCapacity);
                 return ptr;
             }
 
@@ -223,6 +217,7 @@ namespace Unmanaged
             public static void Free(ref UnsafeBinaryWriter* writer)
             {
                 Allocations.ThrowIfNull(writer);
+
                 writer->items.Dispose();
                 Allocations.Free(ref writer);
             }
@@ -230,12 +225,14 @@ namespace Unmanaged
             public static uint GetPosition(UnsafeBinaryWriter* writer)
             {
                 Allocations.ThrowIfNull(writer);
+
                 return writer->position;
             }
 
             public static void SetPosition(UnsafeBinaryWriter* writer, uint position)
             {
                 Allocations.ThrowIfNull(writer);
+
                 if (position > writer->capacity)
                 {
                     throw new ArgumentOutOfRangeException(nameof(position));
@@ -247,6 +244,7 @@ namespace Unmanaged
             public static void Write(ref UnsafeBinaryWriter* writer, void* data, uint length)
             {
                 Allocations.ThrowIfNull(writer);
+
                 uint endPosition = writer->position + length;
                 while (writer->capacity < endPosition)
                 {

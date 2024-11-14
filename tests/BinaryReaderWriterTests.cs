@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Unmanaged
+namespace Unmanaged.Tests
 {
     public class BinaryReaderWriterTests : UnmanagedTests
     {
@@ -64,7 +64,7 @@ namespace Unmanaged
         [Test]
         public void WriteValues()
         {
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteValue(32);
             Assert.That(writer.Position, Is.EqualTo(sizeof(int)));
             writer.WriteValue(64);
@@ -84,7 +84,7 @@ namespace Unmanaged
         [Test]
         public void WriteSpan()
         {
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteSpan("Hello there".AsUSpan());
 
             using BinaryReader reader = new(writer.GetBytes());
@@ -132,7 +132,7 @@ namespace Unmanaged
         public void WriteUTF8Text()
         {
             string myString = "Hello, 你好, 🌍";
-            using BinaryWriter writer = BinaryWriter.Create();
+            using BinaryWriter writer = new();
             writer.WriteUTF8Text(MemoryExtensions.AsSpan(myString));
             using BinaryReader reader = new(writer.GetBytes());
             USpan<char> sample = stackalloc char[32];
@@ -145,7 +145,7 @@ namespace Unmanaged
         [Test]
         public void ReuseWriter()
         {
-            BinaryWriter writer = BinaryWriter.Create();
+            BinaryWriter writer = new();
             writer.WriteValue(32);
             writer.WriteValue(64);
             writer.WriteValue(128);
