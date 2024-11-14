@@ -131,7 +131,7 @@ namespace Unmanaged
         {
             if (position > Length)
             {
-                throw new InvalidOperationException("Reading past end of data.");
+                throw new InvalidOperationException($"Position {position} is out of range {Length}");
             }
         }
 

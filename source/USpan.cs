@@ -510,6 +510,7 @@ namespace Unmanaged
         /// <summary>
         /// Copies this entire span to the given span.
         /// </summary>
+        /// <returns>Amount of values copied.</returns>
         public unsafe readonly uint CopyTo(USpan<T> otherSpan)
         {
             ThrowIfDestinationTooSmall(otherSpan.Length);
