@@ -11,7 +11,17 @@ namespace System.Runtime.InteropServices
             return Marshal.AllocHGlobal((int)size).ToPointer();
         }
 
+        public static void* AlignedAlloc(uint size, uint alignment)
+        {
+            return Marshal.AllocHGlobal((int)size).ToPointer();
+        }
+
         public static void Free(void* ptr)
+        {
+            Marshal.FreeHGlobal(new IntPtr(ptr));
+        }
+
+        public static void AlignedFree(void* ptr)
         {
             Marshal.FreeHGlobal(new IntPtr(ptr));
         }
@@ -21,7 +31,17 @@ namespace System.Runtime.InteropServices
             Unsafe.InitBlockUnaligned(ptr, 0, size);
         }
 
+        public static void Fill(void* ptr, uint length, byte value)
+        {
+            Unsafe.InitBlockUnaligned((byte*)ptr + length, value, length);
+        }
+
         public static void* Realloc(void* ptr, uint newSize)
+        {
+            return Marshal.ReAllocHGlobal(new IntPtr(ptr), new IntPtr(newSize)).ToPointer();
+        }
+
+        public static void* AlignedRealloc(void* ptr, uint newSize, uint alignment)
         {
             return Marshal.ReAllocHGlobal(new IntPtr(ptr), new IntPtr(newSize)).ToPointer();
         }

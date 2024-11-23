@@ -68,7 +68,18 @@ namespace Unmanaged
         /// </summary>
         public FixedString(string text)
         {
-            CopyFrom(text.AsUSpan());
+            ThrowIfLengthExceedsCapacity((uint)text.Length);
+            length = (byte)text.Length;
+            for (int i = 0; i < length; i++)
+            {
+                char c = text[i];
+                if (c == '\0')
+                {
+                    break;
+                }
+
+                characters[i] = (byte)c;
+            }
         }
 
         /// <summary>
@@ -76,7 +87,18 @@ namespace Unmanaged
         /// </summary>
         public FixedString(USpan<char> text)
         {
-            CopyFrom(text);
+            ThrowIfLengthExceedsCapacity(text.Length);
+            length = (byte)text.Length;
+            for (uint i = 0; i < length; i++)
+            {
+                char c = text[i];
+                if (c == '\0')
+                {
+                    break;
+                }
+
+                characters[i] = (byte)c;
+            }
         }
 
         /// <summary>
@@ -84,7 +106,67 @@ namespace Unmanaged
         /// </summary>
         public FixedString(USpan<byte> utf8Bytes)
         {
-            CopyFrom(utf8Bytes);
+            uint index = 0;
+            while (index < utf8Bytes.Length)
+            {
+                byte firstByte = utf8Bytes[index];
+                byte byteCount;
+                if ((firstByte & 0x80) == 0)
+                {
+                    byteCount = 1;
+                }
+                else if ((firstByte & 0xE0) == 0xC0)
+                {
+                    byteCount = 2;
+                }
+                else if ((firstByte & 0xF0) == 0xE0)
+                {
+                    byteCount = 3;
+                }
+                else if ((firstByte & 0xF8) == 0xF0)
+                {
+                    byteCount = 4;
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid UTF-8 byte sequence");
+                }
+
+                int codePoint;
+                if (byteCount == 1)
+                {
+                    codePoint = firstByte;
+                }
+                else
+                {
+                    codePoint = firstByte & (0xFF >> (byteCount + 1));
+                    for (uint i = 1; i < byteCount; i++)
+                    {
+                        byte b = utf8Bytes[index + i];
+                        if ((b & 0xC0) != 0x80)
+                        {
+                            throw new ArgumentException("Invalid UTF-8 byte sequence");
+                        }
+
+                        codePoint = (codePoint << 6) | (b & 0x3F);
+                    }
+                }
+
+                char value = (char)codePoint;
+                if (value == '\0')
+                {
+                    break;
+                }
+                else
+                {
+                    ThrowIfCharacterIsOutOfRange(value);
+                    characters[index] = (byte)value;
+                    index++;
+                    ThrowIfLengthExceedsCapacity(index);
+                }
+            }
+
+            length = (byte)index;
         }
 
         /// <summary>
@@ -93,7 +175,67 @@ namespace Unmanaged
         public FixedString(void* utf8Bytes)
         {
             USpan<byte> span = new(utf8Bytes, Capacity);
-            CopyFrom(span);
+            uint index = 0;
+            while (index < span.Length)
+            {
+                byte firstByte = span[index];
+                byte byteCount;
+                if ((firstByte & 0x80) == 0)
+                {
+                    byteCount = 1;
+                }
+                else if ((firstByte & 0xE0) == 0xC0)
+                {
+                    byteCount = 2;
+                }
+                else if ((firstByte & 0xF0) == 0xE0)
+                {
+                    byteCount = 3;
+                }
+                else if ((firstByte & 0xF8) == 0xF0)
+                {
+                    byteCount = 4;
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid UTF-8 byte sequence");
+                }
+
+                int codePoint;
+                if (byteCount == 1)
+                {
+                    codePoint = firstByte;
+                }
+                else
+                {
+                    codePoint = firstByte & (0xFF >> (byteCount + 1));
+                    for (uint i = 1; i < byteCount; i++)
+                    {
+                        byte b = span[index + i];
+                        if ((b & 0xC0) != 0x80)
+                        {
+                            throw new ArgumentException("Invalid UTF-8 byte sequence");
+                        }
+
+                        codePoint = (codePoint << 6) | (b & 0x3F);
+                    }
+                }
+
+                char value = (char)codePoint;
+                if (value == '\0')
+                {
+                    break;
+                }
+                else
+                {
+                    ThrowIfCharacterIsOutOfRange(value);
+                    characters[index] = (byte)value;
+                    index++;
+                    ThrowIfLengthExceedsCapacity(index);
+                }
+            }
+
+            length = (byte)index;
         }
 
         /// <summary>
@@ -763,6 +905,7 @@ namespace Unmanaged
         /// <summary>
         /// Appends a formattable object to the end of this string.
         /// </summary>
+#if NET
         public void Append<T>(T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[256];
@@ -775,6 +918,19 @@ namespace Unmanaged
 
             length = (byte)(length + charsWritten);
         }
+#else
+        public void Append<T>(T formattable) where T : IFormattable
+        {
+            string text = formattable.ToString(default, default);
+            ThrowIfLengthExceedsCapacity(length + (uint)text.Length);
+            for (uint i = 0; i < text.Length; i++)
+            {
+                characters[length + i] = (byte)text[(int)i];
+            }
+
+            length = (byte)(length + text.Length);
+        }
+#endif
 
         /// <summary>
         /// Appends a text span to the end of this string.
@@ -855,6 +1011,7 @@ namespace Unmanaged
         /// <summary>
         /// Inserts a formattable object at the given index.
         /// </summary>
+#if NET
         public void Insert<T>(uint index, T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[256];
@@ -873,6 +1030,25 @@ namespace Unmanaged
 
             length = (byte)(length + charsWritten);
         }
+#else
+        public void Insert<T>(uint index, T formattable) where T : IFormattable
+        {
+            string text = formattable.ToString(default, default);
+            ThrowIfLengthExceedsCapacity(length + (uint)text.Length);
+            ThrowIfIndexOutOfRange(index);
+            for (uint i = length; i > index; i--)
+            {
+                characters[i + text.Length - 1] = characters[i - 1];
+            }
+
+            for (uint i = 0; i < text.Length; i++)
+            {
+                characters[index + i] = (byte)text[(int)i];
+            }
+
+            length = (byte)(length + text.Length);
+        }
+#endif
 
         /// <summary>
         /// Inserts a text span at the given index.

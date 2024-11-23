@@ -28,8 +28,11 @@ namespace Unmanaged
             get
             {
                 ThrowIfAccessingOutOfRange(index);
-
+#if NET
                 return ref Unsafe.Add(ref pointer, index);
+#else
+                return ref Unsafe.Add(ref pointer, (int)index);
+#endif
             }
         }
 
@@ -233,7 +236,11 @@ namespace Unmanaged
         {
             ThrowIfAccessingPastRange(start + length);
 
+#if NET
             return new USpan<T>(ref Unsafe.Add(ref pointer, start), length);
+#else
+            return new USpan<T>(ref Unsafe.Add(ref pointer, (int)start), length);
+#endif
         }
 
         /// <summary>
@@ -243,7 +250,11 @@ namespace Unmanaged
         {
             ThrowIfAccessingPastRange(start);
 
+#if NET
             return new USpan<T>(ref Unsafe.Add(ref pointer, start), Length - start);
+#else
+            return new USpan<T>(ref Unsafe.Add(ref pointer, (int)start), Length - start);
+#endif
         }
 
         /// <summary>
@@ -259,7 +270,11 @@ namespace Unmanaged
             {
                 for (uint i = 0; i < length; i++)
                 {
+#if NET
                     ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
+#else
+                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
+#endif
                     if (e.Equals(value))
                     {
                         return i;
@@ -283,7 +298,11 @@ namespace Unmanaged
             {
                 for (uint i = length - 1; i != uint.MaxValue; i--)
                 {
+#if NET
                     ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
+#else
+                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
+#endif
                     if (e.Equals(value))
                     {
                         return i;
@@ -303,7 +322,11 @@ namespace Unmanaged
             EqualityComparer<T> comparer = EqualityComparer<T>.Default;
             for (uint i = 0; i < Length; i++)
             {
+#if NET
                 ref T e = ref Unsafe.Add(ref pointer, i);
+#else
+                ref T e = ref Unsafe.Add(ref pointer, (int)i);
+#endif
                 if (comparer.Equals(e, value))
                 {
                     index = i;
@@ -326,7 +349,11 @@ namespace Unmanaged
             {
                 for (uint i = 0; i < length; i++)
                 {
+#if NET
                     ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
+#else
+                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
+#endif
                     if (e.Equals(value))
                     {
                         index = i;
@@ -350,7 +377,11 @@ namespace Unmanaged
             {
                 for (uint i = length - 1; i != uint.MaxValue; i--)
                 {
+#if NET
                     ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
+#else
+                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
+#endif
                     if (e.Equals(value))
                     {
                         index = i;
@@ -417,7 +448,11 @@ namespace Unmanaged
             ThrowIfTypeSizeMismatches<V>();
             for (uint i = 0; i < Length; i++)
             {
+#if NET
                 ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
+#else
+                ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
+#endif
                 if (e.Equals(value))
                 {
                     return true;
@@ -457,7 +492,11 @@ namespace Unmanaged
             T[] array = new T[Length];
             for (uint i = 0; i < Length; i++)
             {
+#if NET
                 array[i] = Unsafe.Add(ref pointer, i);
+#else
+                array[i] = Unsafe.Add(ref pointer, (int)i);
+#endif
             }
 
             return array;
@@ -476,10 +515,17 @@ namespace Unmanaged
             EqualityComparer<T> comparer = EqualityComparer<T>.Default;
             for (uint i = 0; i < Length; i++)
             {
+#if NET
                 if (!comparer.Equals(Unsafe.Add(ref pointer, i), Unsafe.Add(ref other.pointer, i)))
                 {
                     return false;
                 }
+#else
+                if (!comparer.Equals(Unsafe.Add(ref pointer, (int)i), Unsafe.Add(ref other.pointer, (int)i)))
+                {
+                    return false;
+                }
+#endif
             }
 
             return true;
@@ -519,9 +565,17 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public static implicit operator USpan<T>(Span<T> span)
+        public static unsafe implicit operator USpan<T>(Span<T> span)
         {
-            return new(span);
+            if (span.Length > 0)
+            {
+                void* pointer = Unsafe.AsPointer(ref span[0]);
+                return new(pointer, (uint)span.Length);
+            }
+            else
+            {
+                return default;
+            }
         }
 
         /// <inheritdoc/>

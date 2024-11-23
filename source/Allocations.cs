@@ -333,7 +333,10 @@ namespace Unmanaged
                     currentAddresses[index] = currentAddresses[^1];
                     Array.Resize(ref currentAddresses, currentAddresses.Length - 1);
                     addresses.Clear();
-                    addresses.PushRange(currentAddresses);
+                    if (currentAddresses.Length > 0)
+                    {
+                        addresses.PushRange(currentAddresses);
+                    }
                 }
 
                 disposals[address] = new StackTrace(2, true);
