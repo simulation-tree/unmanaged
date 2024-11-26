@@ -27,21 +27,19 @@ namespace Unmanaged
             AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
             {
                 ThrowIfAny();
-                Tracker.FreeAll();
             };
         }
 
         /// <summary>
-        /// Throws an <see cref="Exception"/> if there are any memory leaks.
+        /// Throws an <see cref="Exception"/> if there are any allocations present.
         /// </summary>
         public static void ThrowIfAny()
         {
             if (Count > 0)
             {
                 List<char> exceptionBuilder = new();
-                Append("Leaked ");
-                Append(Count.ToString());
-                AppendLine(" allocation(s)");
+                Append("Allocations present: ");
+                AppendLine(Count.ToString());
 
                 Tracker.AppendAllocations(exceptionBuilder);
 
