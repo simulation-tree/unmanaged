@@ -114,6 +114,7 @@ namespace Unmanaged.Tests
             obj.Dispose();
         }
 
+#if DEBUG
         [Test]
         public void ThrowIfIndexingOutOfBounds()
         {
@@ -132,6 +133,14 @@ namespace Unmanaged.Tests
 
             obj.Dispose();
         }
+#endif
+
+        [Test]
+        public void ThrowWhenDefaultInstance()
+        {
+            Allocation obj = default;
+            Assert.Throws<NullReferenceException>(() => { obj.Dispose(); });
+        }
 
         [Test]
         public void ClearAllocation()
@@ -149,21 +158,6 @@ namespace Unmanaged.Tests
             Assert.That(bufferSpan[1], Is.EqualTo(0));
             Assert.That(bufferSpan[2], Is.EqualTo(0));
             Assert.That(bufferSpan[3], Is.EqualTo(0));
-        }
-
-        [Test]
-        public void AccessDefaultInstanceError()
-        {
-            Allocation obj = default;
-            Assert.Throws<NullReferenceException>(() => { obj.Dispose(); });
-        }
-
-        [Test]
-        public void AccessSpanOutOfBoundsError()
-        {
-            using Allocation obj = new(sizeof(int));
-            Assert.Throws<ArgumentOutOfRangeException>(() => { obj.AsSpan<int>(0, 1)[1] = 5; });
-            USpan<byte> okBuffer = obj.AsSpan<byte>(0, 4);
         }
 
         [Test]

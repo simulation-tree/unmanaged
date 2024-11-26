@@ -22,10 +22,14 @@ jobs:
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
       
       - name: Build
-        run: dotnet build -c Release /p:Version=${VERSION}
+        run: dotnet build "source" -c Release /p:Version=${VERSION}
       
       - name: Test
-        run: dotnet test -c Release /p:Version=${VERSION} --no-build
+        run: dotnet test "tests" -c Release
+
+      - name: Setup packing
+        run: |
+          cd source
       
       - name: Pack
         run: dotnet pack -c Release /p:Version=${VERSION} --no-build --output .

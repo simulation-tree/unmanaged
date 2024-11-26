@@ -35,6 +35,7 @@ namespace Unmanaged.Tests
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
+            Console.WriteLine("signed forward loop");
             Console.WriteLine($"avg: {ms / Attempts}");
             Console.WriteLine($"min: {min}");
             Console.WriteLine($"max: {max}");
@@ -67,6 +68,7 @@ namespace Unmanaged.Tests
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
+            Console.WriteLine("signed reverse loop");
             Console.WriteLine($"avg: {ms / Attempts}");
             Console.WriteLine($"min: {min}");
             Console.WriteLine($"max: {max}");
@@ -99,6 +101,7 @@ namespace Unmanaged.Tests
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
+            Console.WriteLine("unsigned forward loop");
             Console.WriteLine($"avg: {ms / Attempts}");
             Console.WriteLine($"min: {min}");
             Console.WriteLine($"max: {max}");
@@ -131,6 +134,7 @@ namespace Unmanaged.Tests
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
+            Console.WriteLine("unsigned reverse loop");
             Console.WriteLine($"avg: {ms / Attempts}");
             Console.WriteLine($"min: {min}");
             Console.WriteLine($"max: {max}");
@@ -163,6 +167,7 @@ namespace Unmanaged.Tests
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
+            Console.WriteLine("unsigned clever reverse loop");
             Console.WriteLine($"avg: {ms / Attempts}");
             Console.WriteLine($"min: {min}");
             Console.WriteLine($"max: {max}");
@@ -198,6 +203,7 @@ namespace Unmanaged.Tests
                 max = Math.Max(max, stopwatch.ElapsedMilliseconds);
             }
 
+            Console.WriteLine("unsiged reverse while loop");
             Console.WriteLine($"avg: {ms / Attempts}");
             Console.WriteLine($"min: {min}");
             Console.WriteLine($"max: {max}");

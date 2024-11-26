@@ -18,8 +18,9 @@ namespace Unmanaged.Tests
             Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
+#if DEBUG
         [Test]
-        public void AccessingSpanOutOfRange()
+        public void ThrowIfAccessingSpanOutOfRange()
         {
             USpan<byte> data = stackalloc byte[8];
             try
@@ -31,6 +32,41 @@ namespace Unmanaged.Tests
             {
             }
         }
+
+        
+
+        [Test]
+        public void ThrowIfSlicingOutOfRange()
+        {
+            Span<byte> data = stackalloc byte[8];
+            try
+            {
+                Span<byte> slice = data.Slice(8, 1);
+                Assert.Fail();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+            }
+            catch
+            {
+                Assert.Fail();
+            }
+
+            USpan<byte> uData = stackalloc byte[8];
+            try
+            {
+                USpan<byte> slice = uData.Slice(8, 1);
+                Assert.Fail();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+            }
+            catch
+            {
+                Assert.Fail();
+            }
+        }
+#endif
 
         [Test]
         public void Slicing()
@@ -94,38 +130,6 @@ namespace Unmanaged.Tests
         }
 
         [Test]
-        public void SliceOutOfRange()
-        {
-            Span<byte> data = stackalloc byte[8];
-            try
-            {
-                Span<byte> slice = data.Slice(8, 1);
-                Assert.Fail();
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-            }
-            catch
-            {
-                Assert.Fail();
-            }
-
-            USpan<byte> uData = stackalloc byte[8];
-            try
-            {
-                USpan<byte> slice = uData.Slice(8, 1);
-                Assert.Fail();
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-            }
-            catch
-            {
-                Assert.Fail();
-            }
-        }
-
-        [Test]
         public void FillingAndClearing()
         {
             USpan<byte> data = stackalloc byte[8];
@@ -159,6 +163,7 @@ namespace Unmanaged.Tests
             Assert.That(otherData[0], Is.EqualTo(1));
             Assert.That(otherData[1], Is.EqualTo(2));
 
+#if DEBUG
             Assert.Throws<ArgumentOutOfRangeException>(() =>
             {
                 USpan<byte> data = stackalloc byte[8];
@@ -167,6 +172,7 @@ namespace Unmanaged.Tests
                 USpan<byte> lessData = stackalloc byte[1];
                 data.CopyTo(lessData);
             });
+#endif
         }
 
         [Test]

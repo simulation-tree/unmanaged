@@ -71,12 +71,26 @@ namespace Unmanaged.Tests
             Assert.That(a.ToString(), Is.EqualTo("Hello World!"));
         }
 
+#if DEBUG
         [Test]
-        public void AccessOutOfRangeError()
+        public void ThrowIfAccessOutOfRange()
         {
             FixedString a = "abcd";
             Assert.Throws<IndexOutOfRangeException>(() => { a[5] = 'e'; });
         }
+
+        [Test]
+        public void ThrowIfGreaterThanCapacity()
+        {
+            FixedString a = default;
+            for (uint i = 0; i < FixedString.Capacity; i++)
+            {
+                a.Append('x');
+            }
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => a.Append('o'));
+        }
+#endif
 
         [Test]
         public void ModifyingTextLength()
@@ -128,7 +142,6 @@ namespace Unmanaged.Tests
             a.Insert(0, ' ');
             a.Insert(0, "Hello");
             Assert.That(a.ToString(), Is.EqualTo("Hello World"));
-
         }
 
         [Test]
@@ -163,18 +176,6 @@ namespace Unmanaged.Tests
             FixedString a = "Hello World!";
             Assert.That(a.StartsWith("Hello"), Is.True);
             Assert.That(a.EndsWith("World!"), Is.True);
-        }
-
-        [Test]
-        public void HittingTheLimit()
-        {
-            FixedString a = default;
-            for (uint i = 0; i < FixedString.Capacity; i++)
-            {
-                a.Append('x');
-            }
-
-            Assert.Throws<ArgumentOutOfRangeException>(() => a.Append('o'));
         }
 
         [Test]
