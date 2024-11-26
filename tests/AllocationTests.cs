@@ -115,6 +115,25 @@ namespace Unmanaged.Tests
         }
 
         [Test]
+        public void ThrowIfIndexingOutOfBounds()
+        {
+            Allocation obj = new(4);
+            Assert.Throws<IndexOutOfRangeException>(() => obj[4] = 5);
+            obj.Dispose();
+
+            obj = new(16);
+            Assert.Throws<IndexOutOfRangeException>(() =>
+            {
+                unchecked
+                {
+                    obj[(uint)-1] = 232;
+                }
+            });
+
+            obj.Dispose();
+        }
+
+        [Test]
         public void ClearAllocation()
         {
             using Allocation obj = new(sizeof(int) * 4);

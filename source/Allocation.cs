@@ -1,4 +1,9 @@
-﻿using System;
+﻿#if DEBUG
+#define TRACK
+#endif
+
+using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -29,6 +34,7 @@ namespace Unmanaged
             get
             {
                 Allocations.ThrowIfNull(pointer);
+                ThrowIfIndexOutOfRange(index);
 #if NET
                 return ref Unsafe.Add(ref Unsafe.AsRef<byte>(pointer), index);
 #else
@@ -66,6 +72,7 @@ namespace Unmanaged
             pointer = Allocations.Allocate(0);
         }
 #endif
+
         /// <summary>
         /// Frees the allocation.
         /// </summary>
@@ -73,6 +80,24 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             Allocations.Free(ref pointer);
+        }
+
+        [Conditional("TRACK")]
+        private readonly void ThrowIfIndexOutOfRange(uint index)
+        {
+            if (Allocations.Tracker.TryGetSize(Address, out uint byteLength) && index >= byteLength)
+            {
+                throw new IndexOutOfRangeException($"Index {index} is out of range for allocation of size {byteLength}");
+            }
+        }
+
+        [Conditional("TRACK")]
+        private readonly void ThrowIfPastRange(uint index)
+        {
+            if (Allocations.Tracker.TryGetSize(Address, out uint byteLength) && index > byteLength)
+            {
+                throw new IndexOutOfRangeException($"Index {index} is past the range of allocation of size {byteLength}");
+            }
         }
 
         /// <summary>
@@ -101,6 +126,8 @@ namespace Unmanaged
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfIndexOutOfRange(bytePosition);
+            ThrowIfPastRange(bytePosition + TypeInfo<T>.size);
 
             void* ptr = &value;
             Write(bytePosition, TypeInfo<T>.size, ptr);
@@ -119,9 +146,12 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
+            uint byteLength = span.Length * TypeInfo<T>.size;
             Allocations.ThrowIfNull(pointer);
+            ThrowIfIndexOutOfRange(bytePosition);
+            ThrowIfPastRange(bytePosition + byteLength);
 
-            Write(bytePosition, span.Length * TypeInfo<T>.size, (void*)span.Address);
+            Write(bytePosition, byteLength, (void*)span.Address);
         }
 
         /// <summary>
@@ -130,6 +160,8 @@ namespace Unmanaged
         public readonly void Write(uint bytePosition, uint byteLength, void* data)
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfIndexOutOfRange(bytePosition);
+            ThrowIfPastRange(bytePosition + byteLength);
 
             Unsafe.CopyBlock((void*)((nint)pointer + bytePosition), data, byteLength);
         }
@@ -140,6 +172,8 @@ namespace Unmanaged
         public readonly USpan<byte> AsSpan(uint bytePosition, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfIndexOutOfRange(bytePosition);
+            ThrowIfPastRange(bytePosition + byteLength);
 
             return new USpan<byte>((void*)((nint)pointer + bytePosition), byteLength);
         }
@@ -152,9 +186,12 @@ namespace Unmanaged
         public readonly USpan<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            uint bytePosition = start * TypeInfo<T>.size;
+            uint byteLength = length * TypeInfo<T>.size;
+            ThrowIfIndexOutOfRange(bytePosition);
+            ThrowIfPastRange(bytePosition + byteLength);
 
-            uint position = start * TypeInfo<T>.size;
-            return new USpan<T>((void*)((nint)pointer + position), length);
+            return new USpan<T>((void*)((nint)pointer + bytePosition), length);
         }
 
         /// <summary>
@@ -163,6 +200,8 @@ namespace Unmanaged
         public readonly ref T Read<T>(uint bytePosition = 0) where T : unmanaged
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfIndexOutOfRange(bytePosition);
+            ThrowIfPastRange(bytePosition + TypeInfo<T>.size);
 
             return ref Unsafe.AsRef<T>((void*)((nint)pointer + bytePosition));
         }
@@ -170,9 +209,10 @@ namespace Unmanaged
         /// <summary>
         /// Reads data from the memory starting from the given byte position with a specified length.
         /// </summary>
-        public readonly void* Read(uint bytePosition, uint byteLength)
+        public readonly void* Read(uint bytePosition)
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfIndexOutOfRange(bytePosition);
 
             return (void*)((nint)pointer + bytePosition);
         }
@@ -183,6 +223,7 @@ namespace Unmanaged
         public readonly void Clear(uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfPastRange(byteLength);
 
             NativeMemory.Clear(pointer, byteLength);
         }
@@ -193,6 +234,7 @@ namespace Unmanaged
         public readonly void Clear(uint bytePosition, uint byteLength)
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfPastRange(bytePosition + byteLength);
 
             nint address = (nint)((nint)pointer + bytePosition);
             NativeMemory.Clear((void*)address, byteLength);
@@ -204,6 +246,7 @@ namespace Unmanaged
         public readonly void Fill(uint byteLength, byte value)
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfPastRange(byteLength);
 
             NativeMemory.Fill(pointer, byteLength, value);
         }
@@ -214,6 +257,8 @@ namespace Unmanaged
         public readonly void Fill(uint bytePosition, uint byteLength, byte value)
         {
             Allocations.ThrowIfNull(pointer);
+            ThrowIfIndexOutOfRange(bytePosition);
+            ThrowIfPastRange(bytePosition + byteLength);
 
             nint address = (nint)((nint)pointer + bytePosition);
             NativeMemory.Fill((void*)address, byteLength, value);
@@ -226,6 +271,10 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(pointer);
             Allocations.ThrowIfNull(destination.pointer);
+            ThrowIfIndexOutOfRange(sourceIndex);
+            ThrowIfPastRange(sourceIndex + byteLength);
+            destination.ThrowIfIndexOutOfRange(destinationIndex);
+            destination.ThrowIfPastRange(destinationIndex + byteLength);
 
             USpan<byte> sourceSpan = AsSpan<byte>(sourceIndex, byteLength);
             USpan<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, byteLength);
@@ -260,6 +309,8 @@ namespace Unmanaged
         /// </summary>
         public static void Resize(ref Allocation allocation, uint newLength)
         {
+            Allocations.ThrowIfNull(allocation.pointer);
+
             allocation = new(Allocations.Reallocate(allocation.pointer, newLength));
         }
 

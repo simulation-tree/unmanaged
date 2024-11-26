@@ -70,7 +70,7 @@ namespace Unmanaged
         public static void* Allocate(uint size)
         {
             void* pointer = NativeMemory.Alloc(size);
-            Tracker.Track(pointer);
+            Tracker.Track(pointer, size);
             count++;
             return pointer;
         }
@@ -81,7 +81,7 @@ namespace Unmanaged
         public static void* AllocateAligned(uint size, uint alignment)
         {
             void* pointer = NativeMemory.AlignedAlloc(size, alignment);
-            Tracker.TrackAligned(pointer);
+            Tracker.TrackAligned(pointer, size);
             count++;
             return pointer;
         }
@@ -91,8 +91,9 @@ namespace Unmanaged
         /// </summary>
         public static T* Allocate<T>() where T : unmanaged
         {
-            void* pointer = NativeMemory.Alloc(TypeInfo<T>.size);
-            Tracker.Track(pointer);
+            uint size = TypeInfo<T>.size;
+            void* pointer = NativeMemory.Alloc(size);
+            Tracker.Track(pointer, size);
             count++;
             return (T*)pointer;
         }
@@ -148,7 +149,7 @@ namespace Unmanaged
         {
             Tracker.Untrack(pointer);
             void* newPointer = NativeMemory.Realloc(pointer, newSize);
-            Tracker.Track(newPointer);
+            Tracker.Track(newPointer, newSize);
             return newPointer;
         }
 
@@ -159,7 +160,7 @@ namespace Unmanaged
         {
             Tracker.UntrackAligned(pointer);
             void* newPointer = NativeMemory.AlignedRealloc(pointer, newSize, alignment);
-            Tracker.TrackAligned(newPointer);
+            Tracker.TrackAligned(newPointer, newSize);
             return newPointer;
         }
 
@@ -168,12 +169,13 @@ namespace Unmanaged
         /// </summary>
         public static void ThrowIfNull(void* pointer)
         {
+            nint address = (nint)pointer;
             if (pointer is null)
             {
-                nint address = (nint)pointer;
-                Tracker.ThrowIfNull(address);
                 throw new NullReferenceException($"Unknown pointer at {address}");
             }
+
+            Tracker.ThrowIfNull(address);
         }
 
         /// <summary>
@@ -231,11 +233,11 @@ namespace Unmanaged
             return ++value;
         }
 
-        private static class Tracker
+        internal static class Tracker
         {
             private static readonly ConcurrentStack<nint> addresses = new();
             private static readonly ConcurrentStack<nint> alignedAddresses = new();
-            private static readonly Dictionary<nint, StackTrace> allocations = new();
+            private static readonly Dictionary<nint, (StackTrace stack, uint size)> allocations = new();
             private static readonly Dictionary<nint, StackTrace> disposals = new();
 
             [Conditional("TRACK")]
@@ -245,11 +247,14 @@ namespace Unmanaged
                 foreach (nint address in leakedAddresses)
                 {
                     Append("    ");
-                    if (allocations.TryGetValue(address, out StackTrace? allocation))
+                    if (allocations.TryGetValue(address, out (StackTrace stack, uint size) info))
                     {
                         Append(address.ToString());
+                        Append(" (");
+                        Append(info.size.ToString());
+                        Append(")");
                         Append(" from ");
-                        AppendLine(allocation.ToString());
+                        AppendLine(info.stack.ToString());
                     }
                     else
                     {
@@ -261,11 +266,14 @@ namespace Unmanaged
                 foreach (nint address in leakedAlignedAddresses)
                 {
                     Append("    ");
-                    if (allocations.TryGetValue(address, out StackTrace? allocation))
+                    if (allocations.TryGetValue(address, out (StackTrace stack, uint size) info))
                     {
                         Append(address.ToString());
+                        Append(" (");
+                        Append(info.size.ToString());
+                        Append(")");
                         Append(" from ");
-                        AppendLine(allocation.ToString());
+                        AppendLine(info.stack.ToString());
                     }
                     else
                     {
@@ -305,20 +313,20 @@ namespace Unmanaged
             }
 
             [Conditional("TRACK")]
-            public static void Track(void* pointer)
+            public static void Track(void* pointer, uint size)
             {
                 nint address = (nint)pointer;
                 addresses.Push(address);
-                allocations[address] = new StackTrace(2, true);
+                allocations[address] = (new StackTrace(2, true), size);
                 disposals.Remove(address);
             }
 
             [Conditional("TRACK")]
-            public static void TrackAligned(void* pointer)
+            public static void TrackAligned(void* pointer, uint size)
             {
                 nint address = (nint)pointer;
                 alignedAddresses.Push(address);
-                allocations[address] = new StackTrace(2, true);
+                allocations[address] = (new StackTrace(2, true), size);
                 disposals.Remove(address);
             }
 
@@ -362,27 +370,41 @@ namespace Unmanaged
             [Conditional("TRACK")]
             public static void ThrowIfNull(nint address)
             {
-                if (allocations.TryGetValue(address, out StackTrace? stackTrace))
+                if (allocations.TryGetValue(address, out (StackTrace stack, uint size) allocInfo))
                 {
                     if (disposals.TryGetValue(address, out StackTrace? disposedStackTrace))
                     {
-                        throw new NullReferenceException($"Invalid pointer at `{address}` allocated then disposed at:\n{stackTrace}\n{disposedStackTrace}");
+                        throw new NullReferenceException($"Memory at address `{address}` was allocated then disposed at:\n{allocInfo.stack}\n{disposedStackTrace}");
                     }
                     else
                     {
-                        throw new NullReferenceException($"Unrecognized pointer at `{address}` that isn't known to be disposed, but supposedly allocated at:\n{stackTrace}");
+                        //allocation address is good, but no disposal yet, nothing wrong here
                     }
                 }
                 else
                 {
-                    if (disposals.TryGetValue(address, out stackTrace))
+                    if (!disposals.ContainsKey(address))
                     {
-                        throw new NullReferenceException($"Unrecognized pointer at `{address}` that isn't known to be allocated, but has been disposed at:\n{stackTrace}");
+                        throw new InvalidOperationException($"Memory at address `{address}` isn't known to be allocated or disposed");
                     }
                     else
                     {
-                        throw new NullReferenceException($"Unknown pointer at `{address}` that hasn't ever been allocated or disposed");
+                        //allocation not present, but it has been disposed, this case shouldnt be possible
                     }
+                }
+            }
+
+            public static bool TryGetSize(nint address, out uint size)
+            {
+                if (allocations.TryGetValue(address, out (StackTrace stack, uint size) info))
+                {
+                    size = info.size;
+                    return true;
+                }
+                else
+                {
+                    size = 0;
+                    return false;
                 }
             }
         }
