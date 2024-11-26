@@ -33,8 +33,6 @@ namespace Unmanaged.Tests
             }
         }
 
-        
-
         [Test]
         public void ThrowIfSlicingOutOfRange()
         {
