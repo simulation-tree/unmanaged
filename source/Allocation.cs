@@ -188,7 +188,6 @@ namespace Unmanaged
             Allocations.ThrowIfNull(pointer);
             uint bytePosition = start * TypeInfo<T>.size;
             uint byteLength = length * TypeInfo<T>.size;
-            ThrowIfIndexOutOfRange(bytePosition);
             ThrowIfPastRange(bytePosition + byteLength);
 
             return new USpan<T>((void*)((nint)pointer + bytePosition), length);

@@ -142,6 +142,17 @@ namespace Unmanaged.Tests
             Assert.That(resultString, Is.EqualTo(myString));
         }
 
+#if DEBUG
+        [Test]
+        public void ThrowIfReadTooMuch()
+        {
+            using BinaryWriter writer = new();
+            writer.WriteSpan<char>("The snake that eats its own tail".AsUSpan());
+            using BinaryReader reader = new(writer.GetBytes());
+            Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
+        }
+#endif
+
         [Test]
         public void ReuseWriter()
         {
