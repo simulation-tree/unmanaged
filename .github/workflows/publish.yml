@@ -27,12 +27,8 @@ jobs:
       - name: Test
         run: dotnet test "tests" -c Release
 
-      - name: Setup packing
-        run: |
-          cd source
-      
       - name: Pack
-        run: dotnet pack -c Release /p:Version=${VERSION} --no-build --output .
+        run: dotnet pack "source" -c Release /p:Version=${VERSION} --no-build --output .
 
       - name: Add source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
