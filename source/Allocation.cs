@@ -357,7 +357,11 @@ namespace Unmanaged
         {
             uint length = span.Length * TypeInfo<T>.size;
             Allocation allocation = new(length);
-            span.CopyTo(allocation.AsSpan<T>(0, span.Length));
+            if (span.Length > 0)
+            {
+                span.CopyTo(allocation.AsSpan<T>(0, span.Length));
+            }
+
             return allocation;
         }
 
