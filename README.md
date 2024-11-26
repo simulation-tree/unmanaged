@@ -42,8 +42,8 @@ int fairDiceRoll = random.NextInt(0, 6);
 
 ### Safety checks
 When compiling with `#DEBUG` or `#TRACK` flag set, all allocations originating from `Allocations` or
-`Allocation` will be tracked. Providing for development time null checks through a thrown exception
-when the current domain exits and there are still allocations present (leaks).
+`Allocation` will be tracked. Providing dispose and access out of bounds checks, in addition to a 
+final check when the current domain exits and there are still allocations present (leaks).
 
 > It's the programmers responsibility and decision for when, and how allocations should be disposed.
 
