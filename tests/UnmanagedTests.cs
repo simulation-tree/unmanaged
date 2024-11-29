@@ -10,7 +10,7 @@
         [TearDown]
         protected virtual void TearDown()
         {
-            Allocations.ThrowIfAny();
+            Allocations.ThrowIfAny(true);
         }
     }
 }

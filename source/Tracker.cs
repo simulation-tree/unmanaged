@@ -19,7 +19,7 @@ namespace Unmanaged
             private static readonly Dictionary<nint, (StackTrace stack, uint size)> allocations = new();
             private static readonly Dictionary<nint, StackTrace> disposals = new();
 
-            public static void AppendAllocations(ref string exceptionMessage)
+            public static void AppendAllocations(ref string exceptionMessage, bool free = false)
             {
                 nint[] leakedAddresses = addresses.ToArray();
                 foreach (nint address in leakedAddresses)
@@ -37,6 +37,12 @@ namespace Unmanaged
                     else
                     {
                         AppendLine(address.ToString(), ref exceptionMessage);
+                    }
+
+                    if (free)
+                    {
+                        void* pointer = (void*)address;
+                        Free(ref pointer);
                     }
                 }
 
@@ -56,6 +62,12 @@ namespace Unmanaged
                     else
                     {
                         AppendLine(address.ToString(), ref exceptionMessage);
+                    }
+
+                    if (free)
+                    {
+                        void* pointer = (void*)address;
+                        FreeAligned(ref pointer);
                     }
                 }
 
@@ -166,7 +178,7 @@ namespace Unmanaged
             }
 #else
             [Conditional("TRACK")]
-            public static void AppendAllocations(ref string exceptionMessage) { }
+            public static void AppendAllocations(ref string exceptionMessage, bool free = false) { }
             [Conditional("TRACK")]
             public static void Track(void* pointer, uint size) { }
             [Conditional("TRACK")]

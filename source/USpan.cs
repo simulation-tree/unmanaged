@@ -204,6 +204,7 @@ namespace Unmanaged
         public unsafe readonly Span<V> AsSystemSpan<V>() where V : unmanaged
         {
             ThrowIfTypeSizeMismatches<V>();
+
             return new Span<V>((void*)Address, (int)length);
         }
 
@@ -220,12 +221,13 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Retrieves this span as a span of another type of
-        /// the same size.
+        /// Retrieves this span as a span of <typeparamref name="X"/> elements,
+        /// assuming its of same size.
         /// </summary>
         public readonly USpan<X> As<X>() where X : unmanaged
         {
             ThrowIfTypeSizeMismatches<X>();
+
             return new(Address, Length);
         }
 
@@ -554,7 +556,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Copies this entire span to the given span.
+        /// Copies the memory of this span to the given <paramref name="otherSpan"/>.
         /// </summary>
         /// <returns>Amount of values copied.</returns>
         public unsafe readonly uint CopyTo(USpan<T> otherSpan)

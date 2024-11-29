@@ -29,8 +29,11 @@ namespace Unmanaged
 
         /// <summary>
         /// Throws an <see cref="Exception"/> if there are any allocations present.
+        /// <para>
+        /// The <paramref name="free"/> parameter is only functional in debug builds, never in release.
+        /// </para>
         /// </summary>
-        public static void ThrowIfAny()
+        public static void ThrowIfAny(bool free = false)
         {
             if (Count > 0)
             {
@@ -38,7 +41,7 @@ namespace Unmanaged
                 Append("Allocations present: ");
                 AppendLine(Count.ToString());
 
-                Tracker.AppendAllocations(ref exceptionMessage);
+                Tracker.AppendAllocations(ref exceptionMessage, free);
 
                 void Append(string str)
                 {

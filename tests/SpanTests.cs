@@ -64,6 +64,19 @@ namespace Unmanaged.Tests
                 Assert.Fail();
             }
         }
+
+        [Test]
+        public void ThrowIfReinterpretSpanOfDifferentSize()
+        {
+            Assert.Throws<ArgumentException>(() =>
+            {
+                USpan<byte> data = stackalloc byte[8];
+                data[0] = 1;
+                data[1] = 2;
+
+                USpan<int> intData = data.As<int>();
+            });
+        }
 #endif
 
         [Test]
