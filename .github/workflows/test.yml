@@ -43,7 +43,7 @@ jobs:
       - name: Build coverage report
         uses: danielpalme/ReportGenerator-GitHub-Action@5.4.1
         with:
-          reports: 'test/TestResults/*.xml'
+          reports: 'test/TestResults/**/*.xml'
           targetdir: 'coveragereport'
           reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub'
           tag: '${{ github.run_number }}_${{ github.run_id }}'
