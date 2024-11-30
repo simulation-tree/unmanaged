@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.Intrinsics.X86;
 
 namespace Unmanaged.Tests
 {
-    public class BenchmarkTests : UnmanagedTests
+    public unsafe class BenchmarkTests : UnmanagedTests
     {
         private const uint Scale = 5931428;
-        private const double Attempts = 8;
+        private const double Attempts = 9;
 
         [Test]
         public void SignedForwardLoop()
@@ -20,6 +21,14 @@ namespace Unmanaged.Tests
             ulong sum = 0;
             for (int a = 0; a < Attempts; a++)
             {
+                //for (int i = 0; i < Scale; i++)
+                //{
+                //    byte x = allocation[(uint)i];
+                //    sum += x;
+                //}
+
+                Sse.Prefetch0(allocation);
+
                 sum = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 for (int i = 0; i < Scale; i++)
@@ -53,6 +62,14 @@ namespace Unmanaged.Tests
             ulong sum = 0;
             for (int a = 0; a < Attempts; a++)
             {
+                //for (int i = 0; i < Scale; i++)
+                //{
+                //    byte x = allocation[(uint)i];
+                //    sum += x;
+                //}
+
+                Sse.Prefetch0(allocation);
+
                 sum = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 for (int i = (int)(Scale - 1); i >= 0; i--)
@@ -86,6 +103,14 @@ namespace Unmanaged.Tests
             ulong sum = 0;
             for (int a = 0; a < Attempts; a++)
             {
+                //for (int i = 0; i < Scale; i++)
+                //{
+                //    byte x = allocation[(uint)i];
+                //    sum += x;
+                //}
+
+                Sse.Prefetch0(allocation);
+
                 sum = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 for (uint i = 0; i < Scale; i++)
@@ -119,6 +144,14 @@ namespace Unmanaged.Tests
             ulong sum = 0;
             for (int a = 0; a < Attempts; a++)
             {
+                //for (int i = 0; i < Scale; i++)
+                //{
+                //    byte x = allocation[(uint)i];
+                //    sum += x;
+                //}
+
+                Sse.Prefetch0(allocation);
+
                 sum = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 for (uint i = Scale - 1; i != uint.MaxValue; i--)
@@ -152,6 +185,14 @@ namespace Unmanaged.Tests
             ulong sum = 0;
             for (int a = 0; a < Attempts; a++)
             {
+                //for (int i = 0; i < Scale; i++) 
+                //{
+                //    byte x = allocation[(uint)i];
+                //    sum += x;
+                //}
+
+                Sse.Prefetch0(allocation);
+
                 sum = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 for (uint i = Scale; i-- > 0;)
@@ -186,6 +227,14 @@ namespace Unmanaged.Tests
             uint i;
             for (int a = 0; a < Attempts; a++)
             {
+                //for (int t = 0; t < Scale; t++)
+                //{
+                //    byte x = allocation[(uint)t];
+                //    sum += x;
+                //}
+
+                Sse.Prefetch0(allocation);
+
                 i = Scale;
                 sum = 0;
                 Stopwatch stopwatch = Stopwatch.StartNew();
