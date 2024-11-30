@@ -268,22 +268,12 @@ namespace Unmanaged
         public readonly uint IndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
+
+            Span<V> span = AsSystemSpan<V>();
+            int i = span.IndexOf(value);
             unchecked
             {
-                for (uint i = 0; i < length; i++)
-                {
-#if NET
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
-#else
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
-#endif
-                    if (e.Equals(value))
-                    {
-                        return i;
-                    }
-                }
-
-                return uint.MaxValue;
+                return (uint)i;
             }
         }
 
@@ -296,22 +286,12 @@ namespace Unmanaged
         public readonly uint LastIndexOf<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
+
+            Span<V> span = AsSystemSpan<V>();
+            int i = span.LastIndexOf(value);
             unchecked
             {
-                for (uint i = length - 1; i != uint.MaxValue; i--)
-                {
-#if NET
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
-#else
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
-#endif
-                    if (e.Equals(value))
-                    {
-                        return i;
-                    }
-                }
-
-                return uint.MaxValue;
+                return (uint)i;
             }
         }
 
@@ -347,24 +327,13 @@ namespace Unmanaged
         public readonly bool TryIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
+
+            Span<V> span = AsSystemSpan<V>();
+            int i = span.IndexOf(value);
             unchecked
             {
-                for (uint i = 0; i < length; i++)
-                {
-#if NET
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
-#else
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
-#endif
-                    if (e.Equals(value))
-                    {
-                        index = i;
-                        return true;
-                    }
-                }
-
-                index = 0;
-                return false;
+                index = (uint)i;
+                return i != -1;
             }
         }
 
@@ -375,24 +344,13 @@ namespace Unmanaged
         public readonly bool TryLastIndexOf<V>(V value, out uint index) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
+
+            Span<V> span = AsSystemSpan<V>();
+            int i = span.LastIndexOf(value);
             unchecked
             {
-                for (uint i = length - 1; i != uint.MaxValue; i--)
-                {
-#if NET
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
-#else
-                    ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
-#endif
-                    if (e.Equals(value))
-                    {
-                        index = i;
-                        return true;
-                    }
-                }
-
-                index = 0;
-                return false;
+                index = (uint)i;
+                return i != -1;
             }
         }
 
@@ -448,20 +406,8 @@ namespace Unmanaged
         public readonly bool Contains<V>(V value) where V : unmanaged, IEquatable<V>
         {
             ThrowIfTypeSizeMismatches<V>();
-            for (uint i = 0; i < Length; i++)
-            {
-#if NET
-                ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, i));
-#else
-                ref V e = ref Unsafe.As<T, V>(ref Unsafe.Add(ref pointer, (int)i));
-#endif
-                if (e.Equals(value))
-                {
-                    return true;
-                }
-            }
 
-            return false;
+            return AsSystemSpan<V>().Contains(value);
         }
 
         /// <summary>
