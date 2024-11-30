@@ -8,7 +8,7 @@
         }
 
         [TearDown]
-        protected virtual void TearDown()
+        protected virtual void CleanUp()
         {
             Allocations.ThrowIfAny(true);
         }
