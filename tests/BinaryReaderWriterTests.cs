@@ -1,5 +1,4 @@
-﻿using Collections;
-using System;
+﻿using System;
 
 namespace Unmanaged.Tests
 {
@@ -251,23 +250,34 @@ namespace Unmanaged.Tests
 
         public struct Complicated : IDisposable, ISerializable
         {
-            private List<Player> players;
+            private Allocation players;
+            private uint count;
+            private uint capacity;
 
-            public readonly USpan<Player> List => players.AsSpan();
+            public readonly USpan<Player> List => players.AsSpan<Player>(0, count);
 
             public Complicated()
             {
-                players = new();
+                players = new(TypeInfo<Player>.size);
+                capacity = 1;
             }
 
-            public readonly void Add(Player player)
+            public void Add(Player player)
             {
-                players.Add(player);
+                if (count == capacity)
+                {
+                    capacity *= 2;
+                    Allocation.Resize(ref players, capacity * TypeInfo<Player>.size);
+                }
+
+                players.Write(count * TypeInfo<Player>.size, player);
+                count++;
             }
 
             public readonly void Dispose()
             {
-                foreach (Player player in players)
+                USpan<Player> list = List;
+                foreach (Player player in list)
                 {
                     player.Dispose();
                 }
@@ -277,19 +287,20 @@ namespace Unmanaged.Tests
 
             void ISerializable.Read(BinaryReader reader)
             {
-                byte count = reader.ReadValue<byte>();
-                players = new();
-                for (uint i = 0; i < count; i++)
+                byte add = reader.ReadValue<byte>();
+                players = new(TypeInfo<Player>.size);
+                capacity = 1;
+                for (uint i = 0; i < add; i++)
                 {
                     Player player = reader.ReadObject<Player>();
-                    players.Add(player);
+                    Add(player);
                 }
             }
 
             void ISerializable.Write(BinaryWriter writer)
             {
-                writer.WriteValue((byte)players.Count);
-                foreach (Player player in players)
+                writer.WriteValue((byte)count);
+                foreach (Player player in List)
                 {
                     writer.WriteObject(player);
                 }
@@ -300,15 +311,19 @@ namespace Unmanaged.Tests
         {
             public uint hp;
             public uint damage;
-            private List<Fruit> inventory;
 
-            public readonly USpan<Fruit> Inventory => inventory.AsSpan();
+            private uint count;
+            private uint capacity;
+            private Allocation inventory;
+
+            public readonly USpan<Fruit> Inventory => inventory.AsSpan<Fruit>(0, count);
 
             public Player(uint hp, uint damage)
             {
                 this.hp = hp;
                 this.damage = damage;
-                this.inventory = new();
+                this.inventory = new(TypeInfo<Fruit>.size);
+                capacity = 1;
             }
 
             public readonly override string ToString()
@@ -323,18 +338,26 @@ namespace Unmanaged.Tests
 
             public void Add(Fruit fruit)
             {
-                inventory.Add(fruit);
+                if (count == capacity)
+                {
+                    capacity *= 2;
+                    Allocation.Resize(ref inventory, capacity * TypeInfo<Fruit>.size);
+                }
+
+                inventory.Write(count * TypeInfo<Fruit>.size, fruit);
+                count++;
             }
 
             void ISerializable.Read(BinaryReader reader)
             {
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
-                inventory = new();
-                uint count = reader.ReadValue<uint>();
-                for (uint i = 0; i < count; i++)
+                uint add = reader.ReadValue<uint>();
+                inventory = new(TypeInfo<Fruit>.size);
+                capacity = 1;
+                for (uint i = 0; i < add; i++)
                 {
-                    inventory.Add(reader.ReadValue<Fruit>());
+                    Add(reader.ReadValue<Fruit>());
                 }
             }
 
@@ -342,8 +365,8 @@ namespace Unmanaged.Tests
             {
                 writer.WriteValue(hp);
                 writer.WriteValue(damage);
-                writer.WriteValue(inventory.Count);
-                foreach (Fruit fruit in inventory)
+                writer.WriteValue(count);
+                foreach (Fruit fruit in Inventory)
                 {
                     writer.WriteValue(fruit);
                 }
@@ -361,12 +384,12 @@ namespace Unmanaged.Tests
 
             public readonly bool InventoryContentsEqual(Player other)
             {
-                if (inventory.Count != other.inventory.Count)
+                if (count != other.count)
                 {
                     return false;
                 }
 
-                for (uint i = 0; i < inventory.Count; i++)
+                for (uint i = 0; i < count; i++)
                 {
                     if (inventory[i] != other.inventory[i])
                     {
@@ -379,7 +402,7 @@ namespace Unmanaged.Tests
 
             public readonly override int GetHashCode()
             {
-                return HashCode.Combine(hp, damage, inventory);
+                return HashCode.Combine(hp, damage, inventory, count, capacity);
             }
 
             public static bool operator ==(Player left, Player right)
@@ -397,7 +420,8 @@ namespace Unmanaged.Tests
         {
             public readonly int a = a;
             public readonly Cherry apple = apple;
-            public readonly List<Fruit> fruits = new(fruits);
+            public readonly byte count = (byte)fruits.Length;
+            public readonly Allocation fruits = Allocation.Create(fruits);
 
             public void Dispose()
             {
@@ -411,12 +435,12 @@ namespace Unmanaged.Tests
 
             public bool Equals(Big other)
             {
-                return a == other.a && fruits.Equals(other.fruits) && apple.stones == other.apple.stones;
+                return a == other.a && fruits.Equals(other.fruits) && count == other.count && apple.stones == other.apple.stones;
             }
 
             public override int GetHashCode()
             {
-                return HashCode.Combine(a, apple, fruits);
+                return HashCode.Combine(a, count, apple, fruits);
             }
 
             public static bool operator ==(Big left, Big right)
