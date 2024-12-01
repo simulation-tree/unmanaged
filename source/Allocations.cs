@@ -229,5 +229,24 @@ namespace Unmanaged
             value |= value >> 16;
             return ++value;
         }
+
+        /// <summary>
+        /// Retrieves the index of the power of 2 for the given value.
+        /// <para>
+        /// If <paramref name="value"/> isn't a power of 2 the returning value
+        /// isn't valid.
+        /// </para>
+        /// </summary>
+        public static uint GetIndexOfPowerOf2(uint value)
+        {
+            uint index = 0;
+            while ((value & 1) == 0)
+            {
+                value >>= 1;
+                index++;
+            }
+
+            return index;
+        }
     }
 }
