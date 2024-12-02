@@ -12,6 +12,7 @@ namespace Unmanaged
     /// <summary>
     /// An unmanaged allocation of memory.
     /// </summary>
+    [DebuggerTypeProxy(typeof(AllocationDebugView))]
     public unsafe struct Allocation : IDisposable, IEquatable<Allocation>
     {
         private void* pointer;
@@ -384,6 +385,22 @@ namespace Unmanaged
         public static implicit operator nint(Allocation allocation)
         {
             return allocation.Address;
+        }
+
+        internal class AllocationDebugView
+        {
+#if DEBUG
+            public readonly Allocation allocation;
+            public readonly nint address;
+            public readonly uint byteLength;
+
+            public AllocationDebugView(Allocation allocation)
+            {
+                this.allocation = allocation;
+                address = allocation.Address;
+                byteLength = Allocations.Tracker.TryGetSize(address, out uint size) ? size : 0;
+            }
+#endif
         }
     }
 }

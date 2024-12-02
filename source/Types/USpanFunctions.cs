@@ -19,6 +19,14 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Retrieves a span containing the given array.
+        /// </summary>
+        public static USpan<T> AsUSpan<T>(this T[] array) where T : unmanaged
+        {
+            return new USpan<T>(array);
+        }
+
+        /// <summary>
         /// Retrieves a span containing the given text.
         /// </summary>
         public static USpan<char> AsUSpan(this string text)
@@ -28,6 +36,14 @@ namespace Unmanaged
             {
                 return new USpan<char>(pointer, (uint)text.Length);
             }
+        }
+
+        /// <summary>
+        /// Retrieves the given system <paramref name="span"/> to a <see cref="USpan{T}"/>.
+        /// </summary>
+        public static USpan<T> AsUSpan<T>(this ReadOnlySpan<T> span) where T : unmanaged
+        {
+            return new USpan<T>(span);
         }
 
         /// <summary>

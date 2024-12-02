@@ -51,6 +51,20 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Pointer to the first element in this span.
+        /// </summary>
+        public unsafe readonly void* Pointer
+        {
+            get
+            {
+                unsafe
+                {
+                    return Unsafe.AsPointer(ref pointer);
+                }
+            }
+        }
+
+        /// <summary>
         /// Amount of <typeparamref name="T"/> elements in this span.
         /// </summary>
         public readonly uint Length => length;
