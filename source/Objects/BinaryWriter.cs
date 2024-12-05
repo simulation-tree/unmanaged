@@ -5,7 +5,7 @@ namespace Unmanaged
     /// <summary>
     /// Represents a writer that can write binary data.
     /// </summary>
-    public unsafe struct BinaryWriter : IDisposable
+    public unsafe struct BinaryWriter : IDisposable, IEquatable<BinaryWriter>
     {
         private UnsafeBinaryWriter* value;
 
@@ -174,6 +174,24 @@ namespace Unmanaged
             return new((void*)Address, Position / TypeInfo<T>.size);
         }
 
+        /// <inheritdoc/>
+        public readonly override bool Equals(object? obj)
+        {
+            return obj is BinaryWriter writer && Equals(writer);
+        }
+
+        /// <inheritdoc/>
+        public readonly bool Equals(BinaryWriter other)
+        {
+            return value == other.value;
+        }
+
+        /// <inheritdoc/>
+        public readonly override int GetHashCode()
+        {
+            return ((nint)value).GetHashCode();
+        }
+
         internal unsafe struct UnsafeBinaryWriter
         {
             private Allocation items;
@@ -196,6 +214,7 @@ namespace Unmanaged
 
             public static UnsafeBinaryWriter* Allocate(uint initialCapacity)
             {
+                initialCapacity = Allocations.GetNextPowerOf2(initialCapacity);
                 UnsafeBinaryWriter* ptr = Allocations.Allocate<UnsafeBinaryWriter>();
                 ptr[0] = new(new(initialCapacity), 0, initialCapacity);
                 return ptr;
@@ -245,15 +264,33 @@ namespace Unmanaged
                 Allocations.ThrowIfNull(writer);
 
                 uint endPosition = writer->position + length;
-                while (writer->capacity < endPosition)
+                uint capacity = writer->capacity;
+                if (capacity < endPosition)
                 {
-                    writer->capacity *= 2;
-                    Allocation.Resize(ref writer->items, writer->capacity);
+                    while (capacity < endPosition)
+                    {
+                        capacity *= 2;
+                        Allocation.Resize(ref writer->items, capacity);
+                    }
+
+                    writer->capacity = capacity;
                 }
 
                 writer->items.Write(writer->position, length, data);
                 writer->position = endPosition;
             }
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(BinaryWriter left, BinaryWriter right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(BinaryWriter left, BinaryWriter right)
+        {
+            return !(left == right);
         }
     }
 }

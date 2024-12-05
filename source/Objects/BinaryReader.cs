@@ -7,7 +7,7 @@ namespace Unmanaged
     /// <summary>
     /// Reads binary data from a byte stream.
     /// </summary>
-    public unsafe struct BinaryReader : IDisposable
+    public unsafe struct BinaryReader : IDisposable, IEquatable<BinaryReader>
     {
         private UnsafeBinaryReader* value;
 
@@ -107,6 +107,15 @@ namespace Unmanaged
             ThrowIfDisposed();
             Allocation allocation = UnsafeBinaryReader.GetData(value);
             return allocation.AsSpan(0, Length);
+        }
+
+        /// <summary>
+        /// Resets this reader and loads data from the given <paramref name="data"/>.
+        /// </summary>
+        public readonly void CopyFrom(USpan<byte> data)
+        {
+            Position = 0;
+            UnsafeBinaryReader.CopyFrom(value, data);
         }
 
         /// <summary>
@@ -281,7 +290,7 @@ namespace Unmanaged
         /// </summary>
         public static BinaryReader CreateFromUTF8(USpan<char> text)
         {
-            using BinaryWriter writer = new(4);
+            using BinaryWriter writer = new(text.Length);
             writer.WriteUTF8Text(text);
             return new BinaryReader(writer.GetBytes());
         }
@@ -291,7 +300,7 @@ namespace Unmanaged
         /// </summary>
         public static BinaryReader CreateFromUTF8(FixedString text)
         {
-            using BinaryWriter writer = new(4);
+            using BinaryWriter writer = new(text.Length);
             writer.WriteUTF8Text(text);
             return new BinaryReader(writer.GetBytes());
         }
@@ -301,17 +310,35 @@ namespace Unmanaged
         /// </summary>
         public static BinaryReader CreateFromUTF8(string text)
         {
-            using BinaryWriter writer = new(4);
+            using BinaryWriter writer = new((uint)text.Length);
             writer.WriteUTF8Text(text);
             return new BinaryReader(writer.GetBytes());
+        }
+
+        /// <inheritdoc/>
+        public readonly override bool Equals(object? obj)
+        {
+            return obj is BinaryReader reader && Equals(reader);
+        }
+
+        /// <inheritdoc/>
+        public readonly bool Equals(BinaryReader other)
+        {
+            return value == other.value;
+        }
+
+        /// <inheritdoc/>
+        public readonly override int GetHashCode()
+        {
+            return ((nint)value).GetHashCode();
         }
 
         internal unsafe struct UnsafeBinaryReader
         {
             private uint position;
+            private Allocation data;
+            private uint length;
             private readonly bool clone;
-            private readonly Allocation data;
-            private readonly uint length;
 
             private UnsafeBinaryReader(uint position, Allocation data, uint length, bool clone)
             {
@@ -390,6 +417,31 @@ namespace Unmanaged
 
                 Allocations.Free(ref reader);
             }
+
+            public static void CopyFrom(UnsafeBinaryReader* reader, USpan<byte> data)
+            {
+                Allocations.ThrowIfNull(reader);
+
+                if (reader->length < data.Length)
+                {
+                    Allocation.Resize(ref reader->data, data.Length);
+                }
+
+                reader->length = data.Length;
+                reader->data.Write(0, data);
+            }
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(BinaryReader left, BinaryReader right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(BinaryReader left, BinaryReader right)
+        {
+            return !(left == right);
         }
     }
 }
