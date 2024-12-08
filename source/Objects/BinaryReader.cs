@@ -14,11 +14,7 @@ namespace Unmanaged
         /// <summary>
         /// Position of the reader in the byte stream.
         /// </summary>
-        public readonly uint Position
-        {
-            get => UnsafeBinaryReader.GetPositionRef(value);
-            set => UnsafeBinaryReader.GetPositionRef(this.value) = value;
-        }
+        public readonly ref uint Position => ref UnsafeBinaryReader.GetPositionRef(value);
 
         /// <summary>
         /// Length of the byte stream.
