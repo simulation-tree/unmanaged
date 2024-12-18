@@ -79,6 +79,26 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
+        public RandomGenerator(FixedString seed)
+        {
+            unchecked
+            {
+                long hash = 17;
+                for (uint i = 0; i < seed.Length; i++)
+                {
+                    hash = hash * 31 + seed[i];
+                }
+
+                pointer = Allocations.Allocate(TypeInfo<ulong>.size);
+                ulong* t = (ulong*)pointer;
+                *t = (ulong)hash;
+            }
+        }
+
+        /// <summary>
+        /// Creates a new disposable randomness generator using the given
+        /// text input as the initialization seed.
+        /// </summary>
         public RandomGenerator(string seed) : this(seed.AsSpan())
         {
         }
