@@ -516,14 +516,27 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Copies the memory of this span to the given <paramref name="otherSpan"/>.
+        /// Copies the memory of this span to the given <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of values copied.</returns>
-        public unsafe readonly uint CopyTo(USpan<T> otherSpan)
+        public unsafe readonly uint CopyTo(USpan<T> destination)
         {
-            ThrowIfDestinationTooSmall(otherSpan.Length);
-            Unsafe.CopyBlockUnaligned((void*)otherSpan.Address, (void*)Address, Length * TypeInfo<T>.size);
+            ThrowIfDestinationTooSmall(destination.Length);
+
+            Unsafe.CopyBlockUnaligned((void*)destination.Address, (void*)Address, Length * TypeInfo<T>.size);
             return Length;
+        }
+
+        /// <summary>
+        /// Copies the memory of <paramref name="source"/> into this span.
+        /// </summary>
+        /// <returns>Amount of values copied.</returns>
+        public unsafe readonly uint CopyFrom(USpan<T> source)
+        {
+            source.ThrowIfDestinationTooSmall(Length);
+
+            Unsafe.CopyBlockUnaligned((void*)Address, (void*)source.Address, Length * TypeInfo<T>.size);
+            return source.Length;
         }
 
         /// <inheritdoc/>
