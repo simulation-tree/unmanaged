@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -15,7 +16,7 @@ namespace Unmanaged
 #endif
     public readonly ref struct USpan<T> where T : unmanaged
     {
-        //todo: efficiency: take advantage of vector256 and vector512
+        private unsafe static readonly uint size = (uint)sizeof(T);
 
         private readonly ref T pointer;
         private readonly uint length;
@@ -150,7 +151,7 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         private static void ThrowIfTypeSizeMismatches<V>() where V : unmanaged
         {
-            if (TypeInfo<T>.size != TypeInfo<V>.size)
+            if (size != USpan<V>.size)
             {
                 throw new ArgumentException("Size of type mismatch");
             }
@@ -504,7 +505,7 @@ namespace Unmanaged
         /// </summary>
         public unsafe readonly void Clear()
         {
-            Unsafe.InitBlockUnaligned((void*)Address, 0, Length * TypeInfo<T>.size);
+            Unsafe.InitBlockUnaligned((void*)Address, 0, Length * size);
         }
 
         /// <summary>
@@ -523,7 +524,7 @@ namespace Unmanaged
         {
             ThrowIfDestinationTooSmall(destination.Length);
 
-            Unsafe.CopyBlockUnaligned((void*)destination.Address, (void*)Address, Length * TypeInfo<T>.size);
+            Unsafe.CopyBlockUnaligned((void*)destination.Address, (void*)Address, Length * size);
             return Length;
         }
 
@@ -535,7 +536,7 @@ namespace Unmanaged
         {
             source.ThrowIfDestinationTooSmall(Length);
 
-            Unsafe.CopyBlockUnaligned((void*)Address, (void*)source.Address, Length * TypeInfo<T>.size);
+            Unsafe.CopyBlockUnaligned((void*)Address, (void*)source.Address, Length * size);
             return source.Length;
         }
 
@@ -568,7 +569,7 @@ namespace Unmanaged
         /// <summary>
         /// Enumerator for <see cref="USpan{T}"/>.
         /// </summary>
-        public ref struct Enumerator
+        public ref struct Enumerator : IEnumerator<T>
         {
             private readonly USpan<T> span;
             private int index;
@@ -577,6 +578,8 @@ namespace Unmanaged
             /// Current element in the span.
             /// </summary>
             public readonly ref T Current => ref span[(uint)index];
+            readonly T IEnumerator<T>.Current => Current;
+            readonly object IEnumerator.Current => Current;
 
             internal Enumerator(USpan<T> span)
             {
@@ -597,6 +600,17 @@ namespace Unmanaged
                 }
 
                 return false;
+            }
+
+            /// <inheritdoc/>
+            public void Reset()
+            {
+                index = -1;
+            }
+
+            /// <inheritdoc/>
+            public void Dispose()
+            {
             }
         }
     }
