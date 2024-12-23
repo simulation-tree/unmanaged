@@ -394,7 +394,14 @@ namespace Unmanaged
         /// <returns><c>true</c> if found.</returns>
         public readonly bool TryIndexOf(USpan<T> span, out uint index)
         {
-            for (uint i = 0; i < Length; i++)
+            if (span.Length > Length)
+            {
+                index = 0;
+                return false;
+            }
+
+            uint maxIndex = Length - span.Length;
+            for (uint i = 0; i <= maxIndex; i++)
             {
                 if (Slice(i, span.Length).SequenceEqual(span))
                 {
