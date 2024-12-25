@@ -27,7 +27,7 @@ namespace Unmanaged
         /// <summary>
         /// Number of characters in this string.
         /// </summary>
-        public uint Length
+        public byte Length
         {
             readonly get => length;
             set
@@ -745,7 +745,7 @@ namespace Unmanaged
             uint thisLength = Length;
             for (uint i = thisLength - 1; i != uint.MaxValue; i--)
             {
-                if (characters[i] == text[text.Length - 1])
+                if (characters[i] == text[(byte)(text.Length - 1)])
                 {
                     bool found = true;
                     for (uint j = 1; j < text.length; j++)
@@ -776,7 +776,7 @@ namespace Unmanaged
             uint thisLength = Length;
             for (uint i = thisLength - 1; i != uint.MaxValue; i--)
             {
-                if (characters[i] == text[text.Length - 1])
+                if (characters[i] == text[(byte)(text.Length - 1)])
                 {
                     bool found = true;
                     for (uint j = 1; j < text.length; j++)

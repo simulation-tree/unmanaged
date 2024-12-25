@@ -40,7 +40,7 @@ namespace Unmanaged.Tests
         {
             FixedString a = "Hello World";
             Assert.That(a.Length, Is.EqualTo(11));
-            a.RemoveAt(a.Length - 1);
+            a.RemoveAt((byte)(a.Length - 1));
 
             Assert.That(a.Contains('d'), Is.False);
             Assert.That(a.Length, Is.EqualTo(10));
