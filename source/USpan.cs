@@ -512,7 +512,7 @@ namespace Unmanaged
         /// </summary>
         public unsafe readonly void Clear()
         {
-            Unsafe.InitBlockUnaligned((void*)Address, 0, Length * size);
+            Unsafe.InitBlockUnaligned(Pointer, 0, Length * size);
         }
 
         /// <summary>
@@ -531,8 +531,19 @@ namespace Unmanaged
         {
             ThrowIfDestinationTooSmall(destination.Length);
 
-            Unsafe.CopyBlockUnaligned((void*)destination.Address, (void*)Address, Length * size);
+            Unsafe.CopyBlockUnaligned(destination.Pointer, Pointer, Length * size);
             return Length;
+        }
+
+        /// <summary>
+        /// Copies the memory of this span into the <paramref name="destination"/>
+        /// with the specified <paramref name="byteLength"/>.
+        /// </summary>
+        public unsafe readonly void CopyTo(void* destination, uint byteLength)
+        {
+            ThrowIfAccessingPastRange(byteLength / size);
+
+            Unsafe.CopyBlockUnaligned(destination, Pointer, Length * size);
         }
 
         /// <summary>
@@ -543,8 +554,19 @@ namespace Unmanaged
         {
             source.ThrowIfDestinationTooSmall(Length);
 
-            Unsafe.CopyBlockUnaligned((void*)Address, (void*)source.Address, Length * size);
+            Unsafe.CopyBlockUnaligned(Pointer, source.Pointer, Length * size);
             return source.Length;
+        }
+
+        /// <summary>
+        /// Copies the memory from <paramref name="source"/> into this span
+        /// with the specified <paramref name="byteLength"/>.
+        /// </summary>
+        public unsafe readonly void CopyFrom(void* source, uint byteLength)
+        {
+            ThrowIfAccessingPastRange(byteLength / size);
+
+            Unsafe.CopyBlockUnaligned(Pointer, source, Length * size);
         }
 
         /// <inheritdoc/>

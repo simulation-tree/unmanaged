@@ -75,6 +75,14 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Writes memory from the given pointer with the specified <paramref name="byteLength"/>.
+        /// </summary>
+        public void Write(void* pointer, uint byteLength)
+        {
+            UnsafeBinaryWriter.Write(ref value, pointer, byteLength);
+        }
+
+        /// <summary>
         /// Writes the given character as a UTF-8 character.
         /// </summary>
         public void WriteUTF8Character(char value)
