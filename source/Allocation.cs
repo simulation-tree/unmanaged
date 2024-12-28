@@ -53,6 +53,14 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Creates an existing allocation from the given pointer.
+        /// </summary>
+        public Allocation(long address)
+        {
+            this.pointer = (void*)address;
+        }
+
+        /// <summary>
         /// Creates a new uninitialized allocation with the given size.
         /// </summary>
         public Allocation(uint size, bool clear = false)
@@ -126,11 +134,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(bytePosition + TypeInfo<T>.size);
-
-            void* ptr = &value;
-            Write(bytePosition, TypeInfo<T>.size, ptr);
+            uint stride = (uint)sizeof(T);
+            Write(bytePosition, stride, &value);
         }
 
         /// <summary>
@@ -146,11 +151,11 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
-            uint byteLength = span.Length * TypeInfo<T>.size;
+            uint byteLength = span.Length * (uint)sizeof(T);
             Allocations.ThrowIfNull(pointer);
             ThrowIfPastRange(bytePosition + byteLength);
 
-            Write(bytePosition, byteLength, (void*)span.Address);
+            Write(bytePosition, byteLength, span.Pointer);
         }
 
         /// <summary>
@@ -158,9 +163,6 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write(uint bytePosition, uint byteLength, void* data)
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(bytePosition + byteLength);
-
             Unsafe.CopyBlock((void*)((nint)pointer + bytePosition), data, byteLength);
         }
 
@@ -182,11 +184,8 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
-            uint bytePosition = start * TypeInfo<T>.size;
-            uint byteLength = length * TypeInfo<T>.size;
-            ThrowIfPastRange(bytePosition + byteLength);
-
+            uint stride = (uint)sizeof(T);
+            uint bytePosition = start * stride;
             return new USpan<T>((void*)((nint)pointer + bytePosition), length);
         }
 
@@ -195,10 +194,8 @@ namespace Unmanaged
         /// </summary>
         public readonly ref T Read<T>(uint bytePosition = 0) where T : unmanaged
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(bytePosition + TypeInfo<T>.size);
-
-            return ref Unsafe.AsRef<T>((void*)((nint)pointer + bytePosition));
+            void* value = (void*)((nint)pointer + bytePosition);
+            return ref *(T*)value;
         }
 
         /// <summary>
@@ -259,18 +256,37 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Copies bytes of this allocation into the destination.
+        /// Copies bytes of this allocation into the <paramref name="destination"/>.
         /// </summary>
         public readonly void CopyTo(Allocation destination, uint sourceIndex, uint destinationIndex, uint byteLength)
         {
-            Allocations.ThrowIfNull(pointer);
-            Allocations.ThrowIfNull(destination.pointer);
-            ThrowIfPastRange(sourceIndex + byteLength);
-            destination.ThrowIfPastRange(destinationIndex + byteLength);
+            void* destinationStart = (void*)((nint)destination.pointer + destinationIndex);
+            void* sourceStart = (void*)((nint)pointer + sourceIndex);
+            Unsafe.CopyBlock(destinationStart, sourceStart, byteLength);
+        }
 
-            USpan<byte> sourceSpan = AsSpan<byte>(sourceIndex, byteLength);
-            USpan<byte> destinationSpan = destination.AsSpan<byte>(destinationIndex, byteLength);
-            sourceSpan.CopyTo(destinationSpan);
+        /// <summary>
+        /// Copies bytes of this allocation into the <paramref name="destination"/>.
+        /// </summary>
+        public readonly void CopyTo(Allocation destination, uint byteLength)
+        {
+            Unsafe.CopyBlock(destination.pointer, pointer, byteLength);
+        }
+
+        /// <summary>
+        /// Copies the bytes from <paramref name="source"/> and writes them into this allocation.
+        /// </summary>
+        public readonly void CopyFrom(Allocation source, uint byteLength)
+        {
+            Unsafe.CopyBlock(pointer, source.pointer, byteLength);
+        }
+
+        /// <summary>
+        /// Copies the bytes from <paramref name="source"/> and writes them into this allocation.
+        /// </summary>
+        public readonly void CopyFrom(void* source, uint byteLength)
+        {
+            Unsafe.CopyBlock(pointer, source, byteLength);
         }
 
         /// <inheritdoc/>
@@ -328,7 +344,7 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>(T value) where T : unmanaged
         {
-            Allocation allocation = new(TypeInfo<T>.size);
+            Allocation allocation = new((uint)sizeof(T));
             allocation.Write(0, value);
             return allocation;
         }
@@ -338,8 +354,7 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>() where T : unmanaged
         {
-            Allocation allocation = new(TypeInfo<T>.size);
-            return allocation;
+            return new((uint)sizeof(T), true);
         }
 
         /// <summary>
@@ -347,7 +362,7 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>(USpan<T> span) where T : unmanaged
         {
-            uint length = span.Length * TypeInfo<T>.size;
+            uint length = span.Length * (uint)sizeof(T);
             Allocation allocation = new(length);
             if (span.Length > 0)
             {
