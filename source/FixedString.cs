@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -98,6 +99,32 @@ namespace Unmanaged
                 }
 
                 characters[i] = (byte)c;
+            }
+        }
+
+        /// <summary>
+        /// Creates a new fixed string from <paramref name="text"/> collection.
+        /// </summary>
+        public FixedString(IReadOnlyCollection<char> text)
+        {
+            ThrowIfLengthExceedsCapacity((uint)text.Count);
+
+            length = (byte)text.Count;
+            uint index = 0;
+            foreach (char c in text)
+            {
+                if (index >= Capacity)
+                {
+                    break;
+                }
+
+                if (c == '\0')
+                {
+                    break;
+                }
+
+                characters[index] = (byte)c;
+                index++;
             }
         }
 
@@ -1237,6 +1264,25 @@ namespace Unmanaged
             for (uint i = 0; i < length; i++)
             {
                 if (characters[i] != other[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public readonly bool Equals(string other)
+        {
+            if (length != other.Length)
+            {
+                return false;
+            }
+
+            for (uint i = 0; i < length; i++)
+            {
+                if (characters[i] != other[(int)i])
                 {
                     return false;
                 }
