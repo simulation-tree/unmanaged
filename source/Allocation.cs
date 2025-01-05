@@ -124,8 +124,6 @@ namespace Unmanaged
         /// </summary>
         public readonly uint ToString(USpan<char> buffer)
         {
-            Allocations.ThrowIfNull(pointer);
-
             return Address.ToString(buffer);
         }
 
