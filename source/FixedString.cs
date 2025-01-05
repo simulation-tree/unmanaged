@@ -914,26 +914,28 @@ namespace Unmanaged
         /// <summary>
         /// Clears the contents of this string.
         /// </summary>
-        public void Clear()
+        public FixedString Clear()
         {
             length = 0;
+            return this;
         }
 
         /// <summary>
         /// Appends a character to the end of this string.
         /// </summary>
-        public void Append(char c)
+        public FixedString Append(char c)
         {
             ThrowIfLengthExceedsCapacity(length + 1u);
             characters[length] = (byte)c;
             length = (byte)(length + 1);
+            return this;
         }
 
         /// <summary>
         /// Appends a formattable object to the end of this string.
         /// </summary>
 #if NET
-        public void Append<T>(T formattable) where T : ISpanFormattable
+        public FixedString Append<T>(T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[256];
             formattable.TryFormat(buffer, out int charsWritten, default, default);
@@ -944,9 +946,10 @@ namespace Unmanaged
             }
 
             length = (byte)(length + charsWritten);
+            return this;
         }
 #else
-        public void Append<T>(T formattable) where T : IFormattable
+        public FixedString Append<T>(T formattable) where T : IFormattable
         {
             string text = formattable.ToString(default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)text.Length);
@@ -956,13 +959,14 @@ namespace Unmanaged
             }
 
             length = (byte)(length + text.Length);
+            return this;
         }
 #endif
 
         /// <summary>
         /// Appends a text span to the end of this string.
         /// </summary>
-        public void Append(USpan<char> text)
+        public FixedString Append(USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(length + text.Length);
             for (uint i = 0; i < text.Length; i++)
@@ -971,12 +975,13 @@ namespace Unmanaged
             }
 
             length = (byte)(length + text.Length);
+            return this;
         }
 
         /// <summary>
         /// Appends a text span to the end of this string.
         /// </summary>
-        public void Append(FixedString text)
+        public FixedString Append(FixedString text)
         {
             uint textLength = text.Length;
             ThrowIfLengthExceedsCapacity(length + textLength);
@@ -986,12 +991,13 @@ namespace Unmanaged
             }
 
             length = (byte)(length + textLength);
+            return this;
         }
 
         /// <summary>
         /// Removes the character at the given index.
         /// </summary>
-        public void RemoveAt(uint index)
+        public FixedString RemoveAt(uint index)
         {
             ThrowIfIndexOutOfRange(index);
 
@@ -1001,12 +1007,13 @@ namespace Unmanaged
             }
 
             length = (byte)(length - 1);
+            return this;
         }
 
         /// <summary>
         /// Removes a range of characters starting at the given index.
         /// </summary>
-        public void RemoveRange(uint start, uint length)
+        public FixedString RemoveRange(uint start, uint length)
         {
             uint thisLength = Length;
             ThrowIfIndexOutOfRange(start);
@@ -1017,15 +1024,17 @@ namespace Unmanaged
             }
 
             this.length = (byte)(thisLength - length);
+            return this;
         }
 
         /// <summary>
         /// Inserts a character at the given index.
         /// </summary>
-        public void Insert(uint index, char c)
+        public FixedString Insert(uint index, char c)
         {
             ThrowIfLengthExceedsCapacity(length + 1u);
-            ThrowIfIndexOutOfRange(index);
+            ThrowIfIndexIsPastRange(index);
+
             for (uint i = length; i > index; i--)
             {
                 characters[i] = characters[i - 1];
@@ -1033,18 +1042,20 @@ namespace Unmanaged
 
             characters[index] = (byte)c;
             length = (byte)(length + 1);
+            return this;
         }
 
         /// <summary>
         /// Inserts a formattable object at the given index.
         /// </summary>
 #if NET
-        public void Insert<T>(uint index, T formattable) where T : ISpanFormattable
+        public FixedString Insert<T>(uint index, T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[256];
             formattable.TryFormat(buffer, out int charsWritten, default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)charsWritten);
-            ThrowIfIndexOutOfRange(index);
+            ThrowIfIndexIsPastRange(index);
+
             for (uint i = length; i > index; i--)
             {
                 characters[i + charsWritten - 1] = characters[i - 1];
@@ -1056,13 +1067,15 @@ namespace Unmanaged
             }
 
             length = (byte)(length + charsWritten);
+            return this;
         }
 #else
-        public void Insert<T>(uint index, T formattable) where T : IFormattable
+        public FixedString Insert<T>(uint index, T formattable) where T : IFormattable
         {
             string text = formattable.ToString(default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)text.Length);
-            ThrowIfIndexOutOfRange(index);
+            ThrowIfIndexIsPastRange(index);
+
             for (uint i = length; i > index; i--)
             {
                 characters[i + text.Length - 1] = characters[i - 1];
@@ -1074,16 +1087,18 @@ namespace Unmanaged
             }
 
             length = (byte)(length + text.Length);
+            return this;
         }
 #endif
 
         /// <summary>
         /// Inserts a text span at the given index.
         /// </summary>
-        public void Insert(uint index, USpan<char> text)
+        public FixedString Insert(uint index, USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(length + text.Length);
-            ThrowIfIndexOutOfRange(index);
+            ThrowIfIndexIsPastRange(index);
+
             for (uint i = length; i > index; i--)
             {
                 characters[i + text.Length - 1] = characters[i - 1];
@@ -1095,15 +1110,17 @@ namespace Unmanaged
             }
 
             length = (byte)(length + text.Length);
+            return this;
         }
 
         /// <summary>
         /// Inserts a text span at the given index.
         /// </summary>
-        public void Insert(uint index, FixedString text)
+        public FixedString Insert(uint index, FixedString text)
         {
             uint textLength = text.Length;
             ThrowIfLengthExceedsCapacity(length + textLength);
+
             for (uint i = length; i > index; i--)
             {
                 characters[i + textLength - 1] = characters[i - 1];
@@ -1115,6 +1132,7 @@ namespace Unmanaged
             }
 
             length = (byte)(length + textLength);
+            return this;
         }
 
         /// <summary>
@@ -1332,6 +1350,24 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Generates a double precision hash code for this text.
+        /// </summary>
+        public readonly long GetLongHashCode()
+        {
+            unchecked
+            {
+                long hash = 3074457345618258791;
+                for (uint i = 0; i < length; i++)
+                {
+                    hash += characters[i];
+                    hash *= 3074457345618258799;
+                }
+
+                return hash;
+            }
+        }
+
+        /// <summary>
         /// Only in debug, throws if the given index is out of range.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException"></exception>
@@ -1339,6 +1375,15 @@ namespace Unmanaged
         private readonly void ThrowIfIndexOutOfRange(uint index)
         {
             if (index >= length)
+            {
+                throw new IndexOutOfRangeException($"Index {index} is out of range of {Length}");
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfIndexIsPastRange(uint index)
+        {
+            if (index > length)
             {
                 throw new IndexOutOfRangeException($"Index {index} is out of range of {Length}");
             }

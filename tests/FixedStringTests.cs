@@ -145,6 +145,14 @@ namespace Unmanaged.Tests
         }
 
         [Test]
+        public void InsertOneCharacterToTheStart()
+        {
+            FixedString a = default;
+            a.Insert(0, 'H');
+            Assert.That(a.ToString(), Is.EqualTo("H"));
+        }
+
+        [Test]
         public void Replace()
         {
             FixedString a = "Hello World";
