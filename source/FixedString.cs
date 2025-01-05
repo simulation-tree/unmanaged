@@ -105,19 +105,11 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new fixed string from <paramref name="text"/> collection.
         /// </summary>
-        public FixedString(IReadOnlyCollection<char> text)
+        public FixedString(IEnumerable<char> text)
         {
-            ThrowIfLengthExceedsCapacity((uint)text.Count);
-
-            length = (byte)text.Count;
             uint index = 0;
             foreach (char c in text)
             {
-                if (index >= Capacity)
-                {
-                    break;
-                }
-
                 if (c == '\0')
                 {
                     break;
@@ -125,7 +117,11 @@ namespace Unmanaged
 
                 characters[index] = (byte)c;
                 index++;
+
+                ThrowIfLengthExceedsCapacity(index);
             }
+
+            length = (byte)index;
         }
 
         /// <summary>
