@@ -1418,6 +1418,12 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
+        public static implicit operator FixedString(USpan<char> text)
+        {
+            return new(text);
+        }
+
+        /// <inheritdoc/>
         public static bool operator ==(FixedString a, FixedString b)
         {
             return a.Equals(b);
