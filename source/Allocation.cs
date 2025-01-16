@@ -667,7 +667,7 @@ namespace Unmanaged
         /// </summary>
         public static void Resize<T>(ref Allocation allocation) where T : unmanaged
         {
-            Resize(ref allocation, TypeInfo<T>.size);
+            Resize(ref allocation, (uint)sizeof(T));
         }
 
         /// <summary>
@@ -697,7 +697,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an allocation containg the given span.
+        /// Creates an allocation containg the given <paramref name="span"/>.
         /// </summary>
         public static Allocation Create<T>(USpan<T> span) where T : unmanaged
         {
