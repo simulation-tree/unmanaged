@@ -19,24 +19,24 @@ namespace Unmanaged
             private static readonly Dictionary<nint, (StackTrace stack, uint size)> allocations = new();
             private static readonly Dictionary<nint, StackTrace> disposals = new();
 
-            public static void AppendAllocations(ref string exceptionMessage, bool free = false)
+            public static void AppendAllocations(List<char> exceptionMessage, bool free = false)
             {
                 nint[] leakedAddresses = addresses.ToArray();
                 foreach (nint address in leakedAddresses)
                 {
-                    Append("    ", ref exceptionMessage);
+                    Append("    ", exceptionMessage);
                     if (allocations.TryGetValue(address, out (StackTrace stack, uint size) info))
                     {
-                        Append(address.ToString(), ref exceptionMessage);
-                        Append(" (", ref exceptionMessage);
-                        Append(info.size.ToString(), ref exceptionMessage);
-                        Append(")", ref exceptionMessage);
-                        Append(" from ", ref exceptionMessage);
-                        AppendLine(info.stack.ToString(), ref exceptionMessage);
+                        Append(address.ToString(), exceptionMessage);
+                        Append(" (", exceptionMessage);
+                        Append(info.size.ToString(), exceptionMessage);
+                        Append(")", exceptionMessage);
+                        Append(" from ", exceptionMessage);
+                        AppendLine(info.stack.ToString(), exceptionMessage);
                     }
                     else
                     {
-                        AppendLine(address.ToString(), ref exceptionMessage);
+                        AppendLine(address.ToString(), exceptionMessage);
                     }
 
                     if (free)
@@ -49,19 +49,19 @@ namespace Unmanaged
                 nint[] leakedAlignedAddresses = alignedAddresses.ToArray();
                 foreach (nint address in leakedAlignedAddresses)
                 {
-                    Append("    ", ref exceptionMessage);
+                    Append("    ", exceptionMessage);
                     if (allocations.TryGetValue(address, out (StackTrace stack, uint size) info))
                     {
-                        Append(address.ToString(), ref exceptionMessage);
-                        Append(" (", ref exceptionMessage);
-                        Append(info.size.ToString(), ref exceptionMessage);
-                        Append(")", ref exceptionMessage);
-                        Append(" from ", ref exceptionMessage);
-                        AppendLine(info.stack.ToString(), ref exceptionMessage);
+                        Append(address.ToString(), exceptionMessage);
+                        Append(" (", exceptionMessage);
+                        Append(info.size.ToString(), exceptionMessage);
+                        Append(")", exceptionMessage);
+                        Append(" from ", exceptionMessage);
+                        AppendLine(info.stack.ToString(), exceptionMessage);
                     }
                     else
                     {
-                        AppendLine(address.ToString(), ref exceptionMessage);
+                        AppendLine(address.ToString(), exceptionMessage);
                     }
 
                     if (free)
@@ -71,18 +71,18 @@ namespace Unmanaged
                     }
                 }
 
-                void Append(string str, ref string exceptionMessage)
+                void Append(string str, List<char> exceptionMessage)
                 {
-                    for (uint i = 0; i < str.Length; i++)
+                    for (int i = 0; i < str.Length; i++)
                     {
-                        exceptionMessage += str[(int)i];
+                        exceptionMessage.Add(str[i]);
                     }
                 }
 
-                void AppendLine(string str, ref string exceptionMessage)
+                void AppendLine(string str, List<char> exceptionMessage)
                 {
-                    Append(str, ref exceptionMessage);
-                    exceptionMessage += '\n';
+                    Append(str, exceptionMessage);
+                    exceptionMessage.Add('\n');
                 }
             }
 

@@ -37,27 +37,27 @@ namespace Unmanaged
         {
             if (Count > 0)
             {
-                string exceptionMessage = string.Empty;
+                System.Collections.Generic.List<char> stringBuilder = new(1024);
                 Append("Allocations present: ");
                 AppendLine(Count.ToString());
 
-                Tracker.AppendAllocations(ref exceptionMessage, free);
+                Tracker.AppendAllocations(stringBuilder, free);
 
                 void Append(string str)
                 {
-                    for (uint i = 0; i < str.Length; i++)
+                    for (int i = 0; i < str.Length; i++)
                     {
-                        exceptionMessage += str[(int)i];
+                        stringBuilder.Add(str[i]);
                     }
                 }
 
                 void AppendLine(string str)
                 {
                     Append(str);
-                    exceptionMessage += '\n';
+                    stringBuilder.Add('\n');
                 }
 
-                throw new Exception(exceptionMessage);
+                throw new Exception(new(stringBuilder.ToArray()));
             }
         }
 

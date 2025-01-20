@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Unmanaged
 {
@@ -19,9 +20,22 @@ namespace Unmanaged
         public readonly uint Length => value->length;
 
         /// <summary>
+        /// Checks if this text has been disposed.
+        /// </summary>
+        public readonly bool IsDisposed => value == null;
+
+        /// <summary>
         /// Indexer for the text.
         /// </summary>
-        public readonly ref char this[uint index] => ref value->buffer.Read<char>(index * Stride);
+        public readonly ref char this[uint index]
+        {
+            get
+            {
+                ThrowIfOutOfRange(index);
+
+                return ref value->buffer.Read<char>(index * Stride);
+            }
+        }
 
         /// <summary>
         /// Native address of the text.
@@ -29,7 +43,16 @@ namespace Unmanaged
         public readonly nint Address => (nint)value;
 
         readonly int IReadOnlyCollection<char>.Count => (int)Length;
-        readonly char IReadOnlyList<char>.this[int index] => value->buffer.Read<char>((uint)index * Stride);
+
+        readonly char IReadOnlyList<char>.this[int index]
+        {
+            get
+            {
+                ThrowIfOutOfRange((uint)index);
+
+                return value->buffer.Read<char>((uint)index * Stride);
+            }
+        }
 
 #if NET
         /// <summary>
@@ -69,14 +92,6 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an instance from an existing native <paramref name="address"/>.
-        /// </summary>
-        public Text(nint address)
-        {
-            value = (Implementation*)address;
-        }
-
-        /// <summary>
         /// Creates an instance from an existing <paramref name="pointer"/>.
         /// </summary>
         public Text(void* pointer)
@@ -89,6 +104,15 @@ namespace Unmanaged
         {
             Implementation.Free(ref value);
             value = default;
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfOutOfRange(uint index)
+        {
+            if (index >= Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
         }
 
         /// <summary>
@@ -195,6 +219,54 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// Appends a single <paramref name="character"/>.
+        /// </summary>
+        public readonly void Append(char character)
+        {
+            uint length = Length;
+            SetLength(length + 1, character);
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="text"/>.
+        /// </summary>
+        public readonly void Append(string text)
+        {
+            Append(text.AsSpan());
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="text"/>.
+        /// </summary>
+        public readonly void Append(USpan<char> text)
+        {
+            uint length = Length;
+            uint newLength = length + text.Length;
+            SetLength(newLength);
+            text.CopyTo(value->buffer.AsSpan<char>(length, text.Length));
+        }
+
+        /// <summary>
+        /// Removes the character at <paramref name="index"/>.
+        /// </summary>
+        public readonly void RemoveAt(uint index)
+        {
+            ThrowIfOutOfRange(index);
+
+            ref uint length = ref value->length;
+            if (index < length - 1)
+            {
+                USpan<char> buffer = AsSpan();
+                for (uint i = index; i < length - 1; i++)
+                {
+                    buffer[i] = buffer[i + 1];
+                }
+            }
+
+            length--;
+        }
+
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
@@ -204,13 +276,30 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly bool Equals(Text other)
         {
-            return value == other.value;
+            if (Length != other.Length)
+            {
+                return false;
+            }
+
+            return AsSpan().SequenceEqual(other.AsSpan());
         }
 
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return ((nint)value).GetHashCode();
+            unchecked
+            {
+                int hash = 17;
+                uint length = Length;
+                hash = hash * 23 + length.GetHashCode();
+                for (uint i = 0; i < length; i++)
+                {
+                    char c = value->buffer.Read<char>(i * Stride);
+                    hash = hash * 23 + c.GetHashCode();
+                }
+
+                return hash;
+            }
         }
 
         /// <summary>
@@ -400,6 +489,14 @@ namespace Unmanaged
             Text result = new(left);
             result.Append(right);
             return result;
+        }
+
+        /// <summary>
+        /// Implicit cast towards a <see cref="string"/>.
+        /// </summary>
+        public static implicit operator string(Text text)
+        {
+            return text.ToString();
         }
     }
 }
