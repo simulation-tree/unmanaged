@@ -1,8 +1,4 @@
-﻿#if DEBUG
-#define TRACK
-#endif
-
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged

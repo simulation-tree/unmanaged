@@ -178,7 +178,7 @@ namespace Unmanaged
             }
 #else
             [Conditional("TRACK")]
-            public static void AppendAllocations(ref string exceptionMessage, bool free = false) { }
+            public static void AppendAllocations(List<char> exceptionMessage, bool free = false) { }
             [Conditional("TRACK")]
             public static void Track(void* pointer, uint size) { }
             [Conditional("TRACK")]
