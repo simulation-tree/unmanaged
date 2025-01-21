@@ -39,7 +39,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary writer with the specified span of bytes.
         /// </summary>
-        public BinaryWriter(Span<byte> span)
+        public BinaryWriter(USpan<byte> span)
         {
             value = UnsafeBinaryWriter.Allocate(span);
         }
