@@ -318,7 +318,7 @@ namespace Unmanaged
         /// </summary>
         public static void Append(USpan<char> originalText, string newText, USpan<char> destination)
         {
-            Append(originalText, newText.AsUSpan(), destination);
+            Append(originalText, newText.AsSpan(), destination);
         }
 
         /// <summary>
@@ -341,7 +341,7 @@ namespace Unmanaged
         /// </summary>
         public static uint Replace(USpan<char> originalText, string target, string replacement, USpan<char> destination)
         {
-            return Replace(originalText, target.AsUSpan(), replacement.AsUSpan(), destination);
+            return Replace(originalText, target.AsSpan(), replacement.AsSpan(), destination);
         }
 
         /// <summary>

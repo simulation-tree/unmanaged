@@ -94,7 +94,7 @@ namespace Unmanaged.Tests
 
             USpan<byte> data = obj.AsSpan<byte>(0, sizeof(long));
             Assert.That(data.Length, Is.EqualTo(sizeof(long)));
-            ulong value = BitConverter.ToUInt64(data.AsSystemSpan());
+            ulong value = BitConverter.ToUInt64(data);
             Assert.That(value, Is.EqualTo(0));
         }
 

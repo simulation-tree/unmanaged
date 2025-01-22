@@ -138,7 +138,7 @@ namespace Unmanaged.Tests
             USpan<char> sample = stackalloc char[32];
             uint length = reader.ReadUTF8Span(sample);
             USpan<char> result = sample.Slice(0, length);
-            string resultString = new string(result.AsSystemSpan());
+            string resultString = new string(result);
             Assert.That(resultString, Is.EqualTo(myString));
         }
 

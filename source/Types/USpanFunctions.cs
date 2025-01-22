@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Unmanaged
 {
@@ -29,6 +30,7 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a span containing the given text.
         /// </summary>
+        [Obsolete]
         public static USpan<char> AsUSpan(this string text)
         {
             ThrowIfStringObjectIsNull(text);
@@ -52,7 +54,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this byte value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -62,7 +64,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this sbyte value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -72,7 +74,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this short value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -82,7 +84,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this ushort value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -92,7 +94,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this int value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -102,7 +104,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this uint value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -112,7 +114,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this long value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -122,7 +124,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this ulong value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -132,7 +134,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this float value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -142,7 +144,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this double value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -152,7 +154,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this decimal value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer  ;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -162,7 +164,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this bool value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -172,7 +174,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this nint value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
 #if NET
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
 #else
@@ -186,7 +188,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this nuint value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
 #if NET
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
 #else
@@ -200,7 +202,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this DateTime dateTime, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return dateTime.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -210,7 +212,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this TimeSpan timeSpan, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer.AsSystemSpan();
+            Span<char> systemSpan = buffer;
             return timeSpan.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
@@ -283,6 +285,147 @@ namespace Unmanaged
             buffer[length++] = ' ';
             length += quaternion.W.ToString(buffer.Slice(length));
             return length;
+        }
+
+        /// <summary>
+        /// Retrieves the index of the first occurrence of the given <paramref name="value"/>.
+        /// <para>
+        /// Will be <see cref="uint.MaxValue"/> if not found.
+        /// </para>
+        /// </summary>
+        public static uint IndexOf<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            int index = values.IndexOf(value);
+            unchecked
+            {
+                return (uint)index;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the index of the last occurrence of the given <paramref name="value"/>.
+        /// <para>
+        /// Will be <see cref="uint.MaxValue"/> if not found.
+        /// </para>
+        /// </summary>
+        public static uint LastIndexOf<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            int index = values.LastIndexOf(value);
+            unchecked
+            {
+                return (uint)index;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the span contains <paramref name="value"/>.
+        /// </summary>
+        public static bool Contains<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            return values.Contains(value);
+        }
+
+        /// <summary>
+        /// Retrieves the index of the first occurrence of the given <paramref name="value"/>.
+        /// <para>
+        /// Will be <see cref="uint.MaxValue"/> if not found.
+        /// </para>
+        /// </summary>
+        public static uint IndexOf<T>(this USpan<T> span, USpan<T> value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            Span<T> search = value;
+            int index = values.IndexOf(search);
+            unchecked
+            {
+                return (uint)index;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the index of the last occurrence of the given <paramref name="value"/>.
+        /// <para>
+        /// Will be <see cref="uint.MaxValue"/> if not found.
+        /// </para>
+        /// </summary>
+        public static uint LastIndexOf<T>(this USpan<T> span, USpan<T> value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            Span<T> search = value;
+            int index = values.LastIndexOf(search);
+            unchecked
+            {
+                return (uint)index;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the span contains <paramref name="value"/>.
+        /// </summary>
+        public static bool Contains<T>(this USpan<T> span, USpan<T> value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            Span<T> search = value;
+            return values.IndexOf(search) != -1;
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the index of the first occurrence of the given <paramref name="value"/>.
+        /// </summary>
+        /// <returns><c>true</c> if contained.</returns>
+        public static bool TryIndexOf<T>(this USpan<T> span, T value, out uint index) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            unchecked
+            {
+                index = (uint)values.IndexOf(value);
+                return index != uint.MaxValue;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the index of the last occurrence of the given <paramref name="value"/>.
+        /// </summary>
+        /// <returns><c>true</c> if contained.</returns>
+        public static bool TryLastIndexOf<T>(this USpan<T> span, T value, out uint index) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            unchecked
+            {
+                index = (uint)values.LastIndexOf(value);
+                return index != uint.MaxValue;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the index of the first occurrence of the given <paramref name="value"/>.
+        /// </summary>
+        /// <returns><c>true</c> if contained.</returns>
+        public static bool TryIndexOf<T>(this USpan<T> span, USpan<T> value, out uint index) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            unchecked
+            {
+                index = (uint)values.IndexOf(value);
+                return index != uint.MaxValue;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to retrieve the index of the last occurrence of the given <paramref name="value"/>.
+        /// </summary>
+        /// <returns><c>true</c> if contained.</returns>
+        public static bool TryLastIndexOf<T>(this USpan<T> span, USpan<T> value, out uint index) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            unchecked
+            {
+                index = (uint)values.LastIndexOf(value);
+                return index != uint.MaxValue;
+            }
         }
     }
 }

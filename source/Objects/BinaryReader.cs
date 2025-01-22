@@ -378,7 +378,7 @@ namespace Unmanaged
                 uint bufferLength = (uint)stream.Length + 4;
                 using Allocation buffer = new(bufferLength);
                 USpan<byte> span = buffer.AsSpan(0, bufferLength);
-                uint length = (uint)stream.Read(span.AsSystemSpan());
+                uint length = (uint)stream.Read(span);
                 USpan<byte> bytes = span.Slice(0, length);
                 return Allocate(bytes, position);
             }

@@ -209,7 +209,7 @@ namespace Unmanaged.Tests
         public void GetDefaultSpanFromEmpty()
         {
             USpan<char> emptyUnmanaged = default;
-            Span<char> emptySystem = emptyUnmanaged.AsSystemSpan();
+            Span<char> emptySystem = emptyUnmanaged;
             Assert.That(emptySystem.IsEmpty, Is.True);
         }
 

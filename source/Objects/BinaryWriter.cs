@@ -138,7 +138,7 @@ namespace Unmanaged
         public void WriteUTF8Text(string text)
         {
             USpan<char> buffer = stackalloc char[text.Length];
-            text.AsUSpan().CopyTo(buffer);
+            text.AsSpan().CopyTo(buffer);
             WriteUTF8Text(buffer);
         }
 
