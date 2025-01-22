@@ -31,7 +31,7 @@ namespace Unmanaged
         /// <summary>
         /// Pointer to the first element in this span.
         /// </summary>
-        public unsafe readonly void* Pointer
+        public unsafe readonly T* Pointer
         {
             get
             {
