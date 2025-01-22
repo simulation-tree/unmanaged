@@ -1364,6 +1364,24 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Generates a double precision hash code for this <paramref name="text"/>.
+        /// </summary>
+        public static long GetLongHashCode(string text)
+        {
+            unchecked
+            {
+                long hash = 3074457345618258791;
+                for (int i = 0; i < text.Length; i++)
+                {
+                    hash += text[i];
+                    hash *= 3074457345618258799;
+                }
+
+                return hash;
+            }
+        }
+
+        /// <summary>
         /// Only in debug, throws if the given index is out of range.
         /// </summary>
         /// <exception cref="IndexOutOfRangeException"></exception>
