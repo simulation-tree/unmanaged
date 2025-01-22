@@ -85,7 +85,7 @@ namespace Unmanaged.Tests
         public void WriteSpan()
         {
             using BinaryWriter writer = new();
-            writer.WriteSpan("Hello there".AsUSpan());
+            writer.WriteSpan<char>("Hello there".AsSpan());
 
             using BinaryReader reader = new(writer.GetBytes());
             Assert.That(reader.ReadSpan<char>(11).ToString(), Is.EqualTo("Hello there"));
@@ -147,7 +147,7 @@ namespace Unmanaged.Tests
         public void ThrowIfReadTooMuch()
         {
             using BinaryWriter writer = new();
-            writer.WriteSpan<char>("The snake that eats its own tail".AsUSpan());
+            writer.WriteSpan<char>("The snake that eats its own tail".AsSpan());
             using BinaryReader reader = new(writer.GetBytes());
             Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
         }

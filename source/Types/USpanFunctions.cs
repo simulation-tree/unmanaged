@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 
 namespace Unmanaged
 {
@@ -10,44 +8,6 @@ namespace Unmanaged
     /// </summary>
     public unsafe static class USpanFunctions
     {
-        [Conditional("DEBUG")]
-        private static void ThrowIfStringObjectIsNull(string text)
-        {
-            if (text is null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
-        }
-
-        /// <summary>
-        /// Retrieves a span containing the given array.
-        /// </summary>
-        public static USpan<T> AsUSpan<T>(this T[] array) where T : unmanaged
-        {
-            return new USpan<T>(array);
-        }
-
-        /// <summary>
-        /// Retrieves a span containing the given text.
-        /// </summary>
-        [Obsolete]
-        public static USpan<char> AsUSpan(this string text)
-        {
-            ThrowIfStringObjectIsNull(text);
-            fixed (char* pointer = text)
-            {
-                return new USpan<char>(pointer, (uint)text.Length);
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the given system <paramref name="span"/> to a <see cref="USpan{T}"/>.
-        /// </summary>
-        public static USpan<T> AsUSpan<T>(this ReadOnlySpan<T> span) where T : unmanaged
-        {
-            return new USpan<T>(span);
-        }
-
         /// <summary>
         /// Fills the given buffer with the string representation of the given <see cref="byte"/>.
         /// </summary>
@@ -154,7 +114,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
         public static uint ToString(this decimal value, USpan<char> buffer)
         {
-            Span<char> systemSpan = buffer  ;
+            Span<char> systemSpan = buffer;
             return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
         }
 
