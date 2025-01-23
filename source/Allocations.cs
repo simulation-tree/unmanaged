@@ -84,7 +84,7 @@ namespace Unmanaged
         /// </summary>
         public static T* Allocate<T>() where T : unmanaged
         {
-            uint size = TypeInfo<T>.size;
+            uint size = (uint)sizeof(T);
             void* pointer = NativeMemory.Alloc(size);
             Tracker.Track(pointer, size);
             count++;
@@ -176,7 +176,7 @@ namespace Unmanaged
         /// </summary>
         public static uint GetAlignment<T>() where T : unmanaged
         {
-            return GetAlignment(TypeInfo<T>.size);
+            return GetAlignment((uint)sizeof(T));
         }
 
         /// <summary>

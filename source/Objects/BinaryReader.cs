@@ -172,7 +172,7 @@ namespace Unmanaged
         /// </summary>
         public readonly T PeekValue<T>(uint position) where T : unmanaged
         {
-            if (position + TypeInfo<T>.size > Length)
+            if (position + (uint)sizeof(T) > Length)
             {
                 return default;
             }
@@ -207,7 +207,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Advance<T>(uint length = 1) where T : unmanaged
         {
-            Advance(TypeInfo<T>.size * length);
+            Advance((uint)sizeof(T) * length);
         }
 
         /// <summary>
@@ -217,7 +217,7 @@ namespace Unmanaged
         {
             ref uint position = ref UnsafeBinaryReader.GetPositionRef(value);
             USpan<T> span = PeekSpan<T>(Position, length);
-            position += TypeInfo<T>.size * length;
+            position += (uint)sizeof(T) * length;
             return span;
         }
 
@@ -234,7 +234,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> PeekSpan<T>(uint position, uint length) where T : unmanaged
         {
-            ThrowIfReadingPastLength(position + TypeInfo<T>.size * length);
+            ThrowIfReadingPastLength(position + (uint)sizeof(T) * length);
             nint address = UnsafeBinaryReader.GetData(value).Address + (nint)position;
             return new(address, length);
         }

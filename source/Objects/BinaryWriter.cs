@@ -63,7 +63,7 @@ namespace Unmanaged
         public void WriteValue<T>(T value) where T : unmanaged
         {
             T* ptr = &value;
-            UnsafeBinaryWriter.Write(ref this.value, ptr, TypeInfo<T>.size);
+            UnsafeBinaryWriter.Write(ref this.value, ptr, (uint)sizeof(T));
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Unmanaged
         /// </summary>
         public void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            UnsafeBinaryWriter.Write(ref value, (void*)span.Address, span.Length * TypeInfo<T>.size);
+            UnsafeBinaryWriter.Write(ref value, (void*)span.Address, span.Length * (uint)sizeof(T));
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> AsSpan<T>() where T : unmanaged
         {
-            return new((void*)Address, Position / TypeInfo<T>.size);
+            return new((void*)Address, Position / (uint)sizeof(T));
         }
 
         /// <inheritdoc/>

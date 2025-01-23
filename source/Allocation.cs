@@ -57,14 +57,6 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an existing allocation from the given pointer.
-        /// </summary>
-        public Allocation(long address)
-        {
-            this.pointer = (T*)address;
-        }
-
-        /// <summary>
         /// Creates a new uninitialized allocation with the given size.
         /// </summary>
         public Allocation(bool clear)
@@ -386,19 +378,11 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an existing allocation from the given pointer.
+        /// Creates an existing allocation from the given <paramref name="pointer"/>.
         /// </summary>
         public Allocation(void* pointer)
         {
             this.pointer = pointer;
-        }
-
-        /// <summary>
-        /// Creates an existing allocation from the given pointer.
-        /// </summary>
-        public Allocation(long address)
-        {
-            this.pointer = (void*)address;
         }
 
         /// <summary>
