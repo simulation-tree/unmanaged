@@ -1,6 +1,4 @@
-﻿using Unmanaged;
-
-namespace Unmanaged.Tests
+﻿namespace Unmanaged.Tests
 {
     public class TextTests : UnmanagedTests
     {
