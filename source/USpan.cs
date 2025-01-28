@@ -199,6 +199,15 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Reinterprets the span as a span of <typeparamref name="X"/> elements.
+        /// </summary>
+        public unsafe readonly USpan<X> Reinterpret<X>() where X : unmanaged
+        {
+            uint newLength = Length * (uint)sizeof(T) / (uint)sizeof(X);
+            return new(Address, newLength);
+        }
+
+        /// <summary>
         /// Retrieves a slice of this span starting at the given index with a specified length.
         /// </summary>
         public readonly USpan<T> Slice(uint start, uint length)
