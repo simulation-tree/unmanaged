@@ -123,9 +123,10 @@ namespace Unmanaged.Tests
         {
             byte[] data = new byte[] { 239, 187, 191, 60, 80, 114, 111, 106, 101, 99, 116, 32, 83, 100, 107 };
             using BinaryReader reader = new(data);
-            USpan<char> sample = stackalloc char[15];
-            reader.ReadUTF8(sample);
-            Assert.That(sample.ToString(), Is.EqualTo("﻿<Project Sdk\0\0"));
+            USpan<char> sample = stackalloc char[16];
+            uint length = reader.ReadUTF8(sample);
+            USpan<char> result = sample.Slice(0, length);
+            Assert.That(result.ToString(), Is.EqualTo("<Project Sdk"));
         }
 
         [Test]
