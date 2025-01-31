@@ -245,7 +245,7 @@ namespace Unmanaged
         public readonly uint PeekUTF8(uint position, uint length, USpan<char> buffer)
         {
             USpan<byte> bytes = GetBytes();
-            return bytes.PeekUTF8Span(position, length, buffer);
+            return bytes.PeekUTF8(position, length, buffer);
         }
 
         /// <summary>

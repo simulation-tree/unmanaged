@@ -8,6 +8,8 @@ namespace Unmanaged
     /// </summary>
     public static class ByteSpanFunctions
     {
+        private const char BOM = (char)65279;
+
         /// <summary>
         /// Peeks the next UTF-8 character in the stream.
         /// </summary>
@@ -74,7 +76,7 @@ namespace Unmanaged
         /// until a <c>default</c> character is found (included in the buffer).</para>
         /// </summary>
         /// <returns>Amount of character values copied.</returns>
-        public static uint PeekUTF8Span(this USpan<byte> bytes, uint start, uint length, USpan<char> buffer)
+        public static uint PeekUTF8(this USpan<byte> bytes, uint start, uint length, USpan<char> buffer)
         {
             uint t = 0;
             uint i = 0;
@@ -99,7 +101,10 @@ namespace Unmanaged
                 }
                 else
                 {
-                    buffer[t++] = low;
+                    if (low != BOM)
+                    {
+                        buffer[t++] = low;
+                    }
                 }
 
                 i += cLength;
