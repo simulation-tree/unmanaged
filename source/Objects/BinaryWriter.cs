@@ -37,7 +37,11 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new binary writer with the specified span of bytes.
+        /// Creates a new binary writer with the given <paramref name="span"/>
+        /// already contained.
+        /// <para>
+        /// Position of the writer will be at the end of the span.
+        /// </para>
         /// </summary>
         public BinaryWriter(USpan<byte> span)
         {
@@ -85,7 +89,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given character as a UTF-8 character.
         /// </summary>
-        public void WriteUTF8Character(char value)
+        public void WriteUTF8(char value)
         {
             if (value < 0x7F)
             {
@@ -114,32 +118,32 @@ namespace Unmanaged
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8Text(USpan<char> text)
+        public void WriteUTF8(USpan<char> text)
         {
             foreach (char c in text)
             {
-                WriteUTF8Character(c);
+                WriteUTF8(c);
             }
         }
 
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8Text(FixedString text)
+        public void WriteUTF8(FixedString text)
         {
             USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
             uint length = text.CopyTo(buffer);
-            WriteUTF8Text(buffer.Slice(0, length));
+            WriteUTF8(buffer.Slice(0, length));
         }
 
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8Text(string text)
+        public void WriteUTF8(string text)
         {
             USpan<char> buffer = stackalloc char[text.Length];
             text.AsSpan().CopyTo(buffer);
-            WriteUTF8Text(buffer);
+            WriteUTF8(buffer);
         }
 
         /// <summary>
@@ -169,17 +173,9 @@ namespace Unmanaged
         /// <summary>
         /// All bytes written into the writer.
         /// </summary>
-        public readonly USpan<byte> GetBytes()
+        public readonly USpan<byte> AsSpan()
         {
             return new((void*)Address, Position);
-        }
-
-        /// <summary>
-        /// Retrieves the writer as a span of the specified type.
-        /// </summary>
-        public readonly USpan<T> AsSpan<T>() where T : unmanaged
-        {
-            return new((void*)Address, Position / (uint)sizeof(T));
         }
 
         /// <inheritdoc/>
@@ -232,6 +228,7 @@ namespace Unmanaged
             {
                 Implementation* ptr = Allocations.Allocate<Implementation>();
                 ptr[0] = new(Allocation.Create(span), span.Length, span.Length);
+                ptr[0].position = span.Length;
                 return ptr;
             }
 

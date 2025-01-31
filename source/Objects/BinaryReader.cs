@@ -40,7 +40,7 @@ namespace Unmanaged
         /// </summary>
         public BinaryReader(BinaryWriter writer)
         {
-            value = Implementation.Allocate(writer.GetBytes());
+            value = Implementation.Allocate(writer.AsSpan());
         }
 
         /// <summary>
@@ -242,7 +242,7 @@ namespace Unmanaged
         /// <summary>
         /// Peeks UTF8 bytes as characters into the given buffer
         /// </summary>
-        public readonly uint PeekUTF8Span(uint position, uint length, USpan<char> buffer)
+        public readonly uint PeekUTF8(uint position, uint length, USpan<char> buffer)
         {
             USpan<byte> bytes = GetBytes();
             return bytes.PeekUTF8Span(position, length, buffer);
@@ -262,11 +262,11 @@ namespace Unmanaged
         /// Reads UTF8 bytes as characters into the given buffer
         /// until a terminator is found, or no bytes are left.
         /// </summary>
-        public readonly uint ReadUTF8Span(USpan<char> buffer)
+        public readonly uint ReadUTF8(USpan<char> buffer)
         {
             ref uint position = ref Implementation.GetPositionRef(value);
             uint start = position;
-            uint read = PeekUTF8Span(start, buffer.Length, buffer);
+            uint read = PeekUTF8(start, buffer.Length, buffer);
             position += read;
             return read;
         }
@@ -287,8 +287,8 @@ namespace Unmanaged
         public static BinaryReader CreateFromUTF8(USpan<char> text)
         {
             using BinaryWriter writer = new(text.Length);
-            writer.WriteUTF8Text(text);
-            return new BinaryReader(writer.GetBytes());
+            writer.WriteUTF8(text);
+            return new BinaryReader(writer.AsSpan());
         }
 
         /// <summary>
@@ -297,8 +297,8 @@ namespace Unmanaged
         public static BinaryReader CreateFromUTF8(FixedString text)
         {
             using BinaryWriter writer = new(text.Length);
-            writer.WriteUTF8Text(text);
-            return new BinaryReader(writer.GetBytes());
+            writer.WriteUTF8(text);
+            return new BinaryReader(writer.AsSpan());
         }
 
         /// <summary>
@@ -307,8 +307,8 @@ namespace Unmanaged
         public static BinaryReader CreateFromUTF8(string text)
         {
             using BinaryWriter writer = new((uint)text.Length);
-            writer.WriteUTF8Text(text);
-            return new BinaryReader(writer.GetBytes());
+            writer.WriteUTF8(text);
+            return new BinaryReader(writer.AsSpan());
         }
 
         /// <inheritdoc/>
