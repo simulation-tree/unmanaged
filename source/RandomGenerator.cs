@@ -7,6 +7,8 @@ namespace Unmanaged
     /// </summary>
     public unsafe struct RandomGenerator : IDisposable
     {
+        private static uint counter;
+
         private void* pointer;
 
         /// <summary>
@@ -347,14 +349,12 @@ namespace Unmanaged
             {
                 DateTime now = DateTime.UtcNow;
                 long ticks = now.Ticks;
-
 #if NET
-                int pid = Environment.ProcessId * Environment.TickCount;
+                int pid = Environment.ProcessId;
 #else
                 int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
 #endif
-
-                ulong baseSeed = (ulong)pid * (ulong)ticks;
+                ulong baseSeed = (ulong)pid * (ulong)ticks + counter++;
                 baseSeed ^= baseSeed >> 13;
                 baseSeed ^= baseSeed << 3;
                 baseSeed ^= baseSeed >> 27;

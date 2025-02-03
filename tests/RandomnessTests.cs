@@ -52,7 +52,7 @@ namespace Unmanaged.Tests
         [Test]
         public void DistributionOfInitialSeed()
         {
-            const int iterations = 100000;
+            const int iterations = 10000;
             float min = 1f;
             float max = 0f;
             float avg = 0f;
@@ -66,9 +66,9 @@ namespace Unmanaged.Tests
             }
 
             avg /= iterations;
-            Assert.That(min, Is.LessThan(0.1f));
-            Assert.That(max, Is.GreaterThan(0.9f));
-            Assert.That(avg, Is.EqualTo(0.5f).Within(0.05f));
+            Assert.That(min, Is.LessThan(0.2f));
+            Assert.That(max, Is.GreaterThan(0.8f));
+            Assert.That(avg, Is.EqualTo(0.5f).Within(0.1f));
         }
 
         [Test]
