@@ -24,7 +24,7 @@ namespace Unmanaged
         /// <summary>
         /// Has this reader been disposed?
         /// </summary>
-        public readonly bool IsDisposed => Implementation.IsDisposed(value);
+        public readonly bool IsDisposed => value is null;
 
         /// <summary>
         /// Creates a new binary reader from the data in the span.
@@ -353,24 +353,33 @@ namespace Unmanaged
 
             public static Implementation* Allocate(Implementation* reader, uint position = 0)
             {
-                Implementation* copy = Allocations.Allocate<Implementation>();
-                copy[0] = new(position, reader->data, reader->length, true);
-                return copy;
+                ref Implementation copy = ref Allocations.Allocate<Implementation>();
+                copy = new(position, reader->data, reader->length, true);
+                fixed (Implementation* pointer = &copy)
+                {
+                    return pointer;
+                }
             }
 
             public static Implementation* Allocate(BinaryWriter.Implementation* writer, uint position = 0)
             {
-                Implementation* copy = Allocations.Allocate<Implementation>();
+                ref Implementation copy = ref Allocations.Allocate<Implementation>();
                 Allocation data = new((Allocation*)BinaryWriter.Implementation.GetStartAddress(writer));
-                copy[0] = new(position, data, BinaryWriter.Implementation.GetPosition(writer), true);
-                return copy;
+                copy = new(position, data, BinaryWriter.Implementation.GetPosition(writer), true);
+                fixed (Implementation* pointer = &copy)
+                {
+                    return pointer;
+                }
             }
 
             public static Implementation* Allocate(USpan<byte> bytes, uint position = 0)
             {
-                Implementation* reader = Allocations.Allocate<Implementation>();
-                reader[0] = new(position, Allocation.Create(bytes), bytes.Length, false);
-                return reader;
+                ref Implementation reader = ref Allocations.Allocate<Implementation>();
+                reader = new(position, Allocation.Create(bytes), bytes.Length, false);
+                fixed (Implementation* pointer = &reader)
+                {
+                    return pointer;
+                }
             }
 
             public static Implementation* Allocate(Stream stream, uint position = 0)
@@ -381,11 +390,6 @@ namespace Unmanaged
                 uint length = (uint)stream.Read(span);
                 USpan<byte> bytes = span.Slice(0, length);
                 return Allocate(bytes, position);
-            }
-
-            public static bool IsDisposed(Implementation* reader)
-            {
-                return reader is null;
             }
 
             public static ref uint GetPositionRef(Implementation* reader)

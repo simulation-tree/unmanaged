@@ -12,7 +12,7 @@ namespace Unmanaged
         /// <summary>
         /// Indicates whether the writer has been disposed.
         /// </summary>
-        public readonly bool IsDisposed => Implementation.IsDisposed(value);
+        public readonly bool IsDisposed => value is null;
 
         /// <summary>
         /// Read position of the writer.
@@ -219,22 +219,23 @@ namespace Unmanaged
             public static Implementation* Allocate(uint initialCapacity)
             {
                 initialCapacity = Allocations.GetNextPowerOf2(initialCapacity);
-                Implementation* ptr = Allocations.Allocate<Implementation>();
-                ptr[0] = new(new(initialCapacity), 0, initialCapacity);
-                return ptr;
+                ref Implementation writer = ref Allocations.Allocate<Implementation>();
+                writer = new(new(initialCapacity), 0, initialCapacity);
+                fixed (Implementation* pointer = &writer)
+                {
+                    return pointer;
+                }
             }
 
             public static Implementation* Allocate(USpan<byte> span)
             {
-                Implementation* ptr = Allocations.Allocate<Implementation>();
-                ptr[0] = new(Allocation.Create(span), span.Length, span.Length);
-                ptr[0].position = span.Length;
-                return ptr;
-            }
-
-            public static bool IsDisposed(Implementation* writer)
-            {
-                return writer is null;
+                ref Implementation writer = ref Allocations.Allocate<Implementation>();
+                writer = new(Allocation.Create(span), span.Length, span.Length);
+                writer.position = span.Length;
+                fixed (Implementation* pointer = &writer)
+                {
+                    return pointer;
+                }
             }
 
             public static void Free(ref Implementation* writer)

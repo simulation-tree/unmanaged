@@ -14,7 +14,7 @@ namespace Unmanaged
     /// </summary>
     public unsafe struct Allocation<T> : IDisposable, IEquatable<Allocation<T>>, IEquatable<Allocation> where T : unmanaged
     {
-        internal T* pointer;
+        private T* pointer;
 
         /// <summary>
         /// Has this allocation been disposed? Also counts for instances that weren't allocated.
@@ -61,7 +61,7 @@ namespace Unmanaged
         /// </summary>
         public Allocation(bool clear)
         {
-            pointer = Allocations.Allocate<T>();
+            pointer = Allocations.AllocatePointer<T>();
             if (clear)
             {
                 Clear((uint)sizeof(T));
@@ -74,7 +74,7 @@ namespace Unmanaged
         /// </summary>
         public Allocation()
         {
-            pointer = Allocations.Allocate<T>();
+            pointer = Allocations.AllocatePointer<T>();
         }
 #endif
 
@@ -83,7 +83,7 @@ namespace Unmanaged
         /// </summary>
         public Allocation(T value)
         {
-            pointer = Allocations.Allocate<T>();
+            pointer = Allocations.AllocatePointer<T>();
             ref T destination = ref *pointer;
             destination = value;
         }

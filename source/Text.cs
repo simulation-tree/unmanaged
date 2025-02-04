@@ -415,10 +415,13 @@ namespace Unmanaged
             /// </summary>
             public static Implementation* Allocate(uint length)
             {
-                Implementation* text = Allocations.Allocate<Implementation>();
-                text->length = length;
-                text->buffer = new(length * Stride);
-                return text;
+                ref Implementation text = ref Allocations.Allocate<Implementation>();
+                text.length = length;
+                text.buffer = new(length * Stride);
+                fixed (Implementation* pointer = &text)
+                {
+                    return pointer;
+                }
             }
 
             /// <summary>

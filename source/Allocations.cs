@@ -80,15 +80,27 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Allocates unmanaged memory for a single instance of the given type.
+        /// Allocates unmanaged memory for a single instance of type <typeparamref name="T"/>.
         /// </summary>
-        public static T* Allocate<T>() where T : unmanaged
+        public static T* AllocatePointer<T>() where T : unmanaged
         {
             uint size = (uint)sizeof(T);
             void* pointer = NativeMemory.Alloc(size);
             Tracker.Track(pointer, size);
             count++;
             return (T*)pointer;
+        }
+
+        /// <summary>
+        /// Allocates unmanaged memory for a single instance of type <typeparamref name="T"/>.
+        /// </summary>
+        public static ref T Allocate<T>() where T : unmanaged
+        {
+            uint size = (uint)sizeof(T);
+            void* pointer = NativeMemory.Alloc(size);
+            Tracker.Track(pointer, size);
+            count++;
+            return ref *(T*)pointer;
         }
 
         /// <summary>
