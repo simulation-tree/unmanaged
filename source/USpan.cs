@@ -48,6 +48,11 @@ namespace Unmanaged
         public readonly uint Length => (uint)value.Length;
 
         /// <summary>
+        /// Checks if this span is empty.
+        /// </summary>
+        public readonly bool IsEmpty => value.IsEmpty;
+
+        /// <summary>
         /// Creates a new span from the given pointer with specified element length.
         /// </summary>
         public unsafe USpan(void* pointer, uint length)
@@ -221,6 +226,14 @@ namespace Unmanaged
         public readonly USpan<T> Slice(uint start)
         {
             return new(value.Slice((int)start));
+        }
+
+        /// <summary>
+        /// Retrieves the slice that the given <paramref name="range"/> represents.
+        /// </summary>
+        public readonly USpan<T> Slice(URange range)
+        {
+            return new(value.Slice((int)range.start, (int)range.Length));
         }
 
         /// <summary>

@@ -12,6 +12,7 @@ namespace Unmanaged
     {
         private const uint Stride = 2;
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private Implementation* value;
 
         /// <summary>
@@ -22,7 +23,12 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this text has been disposed.
         /// </summary>
-        public readonly bool IsDisposed => value == null;
+        public readonly bool IsDisposed => value is null;
+
+        /// <summary>
+        /// Checks if the text is empty.
+        /// </summary>
+        public readonly bool IsEmpty => value->length == 0;
 
         /// <summary>
         /// Indexer for the text.
@@ -41,6 +47,9 @@ namespace Unmanaged
         /// Native address of the text.
         /// </summary>
         public readonly nint Address => (nint)value;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+        private readonly string Value => ToString();
 
         readonly int IReadOnlyCollection<char>.Count => (int)Length;
 
@@ -222,10 +231,10 @@ namespace Unmanaged
         /// <summary>
         /// Appends a single <paramref name="character"/>.
         /// </summary>
-        public readonly void Append(char character)
+        public readonly void Append(char character, uint repeat = 1)
         {
             uint length = Length;
-            SetLength(length + 1, character);
+            SetLength(length + repeat, character);
         }
 
         /// <summary>
