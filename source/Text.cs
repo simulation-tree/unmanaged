@@ -276,21 +276,113 @@ namespace Unmanaged
             length--;
         }
 
+        /// <summary>
+        /// Checks if this text ends with <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool EndsWith(string otherText)
+        {
+            return EndsWith(otherText.AsSpan());
+        }
+
+        /// <summary>
+        /// Checks if this text ends with <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool EndsWith(Text otherText)
+        {
+            return EndsWith(otherText.AsSpan());
+        }
+
+        /// <summary>
+        /// Checks if this text starts with <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool StartsWith(string otherText)
+        {
+            return StartsWith(otherText.AsSpan());
+        }
+
+        /// <summary>
+        /// Checks if this text starts with <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool StartsWith(Text otherText)
+        {
+            return StartsWith(otherText.AsSpan());
+        }
+
+        /// <summary>
+        /// Checks if this text ends with <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool EndsWith(USpan<char> otherText)
+        {
+            uint length = Length;
+            uint textLength = otherText.Length;
+            if (length < textLength)
+            {
+                return false;
+            }
+
+            USpan<char> buffer = AsSpan();
+            return buffer.Slice(length - textLength).SequenceEqual(otherText);
+        }
+
+        /// <summary>
+        /// Checks if this text starts with <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool StartsWith(USpan<char> otherText)
+        {
+            uint length = Length;
+            uint textLength = otherText.Length;
+            if (length < textLength)
+            {
+                return false;
+            }
+
+            USpan<char> buffer = AsSpan();
+            return buffer.Slice(0, textLength).SequenceEqual(otherText);
+        }
+
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
             return obj is Text text && Equals(text);
         }
 
-        /// <inheritdoc/>
-        public readonly bool Equals(Text other)
+        /// <summary>
+        /// Checks if this text equals to <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool Equals(Text otherText)
         {
-            if (Length != other.Length)
+            if (Length != otherText.Length)
             {
                 return false;
             }
 
-            return AsSpan().SequenceEqual(other.AsSpan());
+            return AsSpan().SequenceEqual(otherText.AsSpan());
+        }
+
+        /// <summary>
+        /// Checks if this text equals to <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool Equals(string otherText)
+        {
+            if (Length != otherText.Length)
+            {
+                return false;
+            }
+
+            return AsSpan().SequenceEqual(otherText.AsSpan());
+        }
+
+        /// <summary>
+        /// Checks if this text equals to <paramref name="otherText"/>.
+        /// </summary>
+        public readonly bool Equals(USpan<char> otherText)
+        {
+            if (Length != otherText.Length)
+            {
+                return false;
+            }
+
+            return AsSpan().SequenceEqual(otherText);
         }
 
         /// <inheritdoc/>
@@ -489,6 +581,30 @@ namespace Unmanaged
 
         /// <inheritdoc/>
         public static bool operator !=(Text left, Text right)
+        {
+            return !(left == right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(Text left, string right)
+        {
+            return left.Equals(right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(Text left, string right)
+        {
+            return !(left == right);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator ==(string left, Text right)
+        {
+            return right.Equals(left);
+        }
+
+        /// <inheritdoc/>
+        public static bool operator !=(string left, Text right)
         {
             return !(left == right);
         }

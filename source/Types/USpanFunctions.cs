@@ -405,5 +405,41 @@ namespace Unmanaged
             Span<T> values = span;
             return values.LastIndexOf(value) == values.Length - 1;
         }
+
+        /// <summary>
+        /// Removes all occurrences of <paramref name="value"/> from the beginning.
+        /// </summary>
+        public static USpan<T> TrimStart<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            return values.TrimStart(value);
+        }
+
+        /// <summary>
+        /// Removes all trailing occurrences of <paramref name="value"/>.
+        /// </summary>
+        public static USpan<T> TrimEnd<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            return values.TrimEnd(value);
+        }
+
+        /// <summary>
+        /// Removes all occurrences of <paramref name="value"/> from the beginning.
+        /// </summary>
+        public static USpan<T> TrimStart<T>(this USpan<T> span, USpan<T> value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            return values.TrimStart(value);
+        }
+
+        /// <summary>
+        /// Removes all trailing occurrences of <paramref name="value"/>.
+        /// </summary>
+        public static USpan<T> TrimEnd<T>(this USpan<T> span, USpan<T> value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            return values.TrimEnd(value);
+        }
     }
 }
