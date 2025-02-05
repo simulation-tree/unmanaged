@@ -387,5 +387,23 @@ namespace Unmanaged
                 return index != uint.MaxValue;
             }
         }
+
+        /// <summary>
+        /// Checks if the span starts with <paramref name="value"/>.
+        /// </summary>
+        public static bool StartsWith<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            return values.IndexOf(value) == 0;
+        }
+
+        /// <summary>
+        /// Checks if the span ends with <paramref name="value"/>.
+        /// </summary>
+        public static bool EndsWith<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            return values.LastIndexOf(value) == values.Length - 1;
+        }
     }
 }
