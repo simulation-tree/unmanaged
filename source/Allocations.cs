@@ -170,7 +170,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Throws an <see cref="NullReferenceException"/> if the pointer is null.
+        /// Throws a <see cref="NullReferenceException"/> if the pointer is null.
         /// </summary>
         public static void ThrowIfNull(void* pointer)
         {
@@ -178,6 +178,21 @@ namespace Unmanaged
             if (pointer is null)
             {
                 throw new NullReferenceException($"Unknown pointer at {address}");
+            }
+
+            Tracker.ThrowIfNull(address);
+        }
+
+        /// <summary>
+        /// Throws a <see cref="NullReferenceException"/> if the pointer is null
+        /// with a custom message.
+        /// </summary>
+        public static void ThrowIfNull(void* pointer, string message)
+        {
+            nint address = (nint)pointer;
+            if (pointer is null)
+            {
+                throw new NullReferenceException(message);
             }
 
             Tracker.ThrowIfNull(address);
