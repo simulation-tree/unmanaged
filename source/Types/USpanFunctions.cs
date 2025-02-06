@@ -412,7 +412,21 @@ namespace Unmanaged
         public static USpan<T> TrimStart<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
         {
             Span<T> values = span;
+#if NET
             return values.TrimStart(value);
+#else
+            int start = 0;
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (!values[i].Equals(value))
+                {
+                    start = i;
+                    break;
+                }
+            }
+
+            return values.Slice(start);
+#endif
         }
 
         /// <summary>
@@ -421,7 +435,21 @@ namespace Unmanaged
         public static USpan<T> TrimEnd<T>(this USpan<T> span, T value) where T : unmanaged, IEquatable<T>
         {
             Span<T> values = span;
+#if NET
             return values.TrimEnd(value);
+#else
+            int end = values.Length - 1;
+            for (int i = values.Length - 1; i >= 0; i--)
+            {
+                if (!values[i].Equals(value))
+                {
+                    end = i;
+                    break;
+                }
+            }
+
+            return values.Slice(0, end + 1);
+#endif
         }
 
         /// <summary>
@@ -430,7 +458,21 @@ namespace Unmanaged
         public static USpan<T> TrimStart<T>(this USpan<T> span, USpan<T> value) where T : unmanaged, IEquatable<T>
         {
             Span<T> values = span;
+#if NET
             return values.TrimStart(value);
+#else
+            int start = 0;
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (!values.Slice(i).SequenceEqual(value))
+                {
+                    start = i;
+                    break;
+                }
+            }
+
+            return values.Slice(start);
+#endif
         }
 
         /// <summary>
@@ -439,7 +481,21 @@ namespace Unmanaged
         public static USpan<T> TrimEnd<T>(this USpan<T> span, USpan<T> value) where T : unmanaged, IEquatable<T>
         {
             Span<T> values = span;
+#if NET
             return values.TrimEnd(value);
+#else
+            int end = values.Length - 1;
+            for (int i = values.Length - 1; i >= 0; i--)
+            {
+                if (!values.Slice(i).SequenceEqual(value))
+                {
+                    end = i;
+                    break;
+                }
+            }
+
+            return values.Slice(0, end + 1);
+#endif
         }
     }
 }

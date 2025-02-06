@@ -28,12 +28,14 @@ namespace System.Runtime.InteropServices
 
         public static void Clear(void* ptr, uint size)
         {
-            Unsafe.InitBlockUnaligned(ptr, 0, size);
+            Span<byte> span = new((byte*)ptr, (int)size);
+            span.Clear();
         }
 
         public static void Fill(void* ptr, uint length, byte value)
         {
-            Unsafe.InitBlockUnaligned((byte*)ptr + length, value, length);
+            Span<byte> span = new((byte*)ptr, (int)length);
+            span.Fill(value);
         }
 
         public static void* Realloc(void* ptr, uint newSize)

@@ -1,65 +1,56 @@
 ﻿#if !NET
-using System;
 using System.Collections.Generic;
+#endif
 
 namespace System
 {
-    public readonly struct RuntimeTypeHandle : IEquatable<RuntimeTypeHandle>
+    /// <summary>
+    /// Table of <see cref="RuntimeTypeHandle"/>s.
+    /// </summary>
+    public static class RuntimeTypeTable
     {
-        private static readonly Dictionary<nint, System.RuntimeTypeHandle> typeCache = new();
+#if !NET
+        private static Dictionary<nint, RuntimeTypeHandle> table = new();
+#endif
 
-        internal readonly nint value;
-
-        internal RuntimeTypeHandle(nint value)
+        /// <summary>
+        /// Retrieves the <see cref="RuntimeTypeHandle"/> for the given <paramref name="address"/>.
+        /// </summary>
+        public static RuntimeTypeHandle FromAddress(nint address)
         {
-            this.value = value;
+#if NET
+            return RuntimeTypeHandle.FromIntPtr(address);
+#else
+            return table[address];
+#endif
         }
 
-        public readonly override bool Equals(object obj)
+        /// <summary>
+        /// Retrieves the <see cref="RuntimeTypeHandle"/> for the given <paramref name="type"/>.
+        /// </summary>
+        public static RuntimeTypeHandle GetHandle(Type type)
         {
-            return obj is RuntimeTypeHandle typeHandle && Equals(typeHandle);
+            RuntimeTypeHandle handle = type.TypeHandle;
+#if !NET
+            table[handle.Value] = handle;
+#endif
+            return handle;
         }
 
-        public readonly bool Equals(RuntimeTypeHandle other)
+        /// <summary>
+        /// Retrieves the <see cref="RuntimeTypeHandle"/> for the given <typeparamref name="T"/>.
+        /// </summary>
+        public static RuntimeTypeHandle GetHandle<T>()
         {
-            return value == other.value;
+            return GetHandle(typeof(T));
         }
 
-        public readonly override int GetHashCode()
+        /// <summary>
+        /// Retrieves the address of the <see cref="RuntimeTypeHandle"/> for the given <typeparamref name="T"/>.
+        /// </summary>
+        public static nint GetAddress<T>()
         {
-            return HashCode.Combine(value);
-        }
-
-        public static RuntimeTypeHandle FromIntPtr(nint systemType)
-        {
-            return new(systemType);
-        }
-
-        public static nint ToIntPtr(RuntimeTypeHandle typeHandle)
-        {
-            return typeHandle.value;
-        }
-
-        public static bool operator ==(RuntimeTypeHandle left, RuntimeTypeHandle right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(RuntimeTypeHandle left, RuntimeTypeHandle right)
-        {
-            return !(left == right);
-        }
-
-        public static implicit operator System.RuntimeTypeHandle(RuntimeTypeHandle value)
-        {
-            return typeCache[value.value];
-        }
-
-        public static implicit operator RuntimeTypeHandle(System.RuntimeTypeHandle value)
-        {
-            typeCache[value.Value] = value;
-            return new(value.Value);
+            return GetHandle<T>().Value;
         }
     }
 }
-#endif

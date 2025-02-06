@@ -302,7 +302,7 @@ namespace Unmanaged
         {
             ThrowIfDestinationTooSmall(destination.Length);
 
-            Unsafe.CopyBlockUnaligned(destination.Pointer, Pointer, Length * (uint)sizeof(T));
+            value.CopyTo(destination.value);
             return Length;
         }
 
@@ -314,7 +314,7 @@ namespace Unmanaged
         {
             ThrowIfAccessingPastRange(byteLength / (uint)sizeof(T));
 
-            Unsafe.CopyBlockUnaligned(destination, Pointer, Length * (uint)sizeof(T));
+            value.CopyTo(new Span<T>(destination, (int)Length));
         }
 
         /// <summary>
@@ -325,7 +325,7 @@ namespace Unmanaged
         {
             source.ThrowIfDestinationTooSmall(Length);
 
-            Unsafe.CopyBlockUnaligned(Pointer, source.Pointer, Length * (uint)sizeof(T));
+            source.value.CopyTo(value);
             return source.Length;
         }
 
@@ -337,7 +337,7 @@ namespace Unmanaged
         {
             ThrowIfAccessingPastRange(byteLength / (uint)sizeof(T));
 
-            Unsafe.CopyBlockUnaligned(Pointer, source, Length * (uint)sizeof(T));
+            new Span<T>(source, (int)Length).CopyTo(value);
         }
 
         /// <inheritdoc/>
@@ -370,6 +370,7 @@ namespace Unmanaged
             return span.value;
         }
 
+#if NET
         /// <summary>
         /// Enumerator for <see cref="USpan{T}"/>.
         /// </summary>
@@ -417,6 +418,40 @@ namespace Unmanaged
             {
             }
         }
+#else
+        public unsafe struct Enumerator : IEnumerator<T>
+        {
+            private readonly T* span;
+            private uint length;
+            private uint index;
+
+            public readonly ref T Current => ref span[index];
+            T IEnumerator<T>.Current => Current;
+            object IEnumerator.Current => Current;
+
+            internal Enumerator(USpan<T> span)
+            {
+                this.span = span.Pointer;
+                length = span.Length;
+                index = 0;
+            }
+            
+            public bool MoveNext()
+            {
+                index++;
+                return index < length;
+            }
+
+            public void Reset()
+            {
+                index = 0;
+            }
+
+            public readonly void Dispose()
+            {
+            }
+        }
+#endif
     }
 
     /// <summary>
