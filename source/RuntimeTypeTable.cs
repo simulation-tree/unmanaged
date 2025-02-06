@@ -16,7 +16,7 @@ namespace System
         /// <summary>
         /// Retrieves the <see cref="RuntimeTypeHandle"/> for the given <paramref name="address"/>.
         /// </summary>
-        public static RuntimeTypeHandle FromAddress(nint address)
+        public static RuntimeTypeHandle GetHandle(nint address)
         {
 #if NET
             return RuntimeTypeHandle.FromIntPtr(address);
@@ -46,11 +46,27 @@ namespace System
         }
 
         /// <summary>
+        /// Retrieves the address of the <see cref="RuntimeTypeHandle"/> for the given <paramref name="handle"/>.
+        /// </summary>
+        public static nint GetAddress(RuntimeTypeHandle handle)
+        {
+            return handle.Value;
+        }
+
+        /// <summary>
         /// Retrieves the address of the <see cref="RuntimeTypeHandle"/> for the given <typeparamref name="T"/>.
         /// </summary>
         public static nint GetAddress<T>()
         {
-            return GetHandle<T>().Value;
+            return GetAddress(GetHandle<T>());
+        }
+
+        /// <summary>
+        /// Retrieves the address of the <see cref="RuntimeTypeHandle"/> for the given <paramref name="type"/>.
+        /// </summary>
+        public static nint GetAddress(Type type)
+        {
+            return GetAddress(GetHandle(type));
         }
     }
 }
