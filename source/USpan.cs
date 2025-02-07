@@ -180,7 +180,9 @@ namespace Unmanaged
             return length;
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Retrieves a hash based on the address and length of this span.
+        /// </summary>
         public readonly override int GetHashCode()
         {
             unchecked
@@ -188,6 +190,23 @@ namespace Unmanaged
                 int hash = 17;
                 hash += 31 * hash + Length.GetHashCode();
                 hash += 31 * hash + Address.GetHashCode();
+                return hash;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves a hash based on the contents of the span.
+        /// </summary>
+        public readonly int GetContentHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                for (uint i = 0; i < Length; i++)
+                {
+                    hash += 31 * hash + this[i].GetHashCode();
+                }
+
                 return hash;
             }
         }
