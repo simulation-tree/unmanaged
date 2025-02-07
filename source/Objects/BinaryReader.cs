@@ -311,6 +311,15 @@ namespace Unmanaged
             return new BinaryReader(writer.AsSpan());
         }
 
+        /// <summary>
+        /// Creates an empty binary reader.
+        /// </summary>
+        public static BinaryReader Create()
+        {
+            USpan<byte> emptyBytes = stackalloc byte[0];
+            return new BinaryReader(Implementation.Allocate(emptyBytes));
+        }
+
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
