@@ -324,6 +324,32 @@ namespace Unmanaged.Tests
 
             benchmark.Stop();
             Console.WriteLine($"USpan.Slice: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                uint total = 0;
+                foreach (byte x in systemSpan)
+                {
+                    total += x;
+                }
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"System.Span.ForEach: {benchmark.ElapsedMilliseconds}ms");
+
+            benchmark.Restart();
+            for (int i = 0; i < 1000000; i++)
+            {
+                uint total = 0;
+                foreach (byte x in unmanagedSpan)
+                {
+                    total += x;
+                }
+            }
+
+            benchmark.Stop();
+            Console.WriteLine($"USpan.ForEach: {benchmark.ElapsedMilliseconds}ms");
         }
     }
 }

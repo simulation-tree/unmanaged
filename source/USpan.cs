@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -295,9 +294,9 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public readonly Enumerator GetEnumerator()
+        public readonly Span<T>.Enumerator GetEnumerator()
         {
-            return new(this);
+            return value.GetEnumerator();
         }
 
         /// <summary>
@@ -391,89 +390,6 @@ namespace Unmanaged
         {
             return span.value;
         }
-
-#if NET
-        /// <summary>
-        /// Enumerator for <see cref="USpan{T}"/>.
-        /// </summary>
-        public ref struct Enumerator : IEnumerator<T>
-        {
-            private readonly USpan<T> span;
-            private int index;
-
-            /// <summary>
-            /// Current element in the span.
-            /// </summary>
-            public readonly ref T Current => ref span[(uint)index];
-            readonly T IEnumerator<T>.Current => Current;
-            readonly object IEnumerator.Current => Current;
-
-            internal Enumerator(USpan<T> span)
-            {
-                this.span = span;
-                index = -1;
-            }
-
-            /// <summary>
-            /// Iterates to the next element in the span.
-            /// </summary>
-            public bool MoveNext()
-            {
-                int index = this.index + 1;
-                if (index < span.Length)
-                {
-                    this.index = index;
-                    return true;
-                }
-
-                return false;
-            }
-
-            /// <inheritdoc/>
-            public void Reset()
-            {
-                index = -1;
-            }
-
-            /// <inheritdoc/>
-            public void Dispose()
-            {
-            }
-        }
-#else
-        public unsafe struct Enumerator : IEnumerator<T>
-        {
-            private readonly T* span;
-            private uint length;
-            private uint index;
-
-            public readonly ref T Current => ref span[index];
-            T IEnumerator<T>.Current => Current;
-            object IEnumerator.Current => Current;
-
-            internal Enumerator(USpan<T> span)
-            {
-                this.span = span.Pointer;
-                length = span.Length;
-                index = 0;
-            }
-            
-            public bool MoveNext()
-            {
-                index++;
-                return index < length;
-            }
-
-            public void Reset()
-            {
-                index = 0;
-            }
-
-            public readonly void Dispose()
-            {
-            }
-        }
-#endif
     }
 
     /// <summary>
