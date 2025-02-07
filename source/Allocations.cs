@@ -58,7 +58,10 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Allocates unmanaged memory of the given size.
+        /// Allocates native memory of the given size.
+        /// <para>
+        /// Not zeroed.
+        /// </para>
         /// </summary>
         public static void* Allocate(uint size)
         {
@@ -69,7 +72,10 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Allocates unmanaged memory of the given size with the given alignment.
+        /// Allocates native memory of the given size with the given alignment.
+        /// <para>
+        /// Not zeroed.
+        /// </para>
         /// </summary>
         public static void* AllocateAligned(uint size, uint alignment)
         {
@@ -80,7 +86,10 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Allocates unmanaged memory for a single instance of type <typeparamref name="T"/>.
+        /// Allocates native memory for a single instance of type <typeparamref name="T"/>.
+        /// <para>
+        /// Not zeroed.
+        /// </para>
         /// </summary>
         public static T* AllocatePointer<T>() where T : unmanaged
         {
@@ -92,7 +101,10 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Allocates unmanaged memory for a single instance of type <typeparamref name="T"/>.
+        /// Allocates native memory for a single instance of type <typeparamref name="T"/>.
+        /// <para>
+        /// Not zeroed.
+        /// </para>
         /// </summary>
         public static ref T Allocate<T>() where T : unmanaged
         {

@@ -211,7 +211,8 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Reads a span of values from the reader with the specified length.
+        /// Reads a span of values from the reader with the specified length
+        /// in <typeparamref name="T"/> elements.
         /// </summary>
         public readonly USpan<T> ReadSpan<T>(uint length) where T : unmanaged
         {
