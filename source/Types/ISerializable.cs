@@ -13,6 +13,9 @@
         /// <summary>
         /// Reads the data from the reader into the object, updating
         /// it's internal state to match.
+        /// <para>
+        /// Target is uninitialized and <see langword="default"/> from the beginning.
+        /// </para>
         /// </summary>
         void Read(BinaryReader reader);
     }

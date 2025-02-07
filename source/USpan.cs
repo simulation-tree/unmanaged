@@ -204,7 +204,10 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Reinterprets the span as a span of <typeparamref name="X"/> elements.
+        /// Reinterprets this span to be of type <typeparamref name="X"/>.
+        /// <para>
+        /// Length will change to fit the new type.
+        /// </para>
         /// </summary>
         public unsafe readonly USpan<X> Reinterpret<X>() where X : unmanaged
         {
