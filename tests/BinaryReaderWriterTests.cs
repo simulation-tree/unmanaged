@@ -8,7 +8,9 @@ namespace Unmanaged.Tests
         public void CloneSomething()
         {
             Something apple = new("Apple 2 xx");
+            Assert.That(apple.Name.ToString(), Is.EqualTo("Apple 2 xx"));
             Something apple2 = apple.Clone();
+            Assert.That(apple2.Name.ToString(), Is.EqualTo("Apple 2 xx"));
             Assert.That(apple.Name, Is.EqualTo(apple2.Name));
         }
 
@@ -30,7 +32,7 @@ namespace Unmanaged.Tests
 
             void ISerializable.Read(BinaryReader reader)
             {
-                USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
+                USpan<char> buffer = stackalloc char[FixedString.Capacity];
                 uint length = reader.ReadUTF8(buffer);
                 name = new FixedString(buffer.Slice(0, length));
             }
@@ -134,12 +136,12 @@ namespace Unmanaged.Tests
         {
             string myString = "Hello, 你好, 🌍";
             using BinaryWriter writer = new();
-            writer.WriteUTF8(MemoryExtensions.AsSpan(myString));
+            writer.WriteUTF8(myString);
             using BinaryReader reader = new(writer.AsSpan());
             USpan<char> sample = stackalloc char[32];
             uint length = reader.ReadUTF8(sample);
             USpan<char> result = sample.Slice(0, length);
-            string resultString = new string(result);
+            string resultString = result.ToString();
             Assert.That(resultString, Is.EqualTo(myString));
         }
 

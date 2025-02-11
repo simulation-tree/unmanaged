@@ -56,7 +56,10 @@ namespace Unmanaged
         /// </summary>
         public unsafe USpan(void* pointer, uint length)
         {
-            value = new(pointer, (int)length);
+            unchecked
+            {
+                value = new(pointer, (int)length);
+            }
         }
 
         /// <summary>
@@ -64,9 +67,12 @@ namespace Unmanaged
         /// </summary>
         public unsafe USpan(ref T pointer, uint length)
         {
-            fixed (T* p = &pointer)
+            unchecked
             {
-                value = new(p, (int)length);
+                fixed (T* p = &pointer)
+                {
+                    value = new(p, (int)length);
+                }
             }
         }
 
@@ -75,7 +81,10 @@ namespace Unmanaged
         /// </summary>
         public unsafe USpan(nint address, uint length)
         {
-            value = new((T*)address, (int)length);
+            unchecked
+            {
+                value = new((T*)address, (int)length);
+            }
         }
 
         /// <summary>
@@ -389,6 +398,12 @@ namespace Unmanaged
         public static unsafe implicit operator ReadOnlySpan<T>(USpan<T> span)
         {
             return span.value;
+        }
+
+        /// <inheritdoc/>
+        public static unsafe implicit operator T*(USpan<T> span)
+        {
+            return span.Pointer;
         }
     }
 

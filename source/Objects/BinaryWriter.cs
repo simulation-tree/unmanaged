@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Unmanaged
 {
     /// <summary>
     /// Represents a writer that can write binary data.
     /// </summary>
+    [SkipLocalsInit]
     public unsafe struct BinaryWriter : IDisposable, IEquatable<BinaryWriter>
     {
         private Implementation* value;
@@ -75,7 +77,7 @@ namespace Unmanaged
         /// </summary>
         public void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            Allocation spanAllocation = new(span.Pointer);
+            Allocation spanAllocation = new(span);
             Implementation.Write(ref value, spanAllocation, span.Length * (uint)sizeof(T));
         }
 
@@ -121,9 +123,31 @@ namespace Unmanaged
         /// </summary>
         public void WriteUTF8(USpan<char> text)
         {
-            foreach (char c in text)
+            for (uint i = 0; i < text.Length; i++)
             {
-                WriteUTF8(c);
+                char c = text[i];
+                if (c < 0x7F)
+                {
+                    WriteValue((byte)c);
+                }
+                else if (c < 0x7FF)
+                {
+                    WriteValue((byte)(0xC0 | (c >> 6)));
+                    WriteValue((byte)(0x80 | (c & 0x3F)));
+                }
+                else if (c < 0xFFFF)
+                {
+                    WriteValue((byte)(0xE0 | (c >> 12)));
+                    WriteValue((byte)(0x80 | ((c >> 6) & 0x3F)));
+                    WriteValue((byte)(0x80 | (c & 0x3F)));
+                }
+                else
+                {
+                    WriteValue((byte)(0xF0 | (c >> 18)));
+                    WriteValue((byte)(0x80 | ((c >> 12) & 0x3F)));
+                    WriteValue((byte)(0x80 | ((c >> 6) & 0x3F)));
+                    WriteValue((byte)(0x80 | (c & 0x3F)));
+                }
             }
         }
 
@@ -132,9 +156,9 @@ namespace Unmanaged
         /// </summary>
         public void WriteUTF8(FixedString text)
         {
-            USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
-            uint length = text.CopyTo(buffer);
-            WriteUTF8(buffer.Slice(0, length));
+            USpan<char> textSpan = stackalloc char[text.Length];
+            text.CopyTo(textSpan);
+            WriteUTF8(textSpan);
         }
 
         /// <summary>
@@ -142,9 +166,9 @@ namespace Unmanaged
         /// </summary>
         public void WriteUTF8(string text)
         {
-            USpan<char> buffer = stackalloc char[text.Length];
-            text.AsSpan().CopyTo(buffer);
-            WriteUTF8(buffer);
+            USpan<char> textSpan = stackalloc char[text.Length];
+            text.AsSpan().CopyTo(textSpan);
+            WriteUTF8(textSpan);
         }
 
         /// <summary>

@@ -14,7 +14,7 @@ namespace Unmanaged
     [DebuggerTypeProxy(typeof(AllocationDebugView))]
     public unsafe struct Allocation : IDisposable, IEquatable<Allocation>
     {
-        internal void* pointer;
+        private void* pointer;
 
         /// <summary>
         /// Has this allocation been disposed? Also counts for instances that weren't allocated.
@@ -22,9 +22,14 @@ namespace Unmanaged
         public readonly bool IsDisposed => pointer is null;
 
         /// <summary>
-        /// Native address of this allocated memory.
+        /// Native address of this memory.
         /// </summary>
         public readonly nint Address => (nint)pointer;
+
+        /// <summary>
+        /// Native pointer of this memory.
+        /// </summary>
+        public readonly void* Pointer => pointer;
 
         /// <summary>
         /// Gets or sets a byte at the given index.
@@ -157,9 +162,6 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<byte> AsSpan(uint bytePosition, uint byteLength)
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(bytePosition + byteLength);
-
             return new USpan<byte>((void*)((nint)pointer + bytePosition), byteLength);
         }
 

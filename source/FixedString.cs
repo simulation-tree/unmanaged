@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
@@ -9,20 +10,21 @@ namespace Unmanaged
     /// <summary>
     /// Container of up to 255 total characters.
     /// </summary>
+    [SkipLocalsInit]
     [StructLayout(LayoutKind.Sequential, Size = 256)]
     public unsafe struct FixedString : IEquatable<FixedString>
     {
         /// <summary>
         /// Maximum number of characters that can be stored.
         /// </summary>
-        public const uint Capacity = 255;
+        public const byte Capacity = 255;
 
         /// <summary>
         /// Maximum value of a single <see cref="char"/>.
         /// </summary>
         public const uint MaxCharacterValue = 256;
 
-        private fixed byte characters[(int)Capacity];
+        private fixed byte characters[Capacity];
         private byte length;
 
         /// <summary>
@@ -34,6 +36,7 @@ namespace Unmanaged
             set
             {
                 ThrowIfLengthExceedsCapacity(value);
+
                 if (value > length)
                 {
                     for (uint i = length; i < value; i++)
@@ -42,7 +45,7 @@ namespace Unmanaged
                     }
                 }
 
-                length = (byte)value;
+                length = value;
             }
         }
 
@@ -54,12 +57,14 @@ namespace Unmanaged
             readonly get
             {
                 ThrowIfIndexOutOfRange(index);
+
                 return (char)characters[index];
             }
             set
             {
                 ThrowIfIndexOutOfRange(index);
                 ThrowIfCharacterIsOutOfRange(value);
+
                 characters[index] = (byte)value;
             }
         }
@@ -70,6 +75,7 @@ namespace Unmanaged
         public FixedString(string text)
         {
             ThrowIfLengthExceedsCapacity((uint)text.Length);
+
             length = (byte)text.Length;
             for (int i = 0; i < length; i++)
             {
@@ -89,6 +95,7 @@ namespace Unmanaged
         public FixedString(USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(text.Length);
+
             length = (byte)text.Length;
             for (uint i = 0; i < length; i++)
             {
@@ -933,7 +940,7 @@ namespace Unmanaged
 #if NET
         public FixedString Append<T>(T formattable) where T : ISpanFormattable
         {
-            Span<char> buffer = stackalloc char[256];
+            Span<char> buffer = stackalloc char[Capacity];
             formattable.TryFormat(buffer, out int charsWritten, default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)charsWritten);
             for (uint i = 0; i < charsWritten; i++)
@@ -1047,7 +1054,7 @@ namespace Unmanaged
 #if NET
         public FixedString Insert<T>(uint index, T formattable) where T : ISpanFormattable
         {
-            Span<char> buffer = stackalloc char[256];
+            Span<char> buffer = stackalloc char[Capacity];
             formattable.TryFormat(buffer, out int charsWritten, default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)charsWritten);
             ThrowIfIndexIsPastRange(index);

@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Unmanaged
 {
     /// <summary>
     /// Reads binary data from a byte stream.
     /// </summary>
+    [SkipLocalsInit]
     public unsafe struct BinaryReader : IDisposable, IEquatable<BinaryReader>
     {
         private Implementation* value;
