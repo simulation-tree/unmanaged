@@ -33,6 +33,19 @@ namespace Unmanaged.Tests
         }
 
         [Test]
+        public void WriteSpan()
+        {
+            using Allocation a = new(sizeof(int) * 4);
+            a.Write(0, [2, 3, 4, 5]);
+            USpan<int> bufferSpan = a.AsSpan<int>(0, 4);
+            Assert.That(bufferSpan.Length, Is.EqualTo(4));
+            Assert.That(bufferSpan[0], Is.EqualTo(2));
+            Assert.That(bufferSpan[1], Is.EqualTo(3));
+            Assert.That(bufferSpan[2], Is.EqualTo(4));
+            Assert.That(bufferSpan[3], Is.EqualTo(5));
+        }
+
+        [Test]
         public void ResizeAllocation()
         {
             Allocation a = new(sizeof(int));

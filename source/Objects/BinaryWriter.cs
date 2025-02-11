@@ -66,8 +66,8 @@ namespace Unmanaged
         /// </summary>
         public void WriteValue<T>(T value) where T : unmanaged
         {
-            T* ptr = &value;
-            Implementation.Write(ref this.value, ptr, (uint)sizeof(T));
+            Allocation valueAllocation = Allocation.Get(ref value);
+            Implementation.Write(ref this.value, valueAllocation, (uint)sizeof(T));
         }
 
         /// <summary>
@@ -75,13 +75,14 @@ namespace Unmanaged
         /// </summary>
         public void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            Implementation.Write(ref value, (void*)span.Address, span.Length * (uint)sizeof(T));
+            Allocation spanAllocation = new(span.Pointer);
+            Implementation.Write(ref value, spanAllocation, span.Length * (uint)sizeof(T));
         }
 
         /// <summary>
         /// Writes memory from the given pointer with the specified <paramref name="byteLength"/>.
         /// </summary>
-        public void Write(void* pointer, uint byteLength)
+        public void Write(Allocation pointer, uint byteLength)
         {
             Implementation.Write(ref value, pointer, byteLength);
         }
@@ -265,24 +266,19 @@ namespace Unmanaged
                 writer->position = position;
             }
 
-            public static void Write(ref Implementation* writer, void* data, uint length)
+            public static void Write(ref Implementation* writer, Allocation data, uint dataByteLength)
             {
                 Allocations.ThrowIfNull(writer);
 
-                uint endPosition = writer->position + length;
+                uint endPosition = writer->position + dataByteLength;
                 uint capacity = writer->capacity;
                 if (capacity < endPosition)
                 {
-                    while (capacity < endPosition)
-                    {
-                        capacity *= 2;
-                        Allocation.Resize(ref writer->items, capacity);
-                    }
-
-                    writer->capacity = capacity;
+                    writer->capacity = Allocations.GetNextPowerOf2(endPosition);
+                    Allocation.Resize(ref writer->items, writer->capacity);
                 }
 
-                writer->items.Write(writer->position, length, data);
+                writer->items.Write(writer->position, dataByteLength, data);
                 writer->position = endPosition;
             }
         }

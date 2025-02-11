@@ -120,8 +120,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
-            uint stride = (uint)sizeof(T);
-            Write(bytePosition, stride, &value);
+            Span<byte> bytes = new((byte*)&value, sizeof(T));
+            bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, sizeof(T)));
         }
 
         /// <summary>
@@ -129,7 +129,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(T value) where T : unmanaged
         {
-            Write(0, value);
+            Span<byte> bytes = new((byte*)&value, sizeof(T));
+            bytes.CopyTo(new Span<byte>(pointer, sizeof(T)));
         }
 
         /// <summary>
@@ -138,16 +139,14 @@ namespace Unmanaged
         public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
             uint byteLength = span.Length * (uint)sizeof(T);
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(bytePosition + byteLength);
-
-            Write(bytePosition, byteLength, span.Pointer);
+            Span<byte> bytes = new((byte*)span.Pointer, (int)byteLength);
+            bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, (int)byteLength));
         }
 
         /// <summary>
         /// Writes the given data with a custom length into memory starting at this position in bytes.
         /// </summary>
-        public readonly void Write(uint bytePosition, uint byteLength, void* data)
+        public readonly void Write(uint bytePosition, uint byteLength, Allocation data)
         {
             Span<byte> bytes = new((byte*)data, (int)byteLength);
             bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, (int)byteLength));
@@ -188,12 +187,12 @@ namespace Unmanaged
         /// <summary>
         /// Reads data from the memory starting from the given <paramref name="bytePosition"/>.
         /// </summary>
-        public readonly void* Read(uint bytePosition)
+        public readonly Allocation Read(uint bytePosition)
         {
             Allocations.ThrowIfNull(pointer);
             ThrowIfIndexOutOfRange(bytePosition);
 
-            return (void*)((nint)pointer + bytePosition);
+            return new((void*)((nint)pointer + bytePosition));
         }
 
         /// <summary>
@@ -258,7 +257,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyTo(Allocation destination, uint byteLength)
         {
-            CopyTo(destination, 0, 0, byteLength);
+            Span<byte> sourceSpan = new(pointer, (int)byteLength);
+            sourceSpan.CopyTo(new Span<byte>(destination.pointer, (int)byteLength));
         }
 
         /// <summary>
@@ -266,7 +266,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(Allocation source, uint byteLength)
         {
-            source.CopyTo(this, byteLength);
+            Span<byte> sourceSpan = new(source.pointer, (int)byteLength);
+            sourceSpan.CopyTo(new Span<byte>(pointer, (int)byteLength));
         }
 
         /// <summary>
@@ -329,7 +330,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an allocation that contains the data of the given value.
+        /// Creates a new allocation that contains the data of the given value.
         /// </summary>
         public static Allocation Create<T>(T value) where T : unmanaged
         {
@@ -339,7 +340,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an uninitialized allocation that can contain a(n) <typeparamref name="T"/>
+        /// Creates a new uninitialized allocation that can contain a(n) <typeparamref name="T"/>
         /// </summary>
         public static Allocation Create<T>() where T : unmanaged
         {
@@ -347,7 +348,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates an allocation containg the given <paramref name="span"/>.
+        /// Creates a new allocation containg the given <paramref name="span"/>.
         /// </summary>
         public static Allocation Create<T>(USpan<T> span) where T : unmanaged
         {
@@ -359,6 +360,17 @@ namespace Unmanaged
             }
 
             return allocation;
+        }
+
+        /// <summary>
+        /// Retrieves an existing allocation from the reference to <paramref name="value"/>.
+        /// </summary>
+        public static Allocation Get<T>(ref T value) where T : unmanaged
+        {
+            fixed (T* pointer = &value)
+            {
+                return new(pointer);
+            }
         }
 
         /// <inheritdoc/>
