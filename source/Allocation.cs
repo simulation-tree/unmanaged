@@ -120,8 +120,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
-            Span<byte> bytes = new((byte*)&value, sizeof(T));
-            bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, sizeof(T)));
+            T* pointer = (T*)((nint)this.pointer + bytePosition);
+            *pointer = value;
         }
 
         /// <summary>
@@ -129,8 +129,8 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(T value) where T : unmanaged
         {
-            Span<byte> bytes = new((byte*)&value, sizeof(T));
-            bytes.CopyTo(new Span<byte>(pointer, sizeof(T)));
+            T* pointer = (T*)this.pointer;
+            *pointer = value;
         }
 
         /// <summary>
@@ -170,18 +170,26 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
-            uint stride = (uint)sizeof(T);
-            uint bytePosition = start * stride;
-            return new USpan<T>((void*)((nint)pointer + bytePosition), length);
+            return new USpan<T>((void*)((nint)pointer + start * (uint)sizeof(T)), length);
         }
 
         /// <summary>
         /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
         /// </summary>
-        public readonly ref T Read<T>(uint bytePosition = 0) where T : unmanaged
+        public readonly ref T Read<T>(uint bytePosition) where T : unmanaged
         {
-            void* value = (void*)((nint)pointer + bytePosition);
-            return ref *(T*)value;
+            void* shifted = (byte*)pointer + bytePosition;
+            T* value = (T*)shifted;
+            return ref *value;
+        }
+
+        /// <summary>
+        /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
+        /// </summary>
+        public readonly ref T Read<T>() where T : unmanaged
+        {
+            T* value = (T*)pointer;
+            return ref *value;
         }
 
         /// <summary>
