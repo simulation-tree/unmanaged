@@ -11,6 +11,11 @@ namespace System
     {
 #if !NET
         private static Dictionary<nint, RuntimeTypeHandle> table = new();
+#else
+        private static class HandleCache<T>
+        {
+            public static readonly RuntimeTypeHandle value = typeof(T).TypeHandle;
+        }
 #endif
 
         /// <summary>
@@ -42,7 +47,11 @@ namespace System
         /// </summary>
         public static RuntimeTypeHandle GetHandle<T>()
         {
+#if NET
+            return HandleCache<T>.value;
+#else
             return GetHandle(typeof(T));
+#endif
         }
 
         /// <summary>
