@@ -261,7 +261,7 @@ namespace Unmanaged.Tests
 
             public Complicated()
             {
-                players = new(TypeInfo<Player>.size);
+                players = new(Player.TypeSize);
                 capacity = 1;
             }
 
@@ -270,10 +270,10 @@ namespace Unmanaged.Tests
                 if (count == capacity)
                 {
                     capacity *= 2;
-                    Allocation.Resize(ref players, capacity * TypeInfo<Player>.size);
+                    Allocation.Resize(ref players, capacity * Player.TypeSize);
                 }
 
-                players.Write(count * TypeInfo<Player>.size, player);
+                players.Write(count * Player.TypeSize, player);
                 count++;
             }
 
@@ -291,7 +291,7 @@ namespace Unmanaged.Tests
             void ISerializable.Read(BinaryReader reader)
             {
                 byte add = reader.ReadValue<byte>();
-                players = new(TypeInfo<Player>.size);
+                players = new(Player.TypeSize);
                 capacity = 1;
                 for (uint i = 0; i < add; i++)
                 {
@@ -312,6 +312,8 @@ namespace Unmanaged.Tests
 
         public struct Player : IDisposable, ISerializable, IEquatable<Player>
         {
+            public unsafe static readonly uint TypeSize = (uint)sizeof(Player);
+
             public uint hp;
             public uint damage;
 
@@ -325,7 +327,7 @@ namespace Unmanaged.Tests
             {
                 this.hp = hp;
                 this.damage = damage;
-                this.inventory = new(TypeInfo<Fruit>.size);
+                this.inventory = new(Fruit.TypeSize);
                 capacity = 1;
             }
 
@@ -344,10 +346,10 @@ namespace Unmanaged.Tests
                 if (count == capacity)
                 {
                     capacity *= 2;
-                    Allocation.Resize(ref inventory, capacity * TypeInfo<Fruit>.size);
+                    Allocation.Resize(ref inventory, capacity * Fruit.TypeSize);
                 }
 
-                inventory.Write(count * TypeInfo<Fruit>.size, fruit);
+                inventory.Write(count * Fruit.TypeSize, fruit);
                 count++;
             }
 
@@ -356,7 +358,7 @@ namespace Unmanaged.Tests
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
                 uint add = reader.ReadValue<uint>();
-                inventory = new(TypeInfo<Fruit>.size);
+                inventory = new(Fruit.TypeSize);
                 capacity = 1;
                 for (uint i = 0; i < add; i++)
                 {
@@ -458,6 +460,8 @@ namespace Unmanaged.Tests
         }
         public readonly struct Fruit : IEquatable<Fruit>
         {
+            public unsafe static readonly uint TypeSize = (uint)sizeof(Fruit);
+
             public readonly int data;
 
             public Fruit(int data)

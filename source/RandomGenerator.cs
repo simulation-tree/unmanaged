@@ -22,7 +22,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator()
         {
-            pointer = Allocations.Allocate(TypeInfo<ulong>.size);
+            pointer = Allocations.Allocate(sizeof(ulong));
             ulong* t = (ulong*)pointer;
             *t = GetRandomSeed();
         }
@@ -32,7 +32,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(ulong seed)
         {
-            pointer = Allocations.Allocate(TypeInfo<ulong>.size);
+            pointer = Allocations.Allocate(sizeof(ulong));
             ulong* t = (ulong*)pointer;
             *t = seed;
         }
@@ -51,7 +51,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(TypeInfo<ulong>.size);
+                pointer = Allocations.Allocate(sizeof(ulong));
                 ulong* t = (ulong*)pointer;
                 *t = (ulong)hash;
             }
@@ -71,7 +71,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(TypeInfo<ulong>.size);
+                pointer = Allocations.Allocate(sizeof(ulong));
                 ulong* t = (ulong*)pointer;
                 *t = (ulong)hash;
             }
@@ -91,7 +91,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(TypeInfo<ulong>.size);
+                pointer = Allocations.Allocate(sizeof(ulong));
                 ulong* t = (ulong*)pointer;
                 *t = (ulong)hash;
             }
@@ -111,6 +111,7 @@ namespace Unmanaged
         public void Dispose()
         {
             Allocations.ThrowIfNull(pointer);
+
             Allocations.Free(ref pointer);
         }
 
