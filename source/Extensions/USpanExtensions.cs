@@ -40,10 +40,12 @@ namespace Unmanaged
         public static uint ToString(this Vector2 vector, USpan<char> destination)
         {
             uint length = 0;
+            destination[length++] = '<';
             length += vector.X.ToString(destination.Slice(length));
             destination[length++] = ',';
             destination[length++] = ' ';
             length += vector.Y.ToString(destination.Slice(length));
+            destination[length++] = '>';
             return length;
         }
 
@@ -54,6 +56,7 @@ namespace Unmanaged
         public static uint ToString(this Vector3 vector, USpan<char> destination)
         {
             uint length = 0;
+            destination[length++] = '<';
             length += vector.X.ToString(destination.Slice(length));
             destination[length++] = ',';
             destination[length++] = ' ';
@@ -61,6 +64,7 @@ namespace Unmanaged
             destination[length++] = ',';
             destination[length++] = ' ';
             length += vector.Z.ToString(destination.Slice(length));
+            destination[length++] = '>';
             return length;
         }
 
@@ -71,6 +75,7 @@ namespace Unmanaged
         public static uint ToString(this Vector4 vector, USpan<char> destination)
         {
             uint length = 0;
+            destination[length++] = '<';
             length += vector.X.ToString(destination.Slice(length));
             destination[length++] = ',';
             destination[length++] = ' ';
@@ -81,6 +86,7 @@ namespace Unmanaged
             destination[length++] = ',';
             destination[length++] = ' ';
             length += vector.W.ToString(destination.Slice(length));
+            destination[length++] = '>';
             return length;
         }
 
@@ -91,16 +97,23 @@ namespace Unmanaged
         public static uint ToString(this Quaternion quaternion, USpan<char> destination)
         {
             uint length = 0;
+            destination[length++] = '{';
+            destination[length++] = 'X';
+            destination[length++] = ':';
             length += quaternion.X.ToString(destination.Slice(length));
-            destination[length++] = ',';
             destination[length++] = ' ';
+            destination[length++] = 'Y';
+            destination[length++] = ':';
             length += quaternion.Y.ToString(destination.Slice(length));
-            destination[length++] = ',';
             destination[length++] = ' ';
+            destination[length++] = 'Z';
+            destination[length++] = ':';
             length += quaternion.Z.ToString(destination.Slice(length));
-            destination[length++] = ',';
             destination[length++] = ' ';
+            destination[length++] = 'W';
+            destination[length++] = ':';
             length += quaternion.W.ToString(destination.Slice(length));
+            destination[length++] = '}';
             return length;
         }
 
