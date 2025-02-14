@@ -51,7 +51,7 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return System.HashCode.Combine(start, end);
+            return new Range((int)start, (int)end).GetHashCode();
         }
 
         /// <inheritdoc/>

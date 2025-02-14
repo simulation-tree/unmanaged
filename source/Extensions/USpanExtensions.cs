@@ -6,244 +6,101 @@ namespace Unmanaged
     /// <summary>
     /// Extension functions for <see cref="USpan{T}"/>.
     /// </summary>
-    public unsafe static class USpanFunctions
+    public unsafe static class USpanExtensions
     {
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="byte"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this byte value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
+        private const char BOM = (char)65279;
 
         /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="sbyte"/>.
+        /// Fills the given <paramref name="destination"/> with the string representation of the <typeparamref name="T"/> value.
         /// </summary>
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this sbyte value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="short"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this short value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="ushort"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this ushort value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="int"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this int value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="uint"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this uint value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="long"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this long value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="ulong"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this ulong value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="float"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this float value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="double"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this double value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="decimal"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this decimal value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="bool"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this bool value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="nint"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this nint value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
 #if NET
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
+        public static uint ToString<T>(this T formattable, USpan<char> destination) where T : unmanaged, ISpanFormattable
+        {
+            return formattable.TryFormat(destination, out int charsWritten, default, default) ? (uint)charsWritten : 0;
+        }
 #else
-            return ToString((long)value, buffer);
+        public static uint ToString<T>(this T formattable, USpan<char> destination) where T : unmanaged, IFormattable
+        {
+            string? result = formattable.ToString(default, default);
+            if (result is null)
+            {
+                return 0;
+            }
+
+            result.CopyTo(destination);
+            return (uint)result.Length;
+        }
 #endif
-        }
 
         /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="nuint"/>.
+        /// Fills the given <paramref name="destination"/> with the string representation of the given <see cref="Vector2"/>.
         /// </summary>
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this nuint value, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-#if NET
-            return value.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-#else
-            return ToString((ulong)value, buffer);
-#endif
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="DateTime"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this DateTime dateTime, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return dateTime.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="TimeSpan"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this TimeSpan timeSpan, USpan<char> buffer)
-        {
-            Span<char> systemSpan = buffer;
-            return timeSpan.TryFormat(systemSpan, out int charsWritten) ? (uint)charsWritten : 0;
-        }
-
-        /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="Vector2"/>.
-        /// </summary>
-        /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this Vector2 vector, USpan<char> buffer)
+        public static uint ToString(this Vector2 vector, USpan<char> destination)
         {
             uint length = 0;
-            length += vector.X.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += vector.Y.ToString(buffer.Slice(length));
+            length += vector.X.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += vector.Y.ToString(destination.Slice(length));
             return length;
         }
 
         /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="Vector3"/>.
+        /// Fills the given <paramref name="destination"/> with the string representation of the given <see cref="Vector3"/>.
         /// </summary>
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this Vector3 vector, USpan<char> buffer)
+        public static uint ToString(this Vector3 vector, USpan<char> destination)
         {
             uint length = 0;
-            length += vector.X.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += vector.Y.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += vector.Z.ToString(buffer.Slice(length));
+            length += vector.X.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += vector.Y.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += vector.Z.ToString(destination.Slice(length));
             return length;
         }
 
         /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="Vector4"/>.
+        /// Fills the given <paramref name="destination"/> with the string representation of the given <see cref="Vector4"/>.
         /// </summary>
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this Vector4 vector, USpan<char> buffer)
+        public static uint ToString(this Vector4 vector, USpan<char> destination)
         {
             uint length = 0;
-            length += vector.X.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += vector.Y.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += vector.Z.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += vector.W.ToString(buffer.Slice(length));
+            length += vector.X.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += vector.Y.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += vector.Z.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += vector.W.ToString(destination.Slice(length));
             return length;
         }
 
         /// <summary>
-        /// Fills the given buffer with the string representation of the given <see cref="Quaternion"/>.
+        /// Fills the given <paramref name="destination"/> with the string representation of the given <see cref="Quaternion"/>.
         /// </summary>
         /// <returns>Amount of <see cref="char"/>s copied.</returns>
-        public static uint ToString(this Quaternion quaternion, USpan<char> buffer)
+        public static uint ToString(this Quaternion quaternion, USpan<char> destination)
         {
             uint length = 0;
-            length += quaternion.X.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += quaternion.Y.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += quaternion.Z.ToString(buffer.Slice(length));
-            buffer[length++] = ',';
-            buffer[length++] = ' ';
-            length += quaternion.W.ToString(buffer.Slice(length));
+            length += quaternion.X.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += quaternion.Y.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += quaternion.Z.ToString(destination.Slice(length));
+            destination[length++] = ',';
+            destination[length++] = ' ';
+            length += quaternion.W.ToString(destination.Slice(length));
             return length;
         }
 
@@ -496,6 +353,130 @@ namespace Unmanaged
 
             return values.Slice(0, end + 1);
 #endif
+        }
+
+        /// <summary>
+        /// Peeks the next UTF-8 character in the stream.
+        /// </summary>
+        /// <returns>Amount of bytes read.</returns>
+        public static byte PeekUTF8(this USpan<byte> bytes, uint position, out char low, out char high)
+        {
+            high = default;
+            byte firstByte = bytes[position];
+            int codePoint;
+            byte additional;
+            if ((firstByte & 0x80) == 0)
+            {
+                additional = 0;
+                codePoint = firstByte;
+            }
+            else if ((firstByte & 0xE0) == 0xC0)
+            {
+                additional = 1;
+                codePoint = firstByte & 0x1F;
+            }
+            else if ((firstByte & 0xF0) == 0xE0)
+            {
+                additional = 2;
+                codePoint = firstByte & 0x0F;
+            }
+            else if ((firstByte & 0xF8) == 0xF0)
+            {
+                additional = 3;
+                codePoint = firstByte & 0x07;
+            }
+            else
+            {
+                throw new FormatException("Invalid UTF-8 byte sequence");
+            }
+
+            for (uint j = 1; j <= additional; j++)
+            {
+                byte next = bytes[position + j];
+                if ((next & 0xC0) != 0x80)
+                {
+                    throw new FormatException("Invalid UTF-8 continuation byte");
+                }
+
+                codePoint = codePoint << 6 | next & 0x3F;
+            }
+
+            if (codePoint <= 0xFFFF)
+            {
+                low = (char)codePoint;
+            }
+            else
+            {
+                codePoint -= 0x10000;
+                high = (char)((codePoint >> 10) + 0xD800);
+                low = (char)((codePoint & 0x3FF) + 0xDC00);
+            }
+
+            return (byte)(additional + 1);
+        }
+
+        /// <summary>
+        /// Reads the bytes formatted as UTF8 into the given character buffer.
+        /// <para>Reads <paramref name="length"/> amount of characters, or
+        /// until a <c>default</c> character is found (included in the buffer).</para>
+        /// </summary>
+        /// <returns>Amount of character values copied.</returns>
+        public static uint PeekUTF8(this USpan<byte> bytes, uint start, uint length, USpan<char> buffer)
+        {
+            uint t = 0;
+            uint i = 0;
+            if (length > bytes.Length)
+            {
+                length = bytes.Length;
+            }
+
+            while (i < length)
+            {
+                uint cLength = bytes.PeekUTF8(start + i, out char low, out char high);
+                if (low == default)
+                {
+                    buffer[t++] = default;
+                    return t;
+                }
+
+                if (high != default)
+                {
+                    buffer[t++] = high;
+                    buffer[t++] = low;
+                }
+                else
+                {
+                    if (low != BOM)
+                    {
+                        buffer[t++] = low;
+                    }
+                }
+
+                i += cLength;
+            }
+
+            return t;
+        }
+
+        /// <summary>
+        /// Reads how long the UTF-8 text is by counting characters
+        /// until the terminator.
+        /// </summary>
+        public static uint GetUTF8Length(this USpan<byte> bytes)
+        {
+            uint position = 0;
+            while (position < bytes.Length)
+            {
+                byte next = bytes[position];
+                if (next == default)
+                {
+                    break;
+                }
+
+                position += bytes.PeekUTF8(position, out _, out _);
+            }
+
+            return position;
         }
     }
 }

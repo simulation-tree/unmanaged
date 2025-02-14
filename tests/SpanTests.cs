@@ -8,6 +8,21 @@ namespace Unmanaged.Tests
     public class SpanTests : UnmanagedTests
     {
         [Test]
+        public void VerifyRangeProperties()
+        {
+            URange a = new(5, 8);
+            Assert.That(a.start, Is.EqualTo(5));
+            Assert.That(a.end, Is.EqualTo(8));
+            Assert.That(a.Length, Is.EqualTo(3));
+
+            URange b = new(5, 8);
+            Assert.That(a, Is.EqualTo(b));
+            Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+            Assert.That(a.ToString(), Is.EqualTo("5..8"));
+            Assert.That(a.ToString(), Is.EqualTo(b.ToString()));
+        }
+
+        [Test]
         public void CreatingUsingStackalloc()
         {
             USpan<byte> data = stackalloc byte[8];
@@ -92,8 +107,9 @@ namespace Unmanaged.Tests
                 referenceData[(int)i] = (byte)i;
             }
 
-            USpan<byte> slice = data.Slice(2, 4);
-            Span<byte> referenceSlice = referenceData.Slice(2, 4);
+            URange range = new(2, 4);
+            USpan<byte> slice = data.Slice(range);
+            Span<byte> referenceSlice = referenceData[(Range)range];
 
             Assert.That(slice.Length, Is.EqualTo(referenceSlice.Length));
             Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
