@@ -9,6 +9,7 @@ namespace Unmanaged
     /// <summary>
     /// Represents a continous region of unmanaged memory
     /// containing <typeparamref name="T"/> elements.
+    /// Restricted to work with the <see cref="uint"/> set of numbers.
     /// </summary>
 #if NET
     [CollectionBuilder(typeof(USpanBuilder), "Create")]
@@ -44,7 +45,7 @@ namespace Unmanaged
         /// <summary>
         /// Amount of <typeparamref name="T"/> elements in this span.
         /// </summary>
-        public readonly uint Length => (uint)value.Length;
+        public unsafe readonly uint Length => (uint)value.Length;
 
         /// <summary>
         /// Checks if this span is empty.
@@ -328,7 +329,7 @@ namespace Unmanaged
         /// Copies the memory of this span to the given <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of values copied.</returns>
-        public unsafe readonly uint CopyTo(USpan<T> destination)
+        public readonly uint CopyTo(USpan<T> destination)
         {
             ThrowIfDestinationTooSmall(destination.Length);
 
@@ -351,7 +352,7 @@ namespace Unmanaged
         /// Copies the memory of <paramref name="source"/> into this span.
         /// </summary>
         /// <returns>Amount of values copied.</returns>
-        public unsafe readonly uint CopyFrom(USpan<T> source)
+        public readonly uint CopyFrom(USpan<T> source)
         {
             source.ThrowIfDestinationTooSmall(Length);
 
@@ -371,7 +372,7 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public static unsafe implicit operator USpan<T>(Span<T> span)
+        public static implicit operator USpan<T>(Span<T> span)
         {
             return new(span);
         }
@@ -389,13 +390,13 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public static unsafe implicit operator Span<T>(USpan<T> span)
+        public static implicit operator Span<T>(USpan<T> span)
         {
             return span.value;
         }
 
         /// <inheritdoc/>
-        public static unsafe implicit operator ReadOnlySpan<T>(USpan<T> span)
+        public static implicit operator ReadOnlySpan<T>(USpan<T> span)
         {
             return span.value;
         }
