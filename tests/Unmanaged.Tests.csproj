@@ -25,7 +25,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\source\Unmanaged.csproj" />
+		<ProjectReference Include="..\core\Unmanaged.Core.csproj" />
+		<ProjectReference Include="..\generator\Unmanaged.Generator.csproj">
+			<OutputItemType>Analyzer</OutputItemType>
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+		</ProjectReference>
 	</ItemGroup>
 
 	<ItemGroup>

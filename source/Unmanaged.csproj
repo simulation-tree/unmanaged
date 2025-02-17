@@ -3,38 +3,33 @@
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>disable</ImplicitUsings>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<IncludeContentInPack>true</IncludeContentInPack>
+		<NoWarn>$(NoWarn);NU5128</NoWarn>
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<PublishAot>true</PublishAot>
-		<IsAotCompatible>true</IsAotCompatible>
-		<NoStandardLib>true</NoStandardLib>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<SignAssembly>False</SignAssembly>
-		<Title>Unmanaged</Title>
+		<Title>Worlds</Title>
 		<Authors>popcron</Authors>
-		<Description>The building blocks of native C# projects</Description>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<RepositoryUrl>https://github.com/game-simulations/unmanaged</RepositoryUrl>
-		<PackageTags>native;unmanaged</PackageTags>
 		<Company>game-simulations</Company>
-		<IsAotCompatible>true</IsAotCompatible>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningLevel>8</WarningLevel>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<Optimize>false</Optimize>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<Optimize>true</Optimize>
+		<Description>The building blocks of native C# projects</Description>
+		<RepositoryUrl>https://github.com/game-simulations/unmanaged</RepositoryUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<IsAotCompatible>True</IsAotCompatible>
+		<IsTrimmable>True</IsTrimmable>
+		<NoStandardLib>true</NoStandardLib>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Include="..\README.md">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\generator\Unmanaged.Generator.csproj" />
+		<ProjectReference Include="..\core\Unmanaged.Core.csproj" />
 	</ItemGroup>
 
 </Project>

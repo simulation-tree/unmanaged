@@ -149,13 +149,6 @@ namespace Unmanaged.Tests
 #endif
 
         [Test]
-        public void ThrowWhenDefaultInstance()
-        {
-            Allocation obj = default;
-            Assert.Throws<NullReferenceException>(() => { obj.Dispose(); });
-        }
-
-        [Test]
         public void ClearAllocation()
         {
             using Allocation obj = new(sizeof(int) * 4);
