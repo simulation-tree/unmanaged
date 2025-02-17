@@ -1,5 +1,7 @@
 # Unmanaged
 
+[![Test](https://github.com/game-simulations/unmanaged/actions/workflows/test.yml/badge.svg)](https://github.com/game-simulations/unmanaged/actions/workflows/test.yml)
+
 Library containing primitives for working with native C#.
 
 ### Allocations
