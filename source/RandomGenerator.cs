@@ -311,7 +311,6 @@ namespace Unmanaged
             return NextDouble() * maxExclusive;
         }
 
-
         /// <summary>
         /// Generates a new <see cref="double"/> between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
         /// </summary>
