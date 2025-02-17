@@ -63,13 +63,51 @@ using RandomGenerator random = new();
 int fairDiceRoll = random.NextInt(0, 6);
 ```
 
-### Safety checks
+### Optional checks
 
 When compiling with `#DEBUG` or `#TRACK` flag set, all allocations originating from `Allocations` or
-`Allocation` will be tracked. Providing dispose and access out of bounds checks, in addition to a 
-final check when the current domain exits and there are still allocations present (leaks).
+`Allocation` will be tracked. Providing disposed and access out of bounds checks. In addition to a 
+final check when the app domain exits, and there are still allocations present (aka leaks).
 
-> It's the programmers responsibility and decision for when, and how allocations should be disposed.
+Because these checks are an additional branch at runtime, they are made optional for efficiency. It's
+the programmers responsibility and decision for when, and how allocations should be disposed.
+
+### For safer code
+
+Included is an analyzer that flags cases of initialization a disposable structure variable to `default`
+as an error. Mimicking how class instances are initialized, and encouraging safer code:
+```cs
+Allocation allocation = default; //U0001 error
+```
+
+There is no warning or error for `new()` when a default constructor is missing. Because instead, one can
+be declared with an `[Obsolete]` attribute:
+```cs
+SomeData someData = new(); //CS0619 error
+
+public readonly struct SomeData : IDisposable
+{
+    private readonly Allocation allocation;
+
+    public readonly ref int Value => ref allocation.Read<int>();
+
+    [Obsolete("Default constructor not supported", true)]
+    public SomeData() 
+    {
+        throw new NotSupportedException();
+    }
+
+    public SomeData(int value)
+    {
+        allocation = Allocation.Create(value);
+    }
+
+    public readonly void Dispose()
+    {
+        allocation.Dispose();
+    }
+}
+```
 
 ### Contributing and direction
 
