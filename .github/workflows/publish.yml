@@ -24,6 +24,12 @@ jobs:
       - name: Set VERSION variable from tag
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
             
+      - name: Build `Unmanaged.Core`
+        run: dotnet build "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION}
+      
+      - name: Build `Unmanaged.Generator`
+        run: dotnet build "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION}
+      
       - name: Build `Unmanaged`
         run: dotnet build "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION}
       
@@ -33,12 +39,28 @@ jobs:
       - name: Test
         run: dotnet test "${{ github.event.repository.name }}/tests" -c Release --logger "trx"
             
+      - name: Pack `Unmanaged.Core`
+        run: dotnet pack "${{ github.event.repository.name }}/core" -c Release /p:Version=${VERSION} --no-build --output .
+      
+      - name: Pack `Unmanaged.Generator`
+        run: dotnet pack "${{ github.event.repository.name }}/generator" -c Release /p:Version=${VERSION} --no-build --output .
+      
       - name: Pack `Unmanaged`
         run: dotnet pack "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION} --no-build --output .
 
       - name: Add NuGet Source
         run: dotnet nuget add source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --name github --username ${{ github.repository_owner }} --password ${{ github.token }} --store-password-in-clear-text
             
+      - name: Publish `Unmanaged.Core`
+        run: dotnet nuget push Unmanaged.Core.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+      
+      - name: Publish `Unmanaged.Generator`
+        run: dotnet nuget push Unmanaged.Generator.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
+        env:
+          NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+      
       - name: Publish `Unmanaged`
         run: dotnet nuget push Unmanaged.${VERSION}.nupkg --source github --api-key ${NUGET_TOKEN}
         env:
