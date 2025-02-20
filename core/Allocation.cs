@@ -199,9 +199,6 @@ namespace Unmanaged
         /// </summary>
         public readonly Allocation Read(uint bytePosition)
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfIndexOutOfRange(bytePosition);
-
             return new((void*)((nint)pointer + bytePosition));
         }
 

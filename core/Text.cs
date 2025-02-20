@@ -440,6 +440,7 @@ namespace Unmanaged
         /// Replaces all occurrences of <paramref name="target"/> with <paramref name="replacement"/>,
         /// and copies the result to the <paramref name="destination"/>.
         /// </summary>
+        /// <returns>The length copied into the <paramref name="destination"/>.</returns>
         public static uint Replace(USpan<char> originalText, string target, string replacement, USpan<char> destination)
         {
             return Replace(originalText, target.AsSpan(), replacement.AsSpan(), destination);
