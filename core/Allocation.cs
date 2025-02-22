@@ -125,8 +125,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
-            T* pointer = (T*)((nint)this.pointer + bytePosition);
-            *pointer = value;
+            ((T*)((nint)pointer + bytePosition))[0] = value;
         }
 
         /// <summary>
@@ -134,8 +133,15 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(T value) where T : unmanaged
         {
-            T* pointer = (T*)this.pointer;
-            *pointer = value;
+            ((T*)pointer)[0] = value;
+        }
+
+        /// <summary>
+        /// Writes the given <paramref name="value"/> to the element <paramref name="index"/>.
+        /// </summary>
+        public readonly void WriteElement<T>(uint index, T value) where T : unmanaged
+        {
+            ((T*)pointer)[index] = value;
         }
 
         /// <summary>
@@ -180,9 +186,15 @@ namespace Unmanaged
         /// </summary>
         public readonly ref T Read<T>(uint bytePosition) where T : unmanaged
         {
-            void* shifted = (byte*)pointer + bytePosition;
-            T* value = (T*)shifted;
-            return ref *value;
+            return ref *(T*)((nint)pointer + bytePosition);
+        }
+
+        /// <summary>
+        /// Reads a value of type <typeparamref name="T"/> at the given element <paramref name="index"/>.
+        /// </summary>
+        public readonly ref T ReadElement<T>(uint index) where T : unmanaged
+        {
+            return ref ((T*)pointer)[index];
         }
 
         /// <summary>
@@ -190,8 +202,7 @@ namespace Unmanaged
         /// </summary>
         public readonly ref T Read<T>() where T : unmanaged
         {
-            T* value = (T*)pointer;
-            return ref *value;
+            return ref *(T*)pointer;
         }
 
         /// <summary>
