@@ -11,9 +11,9 @@
         /// </summary>
         public unsafe static T Clone<T>(this T self) where T : unmanaged, ISerializable
         {
-            using BinaryWriter writer = new((uint)sizeof(T));
+            using ByteWriter writer = new((uint)sizeof(T));
             self.Write(writer);
-            using BinaryReader reader = new(writer);
+            using ByteReader reader = new(writer);
             return reader.ReadObject<T>();
         }
     }

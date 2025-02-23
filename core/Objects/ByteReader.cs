@@ -9,74 +9,77 @@ namespace Unmanaged
     /// Reads binary data from a byte stream.
     /// </summary>
     [SkipLocalsInit]
-    public unsafe struct BinaryReader : IDisposable, IEquatable<BinaryReader>
+    public unsafe struct ByteReader : IDisposable, IEquatable<ByteReader>
     {
-        private Implementation* value;
+        private Implementation* reader;
 
         /// <summary>
         /// Position of the reader in the byte stream.
         /// </summary>
-        public readonly ref uint Position => ref Implementation.GetPositionRef(value);
+        public readonly ref uint Position
+        {
+            get
+            {
+                Allocations.ThrowIfNull(reader);
+
+                return ref reader->bytePosition;
+            }
+        }
 
         /// <summary>
         /// Length of the byte stream.
         /// </summary>
-        public readonly uint Length => Implementation.GetLength(value);
+        public readonly uint Length
+        {
+            get
+            {
+                Allocations.ThrowIfNull(reader);
+
+                return reader->length;
+            }
+        }
 
         /// <summary>
         /// Has this reader been disposed?
         /// </summary>
-        public readonly bool IsDisposed => value is null;
+        public readonly bool IsDisposed => reader is null;
 
         /// <summary>
-        /// Creates a new binary reader from the data in the span.
+        /// Creates a new binary reader from the given <paramref name="data"/>.
         /// </summary>
-        public BinaryReader(USpan<byte> data, uint position = 0)
+        public ByteReader(USpan<byte> data, uint position = 0)
         {
-            value = Implementation.Allocate(data, position);
+            reader = Implementation.Allocate(data, position);
         }
 
         /// <summary>
-        /// Creates a new binary reader using/sharing the data from the writer.
-        /// <para>Disposal of the reader instance is still required.</para>
+        /// Creates a new binary reader from the data in the <paramref name="writer"/>.
         /// </summary>
-        public BinaryReader(BinaryWriter writer)
+        public ByteReader(ByteWriter writer)
         {
-            value = Implementation.Allocate(writer.AsSpan());
-        }
-
-        /// <summary>
-        /// Duplicates the reader into a new instance while sharing the data.
-        /// <para>
-        /// Disposing of this instance won't dispose the original reader, or
-        /// the shared data.
-        /// </para>
-        /// </summary>
-        public BinaryReader(BinaryReader reader)
-        {
-            value = Implementation.Allocate(reader.value);
+            reader = Implementation.Allocate(writer.AsSpan());
         }
 
         /// <summary>
         /// Creates a new binary reader using the data inside the stream.
         /// </summary>
-        public BinaryReader(Stream stream, uint position = 0)
+        public ByteReader(Stream stream, uint position = 0)
         {
-            value = Implementation.Allocate(stream, position);
+            reader = Implementation.Allocate(stream, position);
         }
 
-        private BinaryReader(Implementation* value)
+        private ByteReader(Implementation* value)
         {
-            this.value = value;
+            this.reader = value;
         }
 
 #if NET
         /// <summary>
         /// Creates an empty binary reader.
         /// </summary>
-        public BinaryReader()
+        public ByteReader()
         {
-            this.value = Implementation.Allocate(Array.Empty<byte>());
+            this.reader = Implementation.Allocate(Array.Empty<byte>());
         }
 #endif
 
@@ -85,8 +88,7 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            ThrowIfDisposed();
-            Implementation.Free(ref value);
+            Implementation.Free(ref reader);
         }
 
         /// <summary>
@@ -98,13 +100,23 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Clones this reader.
+        /// </summary>
+        public readonly ByteReader Clone()
+        {
+            Allocations.ThrowIfNull(reader);
+
+            return new(Implementation.Allocate(reader));
+        }
+
+        /// <summary>
         /// Returns all bytes in the reader.
         /// </summary>
         public readonly USpan<byte> GetBytes()
         {
-            ThrowIfDisposed();
-            Allocation allocation = Implementation.GetData(value);
-            return allocation.AsSpan(0, Length);
+            Allocations.ThrowIfNull(reader);
+
+            return reader->data.AsSpan(0, Length);
         }
 
         /// <summary>
@@ -112,8 +124,16 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(USpan<byte> data)
         {
-            Position = 0;
-            Implementation.CopyFrom(value, data);
+            Allocations.ThrowIfNull(reader);
+
+            if (reader->length < data.Length)
+            {
+                Allocation.Resize(ref reader->data, data.Length);
+            }
+
+            reader->bytePosition = 0;
+            reader->length = data.Length;
+            reader->data.Write(0, data);
         }
 
         /// <summary>
@@ -121,16 +141,9 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<byte> GetRemainingBytes()
         {
-            return GetBytes().Slice(Position);
-        }
+            Allocations.ThrowIfNull(reader);
 
-        [Conditional("DEBUG")]
-        private readonly void ThrowIfDisposed()
-        {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException(nameof(BinaryReader));
-            }
+            return GetBytes().Slice(reader->bytePosition);
         }
 
         [Conditional("DEBUG")]
@@ -149,7 +162,7 @@ namespace Unmanaged
         public readonly byte PeekUTF8(uint position, out char low, out char high)
         {
             USpan<byte> bytes = GetBytes();
-            return bytes.PeekUTF8(position, out low, out high);
+            return bytes.GetUTF8Character(position, out low, out high);
         }
 
         /// <summary>
@@ -158,7 +171,9 @@ namespace Unmanaged
         /// <returns>Amount of bytes read.</returns>
         public readonly byte PeekUTF8(out char low, out char high)
         {
-            return PeekUTF8(Position, out low, out high);
+            Allocations.ThrowIfNull(reader);
+
+            return PeekUTF8(reader->bytePosition, out low, out high);
         }
 
         /// <summary>
@@ -166,21 +181,24 @@ namespace Unmanaged
         /// </summary>
         public readonly T PeekValue<T>() where T : unmanaged
         {
-            return PeekValue<T>(Position);
+            Allocations.ThrowIfNull(reader);
+
+            return PeekValue<T>(reader->bytePosition);
         }
 
         /// <summary>
-        /// Peeks a <typeparamref name="T"/> value at the specified position.
+        /// Peeks a <typeparamref name="T"/> value at the specified <paramref name="bytePosition"/>.
         /// </summary>
-        public readonly T PeekValue<T>(uint position) where T : unmanaged
+        public readonly T PeekValue<T>(uint bytePosition) where T : unmanaged
         {
-            if (position + (uint)sizeof(T) > Length)
+            Allocations.ThrowIfNull(reader);
+
+            if (bytePosition + (uint)sizeof(T) > reader->length)
             {
                 return default;
             }
 
-            nint address = Implementation.GetData(value).Address + (nint)position;
-            return *(T*)address;
+            return reader->data.Read<T>(bytePosition);
         }
 
         /// <summary>
@@ -195,17 +213,20 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Advances the reader by the specified amount of bytes.
+        /// Advances the reader by the specified amount of <paramref name="byteLength"/>.
         /// </summary>
-        public readonly void Advance(uint size)
+        public readonly void Advance(uint byteLength)
         {
-            ref uint position = ref Implementation.GetPositionRef(value);
-            ThrowIfReadingPastLength(position + size);
-            position += size;
+            Allocations.ThrowIfNull(reader);
+
+            uint newPosition = reader->bytePosition + byteLength;
+            ThrowIfReadingPastLength(newPosition);
+
+            reader->bytePosition = newPosition;
         }
 
         /// <summary>
-        /// Advances the reader by the size of the specified type.
+        /// Advances the reader by the size of <typeparamref name="T"/> elements.
         /// </summary>
         public readonly void Advance<T>(uint length = 1) where T : unmanaged
         {
@@ -218,37 +239,45 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> ReadSpan<T>(uint length) where T : unmanaged
         {
-            ref uint position = ref Implementation.GetPositionRef(value);
-            USpan<T> span = PeekSpan<T>(Position, length);
-            position += (uint)sizeof(T) * length;
+            Allocations.ThrowIfNull(reader);
+
+            USpan<T> span = PeekSpan<T>(reader->bytePosition, length);
+            reader->bytePosition += (uint)sizeof(T) * length;
             return span;
         }
 
         /// <summary>
-        /// Peeks a span of values from the reader with the specified length.
+        /// Peeks a span of values with <paramref name="length"/>.
         /// </summary>
         public readonly USpan<T> PeekSpan<T>(uint length) where T : unmanaged
         {
-            return PeekSpan<T>(Position, length);
+            Allocations.ThrowIfNull(reader);
+
+            return PeekSpan<T>(reader->bytePosition, length);
         }
 
         /// <summary>
-        /// Reads a span starting at the given position in bytes.
+        /// Reads a span with <paramref name="length"/> starting at the given <paramref name="bytePosition"/>.
         /// </summary>
-        public readonly USpan<T> PeekSpan<T>(uint position, uint length) where T : unmanaged
+        public readonly USpan<T> PeekSpan<T>(uint bytePosition, uint length) where T : unmanaged
         {
-            ThrowIfReadingPastLength(position + (uint)sizeof(T) * length);
-            nint address = Implementation.GetData(value).Address + (nint)position;
+            Allocations.ThrowIfNull(reader);
+
+            uint byteLength = (uint)sizeof(T) * length;
+            ThrowIfReadingPastLength(bytePosition + byteLength);
+
+            nint address = reader->data.Address + (nint)bytePosition;
             return new(address, length);
         }
 
         /// <summary>
-        /// Peeks UTF8 bytes as characters into the given buffer
+        /// Peeks UTF8 bytes as characters into the given <paramref name="destination"/>.
         /// </summary>
-        public readonly uint PeekUTF8(uint position, uint length, USpan<char> buffer)
+        /// <returns>Amount of <see cref="char"/> values read.</returns>
+        public readonly uint PeekUTF8(uint bytePosition, uint length, USpan<char> destination)
         {
             USpan<byte> bytes = GetBytes();
-            return bytes.PeekUTF8(position, length, buffer);
+            return bytes.GetUTF8Characters(bytePosition, length, destination);
         }
 
         /// <summary>
@@ -262,15 +291,17 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Reads UTF8 bytes as characters into the given buffer
+        /// Reads UTF8 bytes as characters into the given <paramref name="destination"/>
         /// until a terminator is found, or no bytes are left.
         /// </summary>
-        public readonly uint ReadUTF8(USpan<char> buffer)
+        /// <returns>Amount of <see cref="char"/> values read.</returns>
+        public readonly uint ReadUTF8(USpan<char> destination)
         {
-            ref uint position = ref Implementation.GetPositionRef(value);
-            uint start = position;
-            uint read = PeekUTF8(start, buffer.Length, buffer);
-            position += read;
+            Allocations.ThrowIfNull(reader);
+
+            uint start = reader->bytePosition;
+            uint read = PeekUTF8(start, destination.Length, destination);
+            reader->bytePosition += read;
             return read;
         }
 
@@ -287,97 +318,90 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the given text.
         /// </summary>
-        public static BinaryReader CreateFromUTF8(USpan<char> text)
+        public static ByteReader CreateFromUTF8(USpan<char> text)
         {
-            using BinaryWriter writer = new(text.Length);
+            using ByteWriter writer = new(text.Length);
             writer.WriteUTF8(text);
-            return new BinaryReader(writer.AsSpan());
+            return new ByteReader(writer.AsSpan());
         }
 
         /// <summary>
         /// Creates a new binary reader from the given text.
         /// </summary>
-        public static BinaryReader CreateFromUTF8(FixedString text)
+        public static ByteReader CreateFromUTF8(FixedString text)
         {
-            using BinaryWriter writer = new(text.Length);
+            using ByteWriter writer = new(text.Length);
             writer.WriteUTF8(text);
-            return new BinaryReader(writer.AsSpan());
+            return new ByteReader(writer.AsSpan());
         }
 
         /// <summary>
         /// Creates a new binary reader from the given text.
         /// </summary>
-        public static BinaryReader CreateFromUTF8(string text)
+        public static ByteReader CreateFromUTF8(string text)
         {
-            using BinaryWriter writer = new((uint)text.Length);
+            using ByteWriter writer = new((uint)text.Length);
             writer.WriteUTF8(text);
-            return new BinaryReader(writer.AsSpan());
+            return new ByteReader(writer.AsSpan());
         }
 
         /// <summary>
         /// Creates an empty binary reader.
         /// </summary>
-        public static BinaryReader Create()
+        public static ByteReader Create()
         {
             USpan<byte> emptyBytes = stackalloc byte[0];
-            return new BinaryReader(Implementation.Allocate(emptyBytes));
+            return new ByteReader(Implementation.Allocate(emptyBytes));
         }
 
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
-            return obj is BinaryReader reader && Equals(reader);
+            return obj is ByteReader reader && Equals(reader);
         }
 
         /// <inheritdoc/>
-        public readonly bool Equals(BinaryReader other)
+        public readonly bool Equals(ByteReader other)
         {
-            return value == other.value;
+            return reader == other.reader;
         }
 
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return ((nint)value).GetHashCode();
+            return ((nint)reader).GetHashCode();
         }
 
         internal unsafe struct Implementation
         {
-            private uint position;
-            private Allocation data;
-            private uint length;
-            private readonly bool clone;
+            public readonly bool dataIsOwned;
 
-            private Implementation(uint position, Allocation data, uint length, bool clone)
+            internal uint bytePosition;
+            internal Allocation data;
+            internal uint length;
+
+            private Implementation(uint position, Allocation data, uint length, bool dataIsOwned)
             {
-                this.position = position;
+                this.bytePosition = position;
                 this.data = data;
                 this.length = length;
-                this.clone = clone;
-            }
-
-            public static Allocation GetData(Implementation* reader)
-            {
-                Allocations.ThrowIfNull(reader);
-
-                return reader->data;
+                this.dataIsOwned = dataIsOwned;
             }
 
             public static Implementation* Allocate(Implementation* reader, uint position = 0)
             {
                 ref Implementation copy = ref Allocations.Allocate<Implementation>();
-                copy = new(position, reader->data, reader->length, true);
+                copy = new(position, reader->data, reader->length, false);
                 fixed (Implementation* pointer = &copy)
                 {
                     return pointer;
                 }
             }
 
-            public static Implementation* Allocate(BinaryWriter.Implementation* writer, uint position = 0)
+            public static Implementation* Allocate(ByteWriter.Implementation* writer, uint position = 0)
             {
                 ref Implementation copy = ref Allocations.Allocate<Implementation>();
-                Allocation data = new((Allocation*)BinaryWriter.Implementation.GetStartAddress(writer));
-                copy = new(position, data, BinaryWriter.Implementation.GetPosition(writer), true);
+                copy = new(position, writer->data, writer->bytePosition, false);
                 fixed (Implementation* pointer = &copy)
                 {
                     return pointer;
@@ -387,7 +411,7 @@ namespace Unmanaged
             public static Implementation* Allocate(USpan<byte> bytes, uint position = 0)
             {
                 ref Implementation reader = ref Allocations.Allocate<Implementation>();
-                reader = new(position, Allocation.Create(bytes), bytes.Length, false);
+                reader = new(position, Allocation.Create(bytes), bytes.Length, true);
                 fixed (Implementation* pointer = &reader)
                 {
                     return pointer;
@@ -404,25 +428,11 @@ namespace Unmanaged
                 return Allocate(bytes, position);
             }
 
-            public static ref uint GetPositionRef(Implementation* reader)
-            {
-                Allocations.ThrowIfNull(reader);
-
-                return ref reader->position;
-            }
-
-            public static uint GetLength(Implementation* reader)
-            {
-                Allocations.ThrowIfNull(reader);
-
-                return reader->length;
-            }
-
             public static void Free(ref Implementation* reader)
             {
                 Allocations.ThrowIfNull(reader);
 
-                if (!reader->clone)
+                if (reader->dataIsOwned)
                 {
                     reader->data.Dispose();
                 }
@@ -445,13 +455,13 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public static bool operator ==(BinaryReader left, BinaryReader right)
+        public static bool operator ==(ByteReader left, ByteReader right)
         {
             return left.Equals(right);
         }
 
         /// <inheritdoc/>
-        public static bool operator !=(BinaryReader left, BinaryReader right)
+        public static bool operator !=(ByteReader left, ByteReader right)
         {
             return !(left == right);
         }

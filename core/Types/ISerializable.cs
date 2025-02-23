@@ -8,7 +8,7 @@
         /// <summary>
         /// Writes the state of the object into the given writer.
         /// </summary>
-        void Write(BinaryWriter writer);
+        void Write(ByteWriter writer);
 
         /// <summary>
         /// Reads the data from the reader into the object, updating
@@ -17,6 +17,6 @@
         /// Target is uninitialized and <see langword="default"/> from the beginning.
         /// </para>
         /// </summary>
-        void Read(BinaryReader reader);
+        void Read(ByteReader reader);
     }
 }

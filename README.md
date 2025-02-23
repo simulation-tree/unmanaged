@@ -72,16 +72,17 @@ final check when the app domain exits, and there are still allocations present (
 Because these checks are an additional branch at runtime, they are made optional for efficiency. It's
 the programmers responsibility and decision for when, and how allocations should be disposed.
 
-### For safer code
+### Included `default` analyzer
 
-Included is an analyzer that flags cases of initialization a disposable structure variable to `default`
-as an error. Mimicking how class instances are initialized, and encouraging safer code:
+Included is an analyzer that emits errors where a disposable struct type is being created and
+initialized to `default`. Because disposable types imply they must be disposed, and so must have a 
+way to properly initialize them:
 ```cs
 Allocation allocation = default; //U0001 error
 ```
 
-There is no warning or error for `new()` when a default constructor is missing. Because instead, one can
-be declared with an `[Obsolete]` attribute:
+There is no analysis for `new()` however. Because a default constructor can be used on purpose,
+but if not, they can be declared with an `[Obsolete]` attribute:
 ```cs
 SomeData someData = new(); //CS0619 error
 
@@ -91,7 +92,7 @@ public readonly struct SomeData : IDisposable
 
     public readonly ref int Value => ref allocation.Read<int>();
 
-    [Obsolete("Default constructor not supported", true)]
+    [Obsolete("Default constructor not supported", true)] //disallows default constructor
     public SomeData() 
     {
         throw new NotSupportedException();

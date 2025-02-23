@@ -369,13 +369,13 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Peeks the next UTF-8 character in the stream.
+        /// Gets a single UTF8 character at the given <paramref name="bytePosition"/>.
         /// </summary>
-        /// <returns>Amount of bytes read.</returns>
-        public static byte PeekUTF8(this USpan<byte> bytes, uint position, out char low, out char high)
+        /// <returns>Amount of <see cref="byte"/> values read.</returns>
+        public static byte GetUTF8Character(this USpan<byte> bytes, uint bytePosition, out char low, out char high)
         {
             high = default;
-            byte firstByte = bytes[position];
+            byte firstByte = bytes[bytePosition];
             int codePoint;
             byte additional;
             if ((firstByte & 0x80) == 0)
@@ -400,15 +400,15 @@ namespace Unmanaged
             }
             else
             {
-                throw new FormatException("Invalid UTF-8 byte sequence");
+                throw new FormatException("Invalid UTF8 byte sequence");
             }
 
             for (uint j = 1; j <= additional; j++)
             {
-                byte next = bytes[position + j];
+                byte next = bytes[bytePosition + j];
                 if ((next & 0xC0) != 0x80)
                 {
-                    throw new FormatException("Invalid UTF-8 continuation byte");
+                    throw new FormatException("Invalid UTF8 continuation byte");
                 }
 
                 codePoint = codePoint << 6 | next & 0x3F;
@@ -429,67 +429,75 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Reads the bytes formatted as UTF8 into the given character buffer.
-        /// <para>Reads <paramref name="length"/> amount of characters, or
-        /// until a <c>default</c> character is found (included in the buffer).</para>
+        /// Reads the bytes formatted as UTF8 into the given <paramref name="destination"/>.
+        /// <para>Reads until until a <see langword="default"/> character is found,
+        /// or when the <paramref name="length"/> amount of <see cref="char"/> values have been read.</para>
         /// </summary>
-        /// <returns>Amount of character values copied.</returns>
-        public static uint PeekUTF8(this USpan<byte> bytes, uint start, uint length, USpan<char> buffer)
+        /// <returns>Amount of <see cref="byte"/> values read.</returns>
+        public static uint GetUTF8Characters(this USpan<byte> bytes, uint bytePosition, uint length, USpan<char> destination)
         {
-            uint t = 0;
-            uint i = 0;
-            if (length > bytes.Length)
+            uint charactersRead = 0;
+            uint byteIndex = 0;
+            while (byteIndex < bytes.Length)
             {
-                length = bytes.Length;
-            }
-
-            while (i < length)
-            {
-                uint cLength = bytes.PeekUTF8(start + i, out char low, out char high);
+                byte bytesRead = bytes.GetUTF8Character(bytePosition + byteIndex, out char low, out char high);
                 if (low == default)
                 {
-                    buffer[t++] = default;
-                    return t;
+                    destination[charactersRead++] = default;
+                    return charactersRead;
                 }
 
                 if (high != default)
                 {
-                    buffer[t++] = high;
-                    buffer[t++] = low;
+                    destination[charactersRead++] = high;
+                    if (charactersRead == length)
+                    {
+                        break;
+                    }
+
+                    destination[charactersRead++] = low;
+                    if (charactersRead == length)
+                    {
+                        break;
+                    }
                 }
                 else
                 {
                     if (low != BOM)
                     {
-                        buffer[t++] = low;
+                        destination[charactersRead++] = low;
+                        if (charactersRead == length)
+                        {
+                            break;
+                        }
                     }
                 }
 
-                i += cLength;
+                byteIndex += bytesRead;
             }
 
-            return t;
+            return charactersRead;
         }
 
         /// <summary>
-        /// Reads how long the UTF-8 text is by counting characters
-        /// until the terminator.
+        /// Reads how long the UTF8 text is by counting characters
+        /// until a terminator or no more bytes to read.
         /// </summary>
         public static uint GetUTF8Length(this USpan<byte> bytes)
         {
-            uint position = 0;
-            while (position < bytes.Length)
+            uint bytePosition = 0;
+            while (bytePosition < bytes.Length)
             {
-                byte next = bytes[position];
+                byte next = bytes[bytePosition];
                 if (next == default)
                 {
                     break;
                 }
 
-                position += bytes.PeekUTF8(position, out _, out _);
+                bytePosition += bytes.GetUTF8Character(bytePosition, out _, out _);
             }
 
-            return position;
+            return bytePosition;
         }
     }
 }

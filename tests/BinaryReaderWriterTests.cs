@@ -25,12 +25,12 @@ namespace Unmanaged.Tests
                 this.name = new(name);
             }
 
-            void ISerializable.Write(BinaryWriter writer)
+            void ISerializable.Write(ByteWriter writer)
             {
                 writer.WriteUTF8(name);
             }
 
-            void ISerializable.Read(BinaryReader reader)
+            void ISerializable.Read(ByteReader reader)
             {
                 USpan<char> buffer = stackalloc char[FixedString.Capacity];
                 uint length = reader.ReadUTF8(buffer);
@@ -66,7 +66,7 @@ namespace Unmanaged.Tests
         [Test]
         public void WriteValues()
         {
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteValue(32);
             Assert.That(writer.Position, Is.EqualTo(sizeof(int)));
             writer.WriteValue(64);
@@ -76,7 +76,7 @@ namespace Unmanaged.Tests
 
             Assert.That(writer.Position, Is.EqualTo(sizeof(int) * 3));
             byte[] bytes = writer.AsSpan().ToArray();
-            using BinaryReader reader = new(bytes);
+            using ByteReader reader = new(bytes);
             byte[] readerBytes = reader.GetBytes().ToArray();
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(32));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(64));
@@ -86,10 +86,10 @@ namespace Unmanaged.Tests
         [Test]
         public void WriteSpan()
         {
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteSpan<char>("Hello there".AsSpan());
 
-            using BinaryReader reader = new(writer.AsSpan());
+            using ByteReader reader = new(writer.AsSpan());
             Assert.That(reader.ReadSpan<char>(11).ToString(), Is.EqualTo("Hello there"));
         }
 
@@ -102,7 +102,7 @@ namespace Unmanaged.Tests
             binWriter.Write(64);
             binWriter.Write(128);
             byte[] bytes = stream.ToArray();
-            using BinaryReader reader = new(bytes);
+            using ByteReader reader = new(bytes);
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(32));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(64));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(128));
@@ -114,7 +114,7 @@ namespace Unmanaged.Tests
             using var stream = new System.IO.MemoryStream();
             stream.Write([32, 0, 0, 0, 64, 0, 0, 0, 128, 0, 0, 0]);
             stream.Position = 0;
-            using BinaryReader reader = new(stream);
+            using ByteReader reader = new(stream);
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(32));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(64));
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(128));
@@ -124,7 +124,7 @@ namespace Unmanaged.Tests
         public void ReadUTF8Text()
         {
             byte[] data = new byte[] { 239, 187, 191, 60, 80, 114, 111, 106, 101, 99, 116, 32, 83, 100, 107 };
-            using BinaryReader reader = new(data);
+            using ByteReader reader = new(data);
             USpan<char> sample = stackalloc char[16];
             uint length = reader.ReadUTF8(sample);
             USpan<char> result = sample.Slice(0, length);
@@ -135,9 +135,9 @@ namespace Unmanaged.Tests
         public void WriteUTF8Text()
         {
             string myString = "Hello, 你好, 🌍";
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteUTF8(myString);
-            using BinaryReader reader = new(writer.AsSpan());
+            using ByteReader reader = new(writer.AsSpan());
             USpan<char> sample = stackalloc char[32];
             uint length = reader.ReadUTF8(sample);
             USpan<char> result = sample.Slice(0, length);
@@ -149,9 +149,9 @@ namespace Unmanaged.Tests
         [Test]
         public void ThrowIfReadTooMuch()
         {
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteSpan<char>("The snake that eats its own tail".AsSpan());
-            using BinaryReader reader = new(writer.AsSpan());
+            using ByteReader reader = new(writer.AsSpan());
             Assert.Throws<InvalidOperationException>(() => reader.ReadSpan<char>(100));
         }
 #endif
@@ -159,7 +159,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ReuseWriter()
         {
-            BinaryWriter writer = new();
+            ByteWriter writer = new();
             writer.WriteValue(32);
             writer.WriteValue(64);
             writer.WriteValue(128);
@@ -189,9 +189,9 @@ namespace Unmanaged.Tests
             ];
 
             Big big = new(32, new Cherry("apple"), fruits);
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteValue(big);
-            using BinaryReader reader = new(writer.AsSpan());
+            using ByteReader reader = new(writer.AsSpan());
             using Big loadedBig = reader.ReadValue<Big>();
             Assert.That(loadedBig, Is.EqualTo(big));
         }
@@ -199,12 +199,12 @@ namespace Unmanaged.Tests
         [Test]
         public void SaveAndLoadSpans()
         {
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteSpan<byte>([1, 2, 3, 4, 5]);
             writer.WriteSpan<int>([1, 2, 3, 4, 5]);
             writer.WriteSpan<FixedString>(["Hello", "World", "Goodbye"]);
 
-            using BinaryReader reader = new(writer.AsSpan());
+            using ByteReader reader = new(writer.AsSpan());
             USpan<byte> bytes = reader.ReadSpan<byte>(5);
             USpan<int> ints = reader.ReadSpan<int>(5);
             USpan<FixedString> strings = reader.ReadSpan<FixedString>(3);
@@ -229,9 +229,9 @@ namespace Unmanaged.Tests
             complicated.Add(player2);
             complicated.Add(player3);
 
-            using BinaryWriter writer = new();
+            using ByteWriter writer = new();
             writer.WriteObject(complicated);
-            using BinaryReader reader = new(writer.AsSpan());
+            using ByteReader reader = new(writer.AsSpan());
             using Complicated loadedComplicated = reader.ReadObject<Complicated>();
 
             Assert.That(loadedComplicated.List.Length, Is.EqualTo(complicated.List.Length));
@@ -288,7 +288,7 @@ namespace Unmanaged.Tests
                 players.Dispose();
             }
 
-            void ISerializable.Read(BinaryReader reader)
+            void ISerializable.Read(ByteReader reader)
             {
                 byte add = reader.ReadValue<byte>();
                 players = new(Player.TypeSize);
@@ -300,7 +300,7 @@ namespace Unmanaged.Tests
                 }
             }
 
-            void ISerializable.Write(BinaryWriter writer)
+            void ISerializable.Write(ByteWriter writer)
             {
                 writer.WriteValue((byte)count);
                 foreach (Player player in List)
@@ -353,7 +353,7 @@ namespace Unmanaged.Tests
                 count++;
             }
 
-            void ISerializable.Read(BinaryReader reader)
+            void ISerializable.Read(ByteReader reader)
             {
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
@@ -366,7 +366,7 @@ namespace Unmanaged.Tests
                 }
             }
 
-            void ISerializable.Write(BinaryWriter writer)
+            void ISerializable.Write(ByteWriter writer)
             {
                 writer.WriteValue(hp);
                 writer.WriteValue(damage);

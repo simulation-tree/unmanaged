@@ -53,13 +53,13 @@ namespace Unmanaged
         public readonly bool IsEmpty => value.IsEmpty;
 
         /// <summary>
-        /// Creates a new span from the given pointer with specified element length.
+        /// Creates a new span from the given pointer with <paramref name="byteLength"/>.
         /// </summary>
-        public unsafe USpan(void* pointer, uint length)
+        public unsafe USpan(void* pointer, uint byteLength)
         {
             unchecked
             {
-                value = new(pointer, (int)length);
+                value = new(pointer, (int)byteLength);
             }
         }
 
