@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
@@ -195,6 +196,7 @@ namespace Unmanaged
         /// <summary>
         /// Throws a <see cref="NullReferenceException"/> if the pointer is null.
         /// </summary>
+        [Conditional("DEBUG")]
         public static void ThrowIfNull(void* pointer)
         {
             nint address = (nint)pointer;
@@ -210,6 +212,7 @@ namespace Unmanaged
         /// Throws a <see cref="NullReferenceException"/> if the pointer is null
         /// with a custom message.
         /// </summary>
+        [Conditional("DEBUG")]
         public static void ThrowIfNull(void* pointer, string message)
         {
             nint address = (nint)pointer;
