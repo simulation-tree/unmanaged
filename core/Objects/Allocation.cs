@@ -179,7 +179,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Gets a span of bytes from the memory with the <paramref name="byteLength"/>.
+        /// Gets a span of bytes from the start of the memory with the specified <paramref name="byteLength"/>.
         /// </summary>
         public readonly USpan<byte> GetSpan(uint byteLength)
         {
