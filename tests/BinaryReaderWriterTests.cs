@@ -261,7 +261,7 @@ namespace Unmanaged.Tests
 
             public Complicated()
             {
-                players = new(Player.TypeSize);
+                players = Allocation.Create(Player.TypeSize);
                 capacity = 1;
             }
 
@@ -291,7 +291,7 @@ namespace Unmanaged.Tests
             void ISerializable.Read(ByteReader reader)
             {
                 byte add = reader.ReadValue<byte>();
-                players = new(Player.TypeSize);
+                players = Allocation.Create(Player.TypeSize);
                 capacity = 1;
                 for (uint i = 0; i < add; i++)
                 {
@@ -327,7 +327,7 @@ namespace Unmanaged.Tests
             {
                 this.hp = hp;
                 this.damage = damage;
-                this.inventory = new(Fruit.TypeSize);
+                this.inventory = Allocation.Create(Fruit.TypeSize);
                 capacity = 1;
             }
 
@@ -358,7 +358,7 @@ namespace Unmanaged.Tests
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
                 uint add = reader.ReadValue<uint>();
-                inventory = new(Fruit.TypeSize);
+                inventory = Allocation.Create(Fruit.TypeSize);
                 capacity = 1;
                 for (uint i = 0; i < add; i++)
                 {

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Pointer = Unmanaged.Pointers.Text;
 
 namespace Unmanaged
 {
@@ -10,25 +11,39 @@ namespace Unmanaged
     /// </summary>
     public unsafe struct Text : IDisposable, IEquatable<Text>, IEnumerable<char>, IReadOnlyList<char>
     {
-        private const uint Stride = 2;
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private Implementation* value;
+        private Pointer* text;
 
         /// <summary>
         /// Length of the text.
         /// </summary>
-        public readonly uint Length => value->length;
+        public readonly uint Length
+        {
+            get
+            {
+                Allocations.ThrowIfNull(text);
+
+                return text->length;
+            }
+        }
 
         /// <summary>
         /// Checks if this text has been disposed.
         /// </summary>
-        public readonly bool IsDisposed => value is null;
+        public readonly bool IsDisposed => text is null;
 
         /// <summary>
         /// Checks if the text is empty.
         /// </summary>
-        public readonly bool IsEmpty => value->length == 0;
+        public readonly bool IsEmpty
+        {
+            get
+            {
+                Allocations.ThrowIfNull(text);
+
+                return text->length == 0;
+            }
+        }
 
         /// <summary>
         /// Indexer for the text.
@@ -37,16 +52,17 @@ namespace Unmanaged
         {
             get
             {
+                Allocations.ThrowIfNull(text);
                 ThrowIfOutOfRange(index);
 
-                return ref value->buffer.Read<char>(index * Stride);
+                return ref text->buffer.ReadElement<char>(index);
             }
         }
 
         /// <summary>
         /// Native address of the text.
         /// </summary>
-        public readonly nint Address => (nint)value;
+        public readonly nint Address => (nint)text;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
         private readonly string Value => ToString();
@@ -59,7 +75,7 @@ namespace Unmanaged
             {
                 ThrowIfOutOfRange((uint)index);
 
-                return value->buffer.Read<char>((uint)index * Stride);
+                return text->buffer.ReadElement<char>((uint)index);
             }
         }
 
@@ -69,7 +85,13 @@ namespace Unmanaged
         /// </summary>
         public Text()
         {
-            value = Implementation.Allocate(0);
+            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            text.length = 0;
+            text.buffer = Allocation.Create(0);
+            fixed (Pointer* pointer = &text)
+            {
+                this.text = pointer;
+            }
         }
 #endif
 
@@ -78,26 +100,45 @@ namespace Unmanaged
         /// </summary>
         public Text(uint length, char defaultCharacter = ' ')
         {
-            value = Implementation.Allocate(length);
-            value->buffer.AsSpan<char>(0, length).Fill(defaultCharacter);
+            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            text.length = length;
+            text.buffer = Allocation.Create(length * sizeof(char));
+            fixed (Pointer* pointer = &text)
+            {
+                this.text = pointer;
+            }
+
+            text.buffer.GetSpan<char>(length).Fill(defaultCharacter);
         }
 
         /// <summary>
-        /// Creates a container of the given <paramref name="text"/>.
+        /// Creates a container of the given <paramref name="content"/>.
         /// </summary>
-        public Text(USpan<char> text)
+        public Text(USpan<char> content)
         {
-            value = Implementation.Allocate(text.Length);
-            text.CopyTo(value->buffer.AsSpan<char>(0, text.Length));
+            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            text.length = content.Length;
+            text.buffer = Allocation.Create(content);
+            fixed (Pointer* pointer = &text)
+            {
+                this.text = pointer;
+            }
         }
 
         /// <summary>
-        /// Creates a container of the given <paramref name="text"/>.
+        /// Creates a container of the given <paramref name="content"/>.
         /// </summary>
-        public Text(IEnumerable<char> text)
+        public Text(IEnumerable<char> content)
         {
-            value = Implementation.Allocate(0);
-            Append(text);
+            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            text.length = 0;
+            text.buffer = Allocation.Create(0);
+            fixed (Pointer* pointer = &text)
+            {
+                this.text = pointer;
+            }
+
+            Append(content);
         }
 
         /// <summary>
@@ -105,14 +146,16 @@ namespace Unmanaged
         /// </summary>
         public Text(void* pointer)
         {
-            value = (Implementation*)pointer;
+            text = (Pointer*)pointer;
         }
 
         /// <inheritdoc/>
         public void Dispose()
         {
-            Implementation.Free(ref value);
-            value = default;
+            Allocations.ThrowIfNull(text);
+
+            text->buffer.Dispose();
+            Allocations.Free(ref text);
         }
 
         [Conditional("DEBUG")]
@@ -129,7 +172,9 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<char> AsSpan()
         {
-            return value->buffer.AsSpan<char>(0, Length);
+            Allocations.ThrowIfNull(text);
+
+            return text->buffer.GetSpan<char>(text->length);
         }
 
         /// <summary>
@@ -137,7 +182,9 @@ namespace Unmanaged
         /// </summary>
         public readonly void Clear()
         {
-            value->length = 0;
+            Allocations.ThrowIfNull(text);
+
+            text->length = 0;
         }
 
         /// <summary>
@@ -145,7 +192,9 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyTo(USpan<char> destination)
         {
-            value->buffer.AsSpan<char>(0, Length).CopyTo(destination);
+            Allocations.ThrowIfNull(text);
+
+            text->buffer.GetSpan<char>(text->length).CopyTo(destination);
         }
 
         /// <summary>
@@ -153,13 +202,15 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(USpan<char> source)
         {
-            if (value->length != source.Length)
+            Allocations.ThrowIfNull(text);
+
+            if (text->length != source.Length)
             {
-                value->length = source.Length;
-                Allocation.Resize(ref value->buffer, source.Length * Stride);
+                text->length = source.Length;
+                Allocation.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(value->buffer.AsSpan<char>(0, source.Length));
+            source.CopyTo(text->buffer.GetSpan<char>(source.Length));
         }
 
         /// <summary>
@@ -167,16 +218,18 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(IEnumerable<char> source)
         {
+            Allocations.ThrowIfNull(text);
+
             uint length = 0;
             foreach (char character in source)
             {
                 length++;
             }
 
-            if (value->length != length)
+            if (text->length != length)
             {
-                value->length = length;
-                Allocation.Resize(ref value->buffer, length * Stride);
+                text->length = length;
+                Allocation.Resize(ref text->buffer, length * sizeof(char));
             }
 
             USpan<char> buffer = AsSpan();
@@ -190,8 +243,9 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            uint length = Length;
-            USpan<char> buffer = stackalloc char[(int)length];
+            Allocations.ThrowIfNull(text);
+
+            USpan<char> buffer = stackalloc char[(int)text->length];
             ToString(buffer);
             return buffer.ToString();
         }
@@ -201,10 +255,11 @@ namespace Unmanaged
         /// </summary>
         public readonly uint ToString(USpan<char> destination)
         {
-            uint length = Length;
+            Allocations.ThrowIfNull(text);
+
             USpan<char> source = AsSpan();
-            uint copyLength = Math.Min(length, destination.Length);
-            source.Slice(0, copyLength).CopyTo(destination);
+            uint copyLength = Math.Min(text->length, destination.Length);
+            source.GetSpan(copyLength).CopyTo(destination);
             return copyLength;
         }
 
@@ -213,18 +268,20 @@ namespace Unmanaged
         /// </summary>
         public readonly void SetLength(uint newLength, char defaultCharacter = ' ')
         {
-            uint oldLength = Length;
-            if (newLength == oldLength)
+            Allocations.ThrowIfNull(text);
+
+            if (newLength == text->length)
             {
                 return;
             }
 
-            value->length = newLength;
+            uint oldLength = text->length;
+            text->length = newLength;
             if (newLength > oldLength)
             {
                 uint copyLength = newLength - oldLength;
-                Allocation.Resize(ref value->buffer, newLength * Stride);
-                value->buffer.AsSpan<char>(oldLength, copyLength).Fill(defaultCharacter);
+                Allocation.Resize(ref text->buffer, newLength * sizeof(char));
+                text->buffer.AsSpan<char>(oldLength, copyLength).Fill(defaultCharacter);
             }
         }
 
@@ -253,7 +310,7 @@ namespace Unmanaged
             uint length = Length;
             uint newLength = length + text.Length;
             SetLength(newLength);
-            text.CopyTo(value->buffer.AsSpan<char>(length, text.Length));
+            text.CopyTo(this.text->buffer.AsSpan<char>(length, text.Length));
         }
 
         /// <summary>
@@ -263,7 +320,7 @@ namespace Unmanaged
         {
             ThrowIfOutOfRange(index);
 
-            ref uint length = ref value->length;
+            ref uint length = ref text->length;
             if (index < length - 1)
             {
                 USpan<char> buffer = AsSpan();
@@ -337,7 +394,7 @@ namespace Unmanaged
             }
 
             USpan<char> buffer = AsSpan();
-            return buffer.Slice(0, textLength).SequenceEqual(otherText);
+            return buffer.GetSpan(textLength).SequenceEqual(otherText);
         }
 
         /// <inheritdoc/>
@@ -395,7 +452,7 @@ namespace Unmanaged
                 hash = hash * 23 + length.GetHashCode();
                 for (uint i = 0; i < length; i++)
                 {
-                    char c = value->buffer.Read<char>(i * Stride);
+                    char c = text->buffer.ReadElement<char>(i);
                     hash = hash * 23 + c.GetHashCode();
                 }
 
@@ -409,7 +466,7 @@ namespace Unmanaged
         /// </summary>
         public static void Append(USpan<char> originalText, char character, USpan<char> destination)
         {
-            originalText.CopyTo(destination.Slice(0, originalText.Length));
+            originalText.CopyTo(destination.GetSpan(originalText.Length));
             destination[originalText.Length] = character;
         }
 
@@ -432,8 +489,8 @@ namespace Unmanaged
             uint newLength = newText.Length;
             uint destinationLength = destination.Length;
             uint copyLength = Math.Min(originalLength + newLength, destinationLength);
-            originalText.CopyTo(destination.Slice(0, originalLength));
-            newText.Slice(0, copyLength - originalLength).CopyTo(destination.Slice(originalLength));
+            originalText.CopyTo(destination.GetSpan(originalLength));
+            newText.GetSpan(copyLength - originalLength).CopyTo(destination.Slice(originalLength));
         }
 
         /// <summary>
@@ -488,69 +545,34 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public readonly Enumerator GetEnumerator()
+        public readonly Span<char>.Enumerator GetEnumerator()
         {
-            return new(value);
+            return AsSpan().GetEnumerator();
         }
 
         readonly IEnumerator<char> IEnumerable<char>.GetEnumerator()
         {
-            return GetEnumerator();
+            return new Enumerator(this);
         }
 
         readonly IEnumerator IEnumerable.GetEnumerator()
         {
-            return GetEnumerator();
-        }
-
-        /// <inheritdoc/>
-        public struct Implementation
-        {
-            /// <inheritdoc/>
-            public uint length;
-
-            /// <inheritdoc/>
-            public Allocation buffer;
-
-            /// <summary>
-            /// Allocates new text with the given <paramref name="length"/>.
-            /// </summary>
-            public static Implementation* Allocate(uint length)
-            {
-                ref Implementation text = ref Allocations.Allocate<Implementation>();
-                text.length = length;
-                text.buffer = new(length * Stride);
-                fixed (Implementation* pointer = &text)
-                {
-                    return pointer;
-                }
-            }
-
-            /// <summary>
-            /// Frees the given <paramref name="text"/>.
-            /// </summary>
-            public static void Free(ref Implementation* text)
-            {
-                Allocations.ThrowIfNull(text);
-
-                text->buffer.Dispose();
-                Allocations.Free(ref text);
-            }
+            return new Enumerator(this);
         }
 
         /// <inheritdoc/>
         public struct Enumerator : IEnumerator<char>
         {
-            private readonly Implementation* text;
+            private readonly Text text;
             private int index;
 
             /// <inheritdoc/>
-            public readonly char Current => text->buffer.AsSpan<char>(0, text->length)[(uint)index];
+            public readonly char Current => text[(uint)index];
 
             readonly object IEnumerator.Current => Current;
 
             /// <inheritdoc/>
-            public Enumerator(Implementation* text)
+            public Enumerator(Text text)
             {
                 this.text = text;
                 index = -1;
@@ -559,7 +581,7 @@ namespace Unmanaged
             /// <inheritdoc/>
             public bool MoveNext()
             {
-                return ++index < text->length;
+                return ++index < text.Length;
             }
 
             /// <inheritdoc/>
@@ -611,21 +633,14 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Appends text.
+        /// Concatenates <paramref name="left"/> and <paramref name="right"/> texts
+        /// into a new instance.
         /// </summary>
         public static Text operator +(Text left, Text right)
         {
-            Text result = new(left);
-            result.Append(right);
+            Text result = new(left.AsSpan());
+            result.Append(right.AsSpan());
             return result;
-        }
-
-        /// <summary>
-        /// Implicit cast towards a <see cref="string"/>.
-        /// </summary>
-        public static implicit operator string(Text text)
-        {
-            return text.ToString();
         }
     }
 }

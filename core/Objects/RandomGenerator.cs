@@ -9,12 +9,17 @@ namespace Unmanaged
     {
         private static uint counter;
 
-        private void* pointer;
+        private Allocation pointer;
 
         /// <summary>
         /// The current state of the generator.
         /// </summary>
-        public readonly ulong State => *(ulong*)pointer;
+        public readonly ulong State => pointer.Read<ulong>();
+
+        /// <summary>
+        /// Checks if the generator has been disposed.
+        /// </summary>
+        public readonly bool IsDisposed => pointer.IsDisposed;
 
 #if NET
         /// <summary>
@@ -22,9 +27,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator()
         {
-            pointer = Allocations.Allocate(sizeof(ulong));
-            ulong* t = (ulong*)pointer;
-            *t = GetRandomSeed();
+            pointer = Allocation.CreateFromValue(GetRandomSeed());
         }
 #endif
         /// <summary>
@@ -32,9 +35,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(ulong seed)
         {
-            pointer = Allocations.Allocate(sizeof(ulong));
-            ulong* t = (ulong*)pointer;
-            *t = seed;
+            pointer = Allocation.CreateFromValue(seed);
         }
 
         /// <summary>
@@ -51,9 +52,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(sizeof(ulong));
-                ulong* t = (ulong*)pointer;
-                *t = (ulong)hash;
+                pointer = Allocation.CreateFromValue((ulong)hash);
             }
         }
 
@@ -71,9 +70,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(sizeof(ulong));
-                ulong* t = (ulong*)pointer;
-                *t = (ulong)hash;
+                pointer = Allocation.CreateFromValue((ulong)hash);
             }
         }
 
@@ -91,9 +88,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocations.Allocate(sizeof(ulong));
-                ulong* t = (ulong*)pointer;
-                *t = (ulong)hash;
+                pointer = Allocation.CreateFromValue((ulong)hash);
             }
         }
 
@@ -112,7 +107,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(pointer);
 
-            Allocations.Free(ref pointer);
+            pointer.Dispose();
         }
 
         /// <summary>

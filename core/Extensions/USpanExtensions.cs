@@ -369,6 +369,16 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Checks if the entire sequence equals the given <paramref name="other"/>.
+        /// </summary>
+        public static bool SequenceEqual<T>(this USpan<T> span, USpan<T> other) where T : unmanaged, IEquatable<T>
+        {
+            Span<T> values = span;
+            Span<T> compare = other;
+            return values.SequenceEqual(compare);
+        }
+
+        /// <summary>
         /// Gets a single UTF8 character at the given <paramref name="bytePosition"/>.
         /// </summary>
         /// <returns>Amount of <see cref="byte"/> values read.</returns>

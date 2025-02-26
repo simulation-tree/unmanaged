@@ -7,7 +7,7 @@ namespace Unmanaged.Tests
         [Test]
         public void DefaultSizelessAllocation()
         {
-            Allocation allocation = Allocation.Create();
+            Allocation allocation = Allocation.CreateEmpty();
             Assert.That(allocation.IsDisposed, Is.False);
             Assert.That(Allocations.Count, Is.EqualTo(1));
             allocation.Dispose();
@@ -18,7 +18,7 @@ namespace Unmanaged.Tests
         [Test]
         public void WriteMultipleValues()
         {
-            using Allocation allocation = new(sizeof(uint) * 4);
+            using Allocation allocation = Allocation.Create(sizeof(uint) * 4);
             allocation.Write(0 * sizeof(uint), 5);
             allocation.Write(1 * sizeof(uint), 15);
             allocation.Write(2 * sizeof(uint), 25);
@@ -35,7 +35,7 @@ namespace Unmanaged.Tests
         [Test]
         public void WriteSpan()
         {
-            using Allocation a = new(sizeof(int) * 4);
+            using Allocation a = Allocation.Create(sizeof(int) * 4);
             a.Write(0, [2, 3, 4, 5]);
             USpan<int> bufferSpan = a.AsSpan<int>(0, 4);
             Assert.That(bufferSpan.Length, Is.EqualTo(4));
@@ -48,7 +48,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ResizeAllocation()
         {
-            Allocation a = new(sizeof(int));
+            Allocation a = Allocation.Create(sizeof(int));
             a.Write(0 * sizeof(int), 1337);
             Allocation.Resize(ref a, sizeof(int) * 2);
             a.Write(1 * sizeof(int), 1338);
@@ -64,7 +64,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ReadPartsOfTuple()
         {
-            using Allocation tuple = new(8);
+            using Allocation tuple = Allocation.Create(8);
             tuple.Write(0, (5, 1337));
 
             int a = tuple.Read<int>(0 * sizeof(int));
@@ -92,7 +92,7 @@ namespace Unmanaged.Tests
         [Test]
         public void CreateAndDestroy()
         {
-            Allocation obj = new(sizeof(int));
+            Allocation obj = Allocation.Create(sizeof(int));
             Assert.That(obj.IsDisposed, Is.False);
             obj.Dispose();
             Assert.That(obj.IsDisposed, Is.True);
@@ -101,7 +101,7 @@ namespace Unmanaged.Tests
         [Test]
         public void CheckDefault()
         {
-            using Allocation obj = new(sizeof(long));
+            using Allocation obj = Allocation.Create(sizeof(long));
             obj.Clear(sizeof(long));
             Assert.That(obj.IsDisposed, Is.False);
 
@@ -114,7 +114,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ThrowOnDisposeTwice()
         {
-            Allocation obj = new(sizeof(int));
+            Allocation obj = Allocation.Create(sizeof(int));
             obj.Dispose();
             Assert.Throws<NullReferenceException>(() => obj.Dispose());
         }
@@ -122,7 +122,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ThrowIfLeaks()
         {
-            Allocation obj = new(sizeof(int));
+            Allocation obj = Allocation.Create(sizeof(int));
             Assert.Throws<Exception>(() => Allocations.ThrowIfAny());
             obj.Dispose();
         }
@@ -131,11 +131,11 @@ namespace Unmanaged.Tests
         [Test]
         public void ThrowIfIndexingOutOfBounds()
         {
-            Allocation obj = new(4);
+            Allocation obj = Allocation.Create(4);
             Assert.Throws<IndexOutOfRangeException>(() => obj[4] = 5);
             obj.Dispose();
 
-            obj = new(16);
+            obj = Allocation.Create(16);
             Assert.Throws<IndexOutOfRangeException>(() =>
             {
                 unchecked
@@ -151,7 +151,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ClearAllocation()
         {
-            using Allocation obj = new(sizeof(int) * 4);
+            using Allocation obj = Allocation.Create(sizeof(int) * 4);
             USpan<int> span = obj.AsSpan<int>(0, 4);
             span[0] = 5;
             Assert.That(obj.AsSpan<int>(0, 1)[0], Is.EqualTo(5));
@@ -169,9 +169,9 @@ namespace Unmanaged.Tests
         [Test]
         public void CheckAllocationsForDebugging()
         {
-            Allocation a = new(sizeof(int));
-            Allocation b = new(sizeof(int));
-            Allocation c = new(sizeof(int));
+            Allocation a = Allocation.Create(sizeof(int));
+            Allocation b = Allocation.Create(sizeof(int));
+            Allocation c = Allocation.Create(sizeof(int));
 
             Assert.That(Allocations.Count, Is.EqualTo(3));
 
@@ -185,7 +185,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ModifyingThroughDifferentInterfaces()
         {
-            using Allocation obj = new(sizeof(int));
+            using Allocation obj = Allocation.Create(sizeof(int));
             USpan<int> bufferSpan = obj.AsSpan<int>(0, 1);
             ref int x = ref obj.AsSpan<int>(0, 1)[0];
             x = 5;
@@ -197,8 +197,8 @@ namespace Unmanaged.Tests
         [Test]
         public void CopyingIntoAnother()
         {
-            using Allocation a = new(sizeof(int) * 4);
-            using Allocation b = new(sizeof(int) * 8);
+            using Allocation a = Allocation.Create(sizeof(int) * 4);
+            using Allocation b = Allocation.Create(sizeof(int) * 8);
             a.Write(0 * sizeof(int), 1);
             a.Write(1 * sizeof(int), 2);
             a.Write(2 * sizeof(int), 3);

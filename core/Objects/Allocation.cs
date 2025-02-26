@@ -53,25 +53,12 @@ namespace Unmanaged
             this.pointer = pointer;
         }
 
-        /// <summary>
-        /// Creates a new uninitialized allocation with the given size.
-        /// </summary>
-        public Allocation(uint size, bool clear = false)
-        {
-            pointer = Allocations.Allocate(size);
-            if (clear)
-            {
-                Clear(size);
-            }
-        }
-
 #if NET
-        /// <summary>
-        /// Creates a new empty allocation.
-        /// </summary>
+        /// <inheritdoc/>
+        [Obsolete("Default constructor not supported", true)]
         public Allocation()
         {
-            pointer = Allocations.Allocate(0);
+            throw new NotSupportedException();
         }
 #endif
 
@@ -109,7 +96,7 @@ namespace Unmanaged
         {
             USpan<char> buffer = stackalloc char[16];
             uint length = ToString(buffer);
-            return buffer.Slice(0, length).ToString();
+            return buffer.GetSpan(length).ToString();
         }
 
         /// <summary>
@@ -125,15 +112,15 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
-            ((T*)((nint)pointer + bytePosition))[0] = value;
+            *(T*)((nint)pointer + bytePosition) = value;
         }
 
         /// <summary>
-        /// Writes a single given value into the memory starting at the beginning.
+        /// Writes a single given value into the memory to the beginning.
         /// </summary>
         public readonly void Write<T>(T value) where T : unmanaged
         {
-            ((T*)pointer)[0] = value;
+            *(T*)pointer = value;
         }
 
         /// <summary>
@@ -141,17 +128,34 @@ namespace Unmanaged
         /// </summary>
         public readonly void WriteElement<T>(uint index, T value) where T : unmanaged
         {
-            ((T*)pointer)[index] = value;
+            unchecked
+            {
+                ((T*)pointer)[index] = value;
+            }
         }
 
         /// <summary>
-        /// Writes the given span into memory starting at this position in bytes.
+        /// Writes the given <paramref name="span"/> into memory starting at <paramref name="bytePosition"/>.
         /// </summary>
         public readonly void Write<T>(uint bytePosition, USpan<T> span) where T : unmanaged
         {
-            uint byteLength = span.Length * (uint)sizeof(T);
-            Span<byte> bytes = new((byte*)span.Pointer, (int)byteLength);
-            bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, (int)byteLength));
+            unchecked
+            {
+                Span<T> thisSpan = new((void*)((nint)pointer + bytePosition), (int)span.Length);
+                span.CopyTo(thisSpan);
+            }
+        }
+
+        /// <summary>
+        /// Writes the given <paramref name="span"/> into memory from the beginning.
+        /// </summary>
+        public readonly void Write<T>(USpan<T> span) where T : unmanaged
+        {
+            unchecked
+            {
+                Span<T> thisSpan = new(pointer, (int)span.Length * sizeof(T));
+                span.CopyTo(thisSpan);
+            }
         }
 
         /// <summary>
@@ -159,8 +163,11 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write(uint bytePosition, uint byteLength, Allocation data)
         {
-            Span<byte> bytes = new((byte*)data, (int)byteLength);
-            bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, (int)byteLength));
+            unchecked
+            {
+                Span<byte> bytes = new(data, (int)byteLength);
+                bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, (int)byteLength));
+            }
         }
 
         /// <summary>
@@ -172,13 +179,33 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Gets a span of bytes from the memory with the <paramref name="byteLength"/>.
+        /// </summary>
+        public readonly USpan<byte> GetSpan(uint byteLength)
+        {
+            return new USpan<byte>(pointer, byteLength);
+        }
+
+        /// <summary>
+        /// Gets a span of elements from the memory with the given <paramref name="length"/>
+        /// in <typeparamref name="T"/> elements.
+        /// </summary>
+        public readonly USpan<T> GetSpan<T>(uint length) where T : unmanaged
+        {
+            return new USpan<T>(pointer, length);
+        }
+
+        /// <summary>
         /// Gets a span of elements from the memory.
         /// <para>Both <paramref name="start"/> and <paramref name="length"/> are expected
         /// to be in <typeparamref name="T"/> elements.</para>
         /// </summary>
         public readonly USpan<T> AsSpan<T>(uint start, uint length) where T : unmanaged
         {
-            return new USpan<T>((void*)((nint)pointer + start * (uint)sizeof(T)), length);
+            unchecked
+            {
+                return new USpan<T>((void*)((nint)pointer + start * (uint)sizeof(T)), length);
+            }
         }
 
         /// <summary>
@@ -194,7 +221,10 @@ namespace Unmanaged
         /// </summary>
         public readonly ref T ReadElement<T>(uint index) where T : unmanaged
         {
-            return ref ((T*)pointer)[index];
+            unchecked
+            {
+                return ref ((T*)pointer)[index];
+            }
         }
 
         /// <summary>
@@ -262,12 +292,14 @@ namespace Unmanaged
         /// <summary>
         /// Copies bytes of this allocation into the <paramref name="destination"/>.
         /// </summary>
-        public readonly void CopyTo(Allocation destination, uint sourceIndex, uint destinationIndex, uint byteLength)
+        public readonly void CopyTo(Allocation destination, uint sourceBytePosition, uint destinationBytePosition, uint byteLength)
         {
-            void* destinationStart = (void*)((nint)destination.pointer + destinationIndex);
-            void* sourceStart = (void*)((nint)pointer + sourceIndex);
-            Span<byte> source = new((byte*)sourceStart, (int)byteLength);
-            source.CopyTo(new Span<byte>((byte*)destinationStart, (int)byteLength));
+            unchecked
+            {
+                Span<byte> source = new((byte*)pointer + (int)sourceBytePosition, (int)byteLength);
+                Span<byte> dest = new((byte*)destination.pointer + (int)destinationBytePosition, (int)byteLength);
+                source.CopyTo(dest);
+            }
         }
 
         /// <summary>
@@ -275,8 +307,25 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyTo(Allocation destination, uint byteLength)
         {
-            Span<byte> sourceSpan = new(pointer, (int)byteLength);
-            sourceSpan.CopyTo(new Span<byte>(destination.pointer, (int)byteLength));
+            unchecked
+            {
+                Span<byte> source = new(pointer, (int)byteLength);
+                Span<byte> dest = new(destination.pointer, (int)byteLength);
+                source.CopyTo(dest);
+            }
+        }
+
+        /// <summary>
+        /// Copies bytes of this allocation into the <paramref name="destination"/>.
+        /// </summary>
+        public readonly void CopyTo(void* destination, uint byteLength)
+        {
+            unchecked
+            {
+                Span<byte> source = new(pointer, (int)byteLength);
+                Span<byte> dest = new(destination, (int)byteLength);
+                source.CopyTo(dest);
+            }
         }
 
         /// <summary>
@@ -284,8 +333,12 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(Allocation source, uint byteLength)
         {
-            Span<byte> sourceSpan = new(source.pointer, (int)byteLength);
-            sourceSpan.CopyTo(new Span<byte>(pointer, (int)byteLength));
+            unchecked
+            {
+                Span<byte> sourceSpan = new(source.pointer, (int)byteLength);
+                Span<byte> destSpan = new(pointer, (int)byteLength);
+                sourceSpan.CopyTo(destSpan);
+            }
         }
 
         /// <summary>
@@ -293,8 +346,12 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(void* source, uint byteLength)
         {
-            Span<byte> sourceSpan = new((byte*)source, (int)byteLength);
-            sourceSpan.CopyTo(new Span<byte>((byte*)pointer, (int)byteLength));
+            unchecked
+            {
+                Span<byte> sourceSpan = new(source, (int)byteLength);
+                Span<byte> destSpan = new(pointer, (int)byteLength);
+                sourceSpan.CopyTo(destSpan);
+            }
         }
 
         /// <inheritdoc/>
@@ -342,19 +399,42 @@ namespace Unmanaged
         /// <summary>
         /// Creates an empty allocation of size 0.
         /// </summary>
-        public static Allocation Create()
+        public static Allocation CreateEmpty()
         {
-            return new(0);
+            void* pointer = Allocations.Allocate(0);
+            return new(pointer);
         }
 
         /// <summary>
-        /// Creates a new allocation that contains the data of the given value.
+        /// Creates an allocation of size <paramref name="byteLength"/>, initialized
+        /// to <see langword="default"/> memory.
         /// </summary>
-        public static Allocation Create<T>(T value) where T : unmanaged
+        public static Allocation CreateZeroed(uint byteLength)
         {
-            Allocation allocation = new((uint)sizeof(T));
-            allocation.Write(0, value);
-            return allocation;
+            void* pointer = Allocations.AllocateZeroed(byteLength);
+            return new(pointer);
+        }
+
+        /// <summary>
+        /// Creates a new non-zeroed allocation of size <paramref name="byteLength"/>.
+        /// </summary>
+        public static Allocation Create(uint byteLength)
+        {
+            void* pointer = Allocations.Allocate(byteLength);
+            return new(pointer);
+        }
+
+        /// <summary>
+        /// Creates a new allocation that contains the data of the given <paramref name="value"/>.
+        /// </summary>
+        public static Allocation CreateFromValue<T>(T value) where T : unmanaged
+        {
+            ref T reference = ref Allocations.Allocate<T>();
+            reference = value;
+            fixed (T* pointer = &reference)
+            {
+                return new(pointer);
+            }
         }
 
         /// <summary>
@@ -362,7 +442,8 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>() where T : unmanaged
         {
-            return new((uint)sizeof(T), true);
+            void* pointer = Allocations.Allocate((uint)sizeof(T));
+            return new(pointer);
         }
 
         /// <summary>
@@ -370,11 +451,11 @@ namespace Unmanaged
         /// </summary>
         public static Allocation Create<T>(USpan<T> span) where T : unmanaged
         {
-            uint length = span.Length * (uint)sizeof(T);
-            Allocation allocation = new(length);
+            void* pointer = Allocations.Allocate(span.Length * (uint)sizeof(T));
+            Allocation allocation = new(pointer);
             if (span.Length > 0)
             {
-                span.CopyTo(allocation.AsSpan<T>(0, span.Length));
+                span.CopyTo(allocation.GetSpan<T>(span.Length));
             }
 
             return allocation;

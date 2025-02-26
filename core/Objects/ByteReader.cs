@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Pointer = Unmanaged.Pointers.ByteReader;
 
 namespace Unmanaged
 {
@@ -11,7 +12,7 @@ namespace Unmanaged
     [SkipLocalsInit]
     public unsafe struct ByteReader : IDisposable, IEquatable<ByteReader>
     {
-        private Implementation* reader;
+        private Pointer* reader;
 
         /// <summary>
         /// Position of the reader in the byte stream.
@@ -35,7 +36,7 @@ namespace Unmanaged
             {
                 Allocations.ThrowIfNull(reader);
 
-                return reader->length;
+                return reader->byteLength;
             }
         }
 
@@ -45,19 +46,29 @@ namespace Unmanaged
         public readonly bool IsDisposed => reader is null;
 
         /// <summary>
-        /// Creates a new binary reader from the given <paramref name="data"/>.
+        /// Creates a new binary reader from the given <paramref name="bytes"/>.
         /// </summary>
-        public ByteReader(USpan<byte> data, uint position = 0)
+        public ByteReader(USpan<byte> bytes, uint position = 0)
         {
-            reader = Implementation.Allocate(data, position);
+            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            reader = new(position, Allocation.Create(bytes), bytes.Length, true);
+            fixed (Pointer* pointer = &reader)
+            {
+                this.reader = pointer;
+            }
         }
 
         /// <summary>
         /// Creates a new binary reader from the data in the <paramref name="writer"/>.
         /// </summary>
-        public ByteReader(ByteWriter writer)
+        public ByteReader(ByteWriter writer, uint position = 0)
         {
-            reader = Implementation.Allocate(writer.AsSpan());
+            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            reader = new(position, writer.Items, writer.Position, false);
+            fixed (Pointer* pointer = &reader)
+            {
+                this.reader = pointer;
+            }
         }
 
         /// <summary>
@@ -65,12 +76,20 @@ namespace Unmanaged
         /// </summary>
         public ByteReader(Stream stream, uint position = 0)
         {
-            reader = Implementation.Allocate(stream, position);
+            Allocation streamData = Allocation.Create((uint)stream.Length);
+            USpan<byte> span = streamData.GetSpan((uint)stream.Length);
+            uint length = (uint)stream.Read(span);
+            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            reader = new(position, streamData, span.Length, true);
+            fixed (Pointer* pointer = &reader)
+            {
+                this.reader = pointer;
+            }
         }
 
-        private ByteReader(Implementation* value)
+        private ByteReader(void* value)
         {
-            this.reader = value;
+            reader = (Pointer*)value;
         }
 
 #if NET
@@ -79,7 +98,12 @@ namespace Unmanaged
         /// </summary>
         public ByteReader()
         {
-            this.reader = Implementation.Allocate(Array.Empty<byte>());
+            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            reader = new(0, Allocation.CreateEmpty(), 0, true);
+            fixed (Pointer* pointer = &reader)
+            {
+                this.reader = pointer;
+            }
         }
 #endif
 
@@ -88,7 +112,14 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            Implementation.Free(ref reader);
+            Allocations.ThrowIfNull(reader);
+
+            if (reader->isOriginal)
+            {
+                reader->data.Dispose();
+            }
+
+            Allocations.Free(ref reader);
         }
 
         /// <summary>
@@ -106,7 +137,12 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(reader);
 
-            return new(Implementation.Allocate(reader));
+            ref Pointer clone = ref Allocations.Allocate<Pointer>();
+            clone = new(reader->bytePosition, Allocation.Create(GetBytes()), reader->byteLength, true);
+            fixed (Pointer* pointer = &clone)
+            {
+                return new(pointer);
+            }
         }
 
         /// <summary>
@@ -116,7 +152,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(reader);
 
-            return reader->data.AsSpan(0, Length);
+            return reader->data.GetSpan(reader->byteLength);
         }
 
         /// <summary>
@@ -126,13 +162,13 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(reader);
 
-            if (reader->length < data.Length)
+            if (reader->byteLength < data.Length)
             {
                 Allocation.Resize(ref reader->data, data.Length);
             }
 
             reader->bytePosition = 0;
-            reader->length = data.Length;
+            reader->byteLength = data.Length;
             reader->data.Write(0, data);
         }
 
@@ -193,7 +229,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(reader);
 
-            if (bytePosition + (uint)sizeof(T) > reader->length)
+            if (bytePosition + (uint)sizeof(T) > reader->byteLength)
             {
                 return default;
             }
@@ -350,8 +386,12 @@ namespace Unmanaged
         /// </summary>
         public static ByteReader Create()
         {
-            USpan<byte> emptyBytes = stackalloc byte[0];
-            return new ByteReader(Implementation.Allocate(emptyBytes));
+            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            reader = new(0, Allocation.CreateEmpty(), 0, true);
+            fixed (Pointer* pointer = &reader)
+            {
+                return new(pointer);
+            }
         }
 
         /// <inheritdoc/>
@@ -370,88 +410,6 @@ namespace Unmanaged
         public readonly override int GetHashCode()
         {
             return ((nint)reader).GetHashCode();
-        }
-
-        internal unsafe struct Implementation
-        {
-            public readonly bool dataIsOwned;
-
-            internal uint bytePosition;
-            internal Allocation data;
-            internal uint length;
-
-            private Implementation(uint position, Allocation data, uint length, bool dataIsOwned)
-            {
-                this.bytePosition = position;
-                this.data = data;
-                this.length = length;
-                this.dataIsOwned = dataIsOwned;
-            }
-
-            public static Implementation* Allocate(Implementation* reader, uint position = 0)
-            {
-                ref Implementation copy = ref Allocations.Allocate<Implementation>();
-                copy = new(position, reader->data, reader->length, false);
-                fixed (Implementation* pointer = &copy)
-                {
-                    return pointer;
-                }
-            }
-
-            public static Implementation* Allocate(ByteWriter.Implementation* writer, uint position = 0)
-            {
-                ref Implementation copy = ref Allocations.Allocate<Implementation>();
-                copy = new(position, writer->data, writer->bytePosition, false);
-                fixed (Implementation* pointer = &copy)
-                {
-                    return pointer;
-                }
-            }
-
-            public static Implementation* Allocate(USpan<byte> bytes, uint position = 0)
-            {
-                ref Implementation reader = ref Allocations.Allocate<Implementation>();
-                reader = new(position, Allocation.Create(bytes), bytes.Length, true);
-                fixed (Implementation* pointer = &reader)
-                {
-                    return pointer;
-                }
-            }
-
-            public static Implementation* Allocate(Stream stream, uint position = 0)
-            {
-                uint bufferLength = (uint)stream.Length + 4;
-                using Allocation buffer = new(bufferLength);
-                USpan<byte> span = buffer.AsSpan(0, bufferLength);
-                uint length = (uint)stream.Read(span);
-                USpan<byte> bytes = span.Slice(0, length);
-                return Allocate(bytes, position);
-            }
-
-            public static void Free(ref Implementation* reader)
-            {
-                Allocations.ThrowIfNull(reader);
-
-                if (reader->dataIsOwned)
-                {
-                    reader->data.Dispose();
-                }
-
-                Allocations.Free(ref reader);
-            }
-
-            public static void CopyFrom(Implementation* reader, USpan<byte> data)
-            {
-                Allocations.ThrowIfNull(reader);
-
-                if (reader->length < data.Length)
-                {
-                    Allocation.Resize(ref reader->data, data.Length);
-                }
-
-                reader->length = data.Length;
-                reader->data.Write(0, data);
-            }
         }
 
         /// <inheritdoc/>

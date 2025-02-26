@@ -5,19 +5,32 @@ namespace Unmanaged.Tests
 {
     public readonly struct Benchmark
     {
-        public readonly double elapsed;
-        public readonly double average;
+        private readonly Action action;
 
-        public Benchmark(Action action, uint iterations = 10000)
+        [Obsolete("Default constructor not supported", true)]
+        public Benchmark()
         {
-            for (int w = 0; w < 8; w++)
-            {
-                action();
+            throw new NotSupportedException();
+        }
 
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-            }
+        public Benchmark(Action action)
+        {
+            this.action = action;
+        }
+
+        [Obsolete("ToString() is not supported", true)]
+        public readonly override string ToString()
+        {
+            throw new NotSupportedException();
+        }
+
+        public readonly void Run(out double elapsed, out double average, uint iterations = 10000)
+        {
+            action();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
 
             Stopwatch stopwatch = new();
             stopwatch.Restart();
@@ -31,9 +44,21 @@ namespace Unmanaged.Tests
             average = stopwatch.ElapsedMilliseconds / (double)iterations;
         }
 
-        public override string ToString()
+        public readonly string Run(uint iterations = 10000)
         {
-            return $"Elapsed: {elapsed}ms, Average: {average}ms";
+            Run(out double elapsed, out double average, iterations);
+            if (iterations == 0)
+            {
+                return "Did not run";
+            }
+            else if (iterations == 1)
+            {
+                return $"{elapsed:0.00000}ms";
+            }
+            else
+            {
+                return $"AVG: {average:0.00000}ms";
+            }
         }
     }
 }

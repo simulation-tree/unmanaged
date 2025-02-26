@@ -72,6 +72,17 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Allocates native memory of the given size with <see langword="default"/> memory.
+        /// </summary>
+        public static void* AllocateZeroed(uint size)
+        {
+            void* pointer = NativeMemory.AllocZeroed(size);
+            Tracker.Track(pointer, size);
+            count++;
+            return pointer;
+        }
+
+        /// <summary>
         /// Allocates native memory of the given size with the given alignment.
         /// <para>
         /// Not zeroed.

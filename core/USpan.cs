@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -21,7 +20,17 @@ namespace Unmanaged
         /// <summary>
         /// Ref access to the element at the given index.
         /// </summary>
-        public unsafe ref T this[uint index] => ref value[(int)index];
+        public unsafe ref T this[uint index]
+        {
+            get
+            {
+                ThrowIfAccessingOutOfRange(index);
+                unchecked
+                {
+                    return ref value[(int)index];
+                }
+            }
+        }
 
         /// <summary>
         /// Native address of the first element in this span.
@@ -35,7 +44,7 @@ namespace Unmanaged
         {
             get
             {
-                fixed (T* pointer = &MemoryMarshal.GetReference(value))
+                fixed (T* pointer = value)
                 {
                     return pointer;
                 }
@@ -45,7 +54,16 @@ namespace Unmanaged
         /// <summary>
         /// Amount of <typeparamref name="T"/> elements in this span.
         /// </summary>
-        public unsafe readonly uint Length => (uint)value.Length;
+        public unsafe readonly uint Length
+        {
+            get
+            {
+                unchecked
+                {
+                    return (uint)value.Length;
+                }
+            }
+        }
 
         /// <summary>
         /// Checks if this span is empty.
@@ -239,24 +257,59 @@ namespace Unmanaged
         /// </summary>
         public unsafe readonly USpan<X> Reinterpret<X>() where X : unmanaged
         {
-            uint newLength = Length * (uint)sizeof(T) / (uint)sizeof(X);
-            return new(Address, newLength);
+            unchecked
+            {
+                uint newLength = Length * (uint)sizeof(T) / (uint)sizeof(X);
+                return new(Address, newLength);
+            }
         }
 
         /// <summary>
-        /// Retrieves a slice of this span starting at the given index with a specified length.
+        /// Retrieves a span of the specified <paramref name="length"/> from the start.
         /// </summary>
-        public readonly USpan<T> Slice(uint start, uint length)
+        public unsafe readonly USpan<T> GetSpan(uint length)
         {
-            return new(value.Slice((int)start, (int)length));
+            unchecked
+            {
+                ThrowIfAccessingPastRange(length);
+
+                fixed (T* pointer = value)
+                {
+                    return new(pointer, length);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Retrieves a slice of <paramref name="length"/> from <paramref name="start"/>.
+        /// </summary>
+        public unsafe readonly USpan<T> Slice(uint start, uint length)
+        {
+            unchecked
+            {
+                ThrowIfAccessingPastRange(start + length);
+
+                fixed (T* pointer = value)
+                {
+                    return new(pointer + start, length);
+                }
+            }
         }
 
         /// <summary>
         /// Retrieves a slice of this span starting at the given index.
         /// </summary>
-        public readonly USpan<T> Slice(uint start)
+        public unsafe readonly USpan<T> Slice(uint start)
         {
-            return new(value.Slice((int)start));
+            unchecked
+            {
+                ThrowIfAccessingPastRange(start);
+
+                fixed (T* pointer = value)
+                {
+                    return new(pointer + start, (uint)value.Length - start);
+                }
+            }
         }
 
         /// <summary>
@@ -264,7 +317,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> Slice(URange range)
         {
-            return new(value.Slice((int)range.start, (int)range.Length));
+            return Slice(range.start, range.Length);
         }
 
         /// <summary>
@@ -272,35 +325,16 @@ namespace Unmanaged
         /// </summary>
         public readonly T[] ToArray()
         {
-            T[] array = new T[Length];
-            for (uint i = 0; i < Length; i++)
+            unchecked
             {
-                array[i] = value[(int)i];
-            }
-
-            return array;
-        }
-
-        /// <summary>
-        /// Checks if the span is equal to the given span.
-        /// </summary>
-        public readonly bool SequenceEqual(USpan<T> other)
-        {
-            if (Length != other.Length)
-            {
-                return false;
-            }
-
-            EqualityComparer<T> comparer = EqualityComparer<T>.Default;
-            for (uint i = 0; i < Length; i++)
-            {
-                if (!comparer.Equals(value[(int)i], other.value[(int)i]))
+                T[] array = new T[Length];
+                for (uint i = 0; i < Length; i++)
                 {
-                    return false;
+                    array[i] = value[(int)i];
                 }
-            }
 
-            return true;
+                return array;
+            }
         }
 
         /// <inheritdoc/>
@@ -328,13 +362,11 @@ namespace Unmanaged
         /// <summary>
         /// Copies the memory of this span to the given <paramref name="destination"/>.
         /// </summary>
-        /// <returns>Amount of values copied.</returns>
-        public readonly uint CopyTo(USpan<T> destination)
+        public readonly void CopyTo(USpan<T> destination)
         {
             ThrowIfDestinationTooSmall(destination.Length);
 
             value.CopyTo(destination.value);
-            return Length;
         }
 
         /// <summary>
@@ -345,19 +377,20 @@ namespace Unmanaged
         {
             ThrowIfAccessingPastRange(byteLength / (uint)sizeof(T));
 
-            value.CopyTo(new Span<T>(destination, (int)Length));
+            unchecked
+            {
+                Buffer.MemoryCopy(Pointer, destination, byteLength, byteLength);
+            }
         }
 
         /// <summary>
         /// Copies the memory of <paramref name="source"/> into this span.
         /// </summary>
-        /// <returns>Amount of values copied.</returns>
-        public readonly uint CopyFrom(USpan<T> source)
+        public readonly void CopyFrom(USpan<T> source)
         {
             source.ThrowIfDestinationTooSmall(Length);
 
             source.value.CopyTo(value);
-            return source.Length;
         }
 
         /// <summary>
@@ -368,7 +401,10 @@ namespace Unmanaged
         {
             ThrowIfAccessingPastRange(byteLength / (uint)sizeof(T));
 
-            new Span<T>(source, (int)Length).CopyTo(value);
+            unchecked
+            {
+                Buffer.MemoryCopy(source, Pointer, byteLength, byteLength);
+            }
         }
 
         /// <inheritdoc/>

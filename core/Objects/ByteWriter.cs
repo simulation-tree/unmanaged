@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Pointer = Unmanaged.Pointers.ByteWriter;
 
 namespace Unmanaged
 {
@@ -11,7 +11,7 @@ namespace Unmanaged
     [SkipLocalsInit]
     public unsafe struct ByteWriter : IDisposable, IEquatable<ByteWriter>
     {
-        private Implementation* writer;
+        private Pointer* writer;
 
         /// <summary>
         /// Indicates whether the writer has been disposed.
@@ -19,7 +19,7 @@ namespace Unmanaged
         public readonly bool IsDisposed => writer is null;
 
         /// <summary>
-        /// Read position of the writer.
+        /// The current position of the writer in bytes.
         /// </summary>
         public readonly uint Position
         {
@@ -32,18 +32,37 @@ namespace Unmanaged
             set
             {
                 Allocations.ThrowIfNull(writer);
-                Implementation.ThrowIfPositionPastCapacity(writer, value);
+                ThrowIfPositionPastCapacity(value);
 
                 writer->bytePosition = value;
             }
         }
 
         /// <summary>
-        /// Creates a new binary writer with the specified capacity.
+        /// The underlying memory allocation of the writer containg all of the bytes.
         /// </summary>
-        public ByteWriter(uint capacity = 4)
+        public readonly Allocation Items
         {
-            writer = Implementation.Allocate(capacity);
+            get
+            {
+                Allocations.ThrowIfNull(writer);
+
+                return writer->data;
+            }
+        }
+
+        /// <summary>
+        /// Creates a new binary writer with the specified <paramref name="initialCapacity"/>.
+        /// </summary>
+        public ByteWriter(uint initialCapacity = 4)
+        {
+            initialCapacity = Allocations.GetNextPowerOf2(initialCapacity);
+            ref Pointer writer = ref Allocations.Allocate<Pointer>();
+            writer = new(Allocation.Create(initialCapacity), 0, initialCapacity);
+            fixed (Pointer* pointer = &writer)
+            {
+                this.writer = pointer;
+            }
         }
 
         /// <summary>
@@ -55,7 +74,13 @@ namespace Unmanaged
         /// </summary>
         public ByteWriter(USpan<byte> span)
         {
-            writer = Implementation.Allocate(span);
+            ref Pointer writer = ref Allocations.Allocate<Pointer>();
+            writer = new(Allocation.Create(span), span.Length, span.Length);
+            writer.bytePosition = span.Length;
+            fixed (Pointer* pointer = &writer)
+            {
+                this.writer = pointer;
+            }
         }
 #if NET
         /// <summary>
@@ -63,36 +88,74 @@ namespace Unmanaged
         /// </summary>
         public ByteWriter()
         {
-            writer = Implementation.Allocate(4);
+            ref Pointer writer = ref Allocations.Allocate<Pointer>();
+            writer = new(Allocation.CreateEmpty(), 0, 0);
+            fixed (Pointer* pointer = &writer)
+            {
+                this.writer = pointer;
+            }
         }
 #endif
-        private ByteWriter(Implementation* value)
+        private ByteWriter(void* value)
         {
-            this.writer = value;
+            writer = (Pointer*)value;
         }
 
         /// <summary>
-        /// Writes the given value to the writer.
+        /// Writes the given <paramref name="value"/> to the writer.
         /// </summary>
         public readonly void WriteValue<T>(T value) where T : unmanaged
         {
-            Implementation.Write(writer, value);
+            Allocations.ThrowIfNull(writer);
+
+            uint endPosition = writer->bytePosition + (uint)sizeof(T);
+            uint capacity = writer->capacity;
+            if (capacity < endPosition)
+            {
+                writer->capacity = Allocations.GetNextPowerOf2(endPosition);
+                Allocation.Resize(ref writer->data, writer->capacity);
+            }
+
+            writer->data.Write(writer->bytePosition, value);
+            writer->bytePosition = endPosition;
         }
 
         /// <summary>
-        /// Writes the given span of values to the writer.
+        /// Writes the given <paramref name="span"/> of values to the writer.
         /// </summary>
         public readonly void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            Implementation.Write(writer, span);
+            Allocations.ThrowIfNull(writer);
+
+            uint endPosition = writer->bytePosition + (uint)sizeof(T) * span.Length;
+            uint capacity = writer->capacity;
+            if (capacity < endPosition)
+            {
+                writer->capacity = Allocations.GetNextPowerOf2(endPosition);
+                Allocation.Resize(ref writer->data, writer->capacity);
+            }
+
+            writer->data.Write(writer->bytePosition, span);
+            writer->bytePosition = endPosition;
         }
 
         /// <summary>
-        /// Writes memory from the given pointer with the specified <paramref name="byteLength"/>.
+        /// Writes memory from the given <paramref name="data"/> with a specified <paramref name="byteLength"/>.
         /// </summary>
         public readonly void Write(Allocation data, uint byteLength)
         {
-            Implementation.Write(writer, data, byteLength);
+            Allocations.ThrowIfNull(writer);
+
+            uint endPosition = writer->bytePosition + byteLength;
+            uint capacity = writer->capacity;
+            if (capacity < endPosition)
+            {
+                writer->capacity = Allocations.GetNextPowerOf2(endPosition);
+                Allocation.Resize(ref writer->data, writer->capacity);
+            }
+
+            writer->data.Write(writer->bytePosition, byteLength, data);
+            writer->bytePosition = endPosition;
         }
 
         /// <summary>
@@ -190,7 +253,19 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            Implementation.Free(ref writer);
+            Allocations.ThrowIfNull(writer);
+
+            writer->data.Dispose();
+            Allocations.Free(ref writer);
+        }
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfPositionPastCapacity(uint newPosition)
+        {
+            if (newPosition > writer->capacity)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newPosition));
+            }
         }
 
         /// <summary>
@@ -210,7 +285,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(writer);
 
-            return writer->data.AsSpan(0, writer->bytePosition);
+            return writer->data.GetSpan(writer->bytePosition);
         }
 
         /// <inheritdoc/>
@@ -229,107 +304,6 @@ namespace Unmanaged
         public readonly override int GetHashCode()
         {
             return ((nint)writer).GetHashCode();
-        }
-
-        internal unsafe struct Implementation
-        {
-            internal Allocation data;
-            internal uint bytePosition;
-            internal uint capacity;
-
-            private Implementation(Allocation items, uint length, uint capacity)
-            {
-                this.data = items;
-                this.bytePosition = length;
-                this.capacity = capacity;
-            }
-
-            public static Implementation* Allocate(uint initialCapacity)
-            {
-                initialCapacity = Allocations.GetNextPowerOf2(initialCapacity);
-                ref Implementation writer = ref Allocations.Allocate<Implementation>();
-                writer = new(new(initialCapacity), 0, initialCapacity);
-                fixed (Implementation* pointer = &writer)
-                {
-                    return pointer;
-                }
-            }
-
-            public static Implementation* Allocate(USpan<byte> span)
-            {
-                ref Implementation writer = ref Allocations.Allocate<Implementation>();
-                writer = new(Allocation.Create(span), span.Length, span.Length);
-                writer.bytePosition = span.Length;
-                fixed (Implementation* pointer = &writer)
-                {
-                    return pointer;
-                }
-            }
-
-            public static void Free(ref Implementation* writer)
-            {
-                Allocations.ThrowIfNull(writer);
-
-                writer->data.Dispose();
-                Allocations.Free(ref writer);
-            }
-
-            [Conditional("DEBUG")]
-            internal static void ThrowIfPositionPastCapacity(Implementation* writer, uint newPosition)
-            {
-                if (newPosition > writer->capacity)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(newPosition));
-                }
-            }
-
-            public static void Write(Implementation* writer, Allocation data, uint dataByteLength)
-            {
-                Allocations.ThrowIfNull(writer);
-
-                uint endPosition = writer->bytePosition + dataByteLength;
-                uint capacity = writer->capacity;
-                if (capacity < endPosition)
-                {
-                    writer->capacity = Allocations.GetNextPowerOf2(endPosition);
-                    Allocation.Resize(ref writer->data, writer->capacity);
-                }
-
-                writer->data.Write(writer->bytePosition, dataByteLength, data);
-                writer->bytePosition = endPosition;
-            }
-
-            public static void Write<T>(Implementation* writer, T value) where T : unmanaged
-            {
-                Allocations.ThrowIfNull(writer);
-
-                uint endPosition = writer->bytePosition + (uint)sizeof(T);
-                uint capacity = writer->capacity;
-                if (capacity < endPosition)
-                {
-                    writer->capacity = Allocations.GetNextPowerOf2(endPosition);
-                    Allocation.Resize(ref writer->data, writer->capacity);
-                }
-
-                writer->data.Write(writer->bytePosition, value);
-                writer->bytePosition = endPosition;
-            }
-
-            public static void Write<T>(Implementation* writer, USpan<T> value) where T : unmanaged
-            {
-                Allocations.ThrowIfNull(writer);
-
-                uint endPosition = writer->bytePosition + (uint)sizeof(T) * value.Length;
-                uint capacity = writer->capacity;
-                if (capacity < endPosition)
-                {
-                    writer->capacity = Allocations.GetNextPowerOf2(endPosition);
-                    Allocation.Resize(ref writer->data, writer->capacity);
-                }
-
-                writer->data.Write(writer->bytePosition, value);
-                writer->bytePosition = endPosition;
-            }
         }
 
         /// <inheritdoc/>
