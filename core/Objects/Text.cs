@@ -142,6 +142,21 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Creates a container of the given <paramref name="content"/>.
+        /// </summary>
+        public Text(string content)
+        {
+            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            text.length = (uint)content.Length;
+            USpan<char> contentSpan = content.AsSpan();
+            text.buffer = Allocation.Create(contentSpan);
+            fixed (Pointer* pointer = &text)
+            {
+                this.text = pointer;
+            }
+        }
+
+        /// <summary>
         /// Creates an instance from an existing <paramref name="pointer"/>.
         /// </summary>
         public Text(void* pointer)
