@@ -76,9 +76,10 @@ namespace Unmanaged
         /// </summary>
         public ByteReader(Stream stream, uint position = 0)
         {
-            Allocation streamData = Allocation.Create((uint)stream.Length);
-            USpan<byte> span = streamData.GetSpan((uint)stream.Length);
-            uint length = (uint)stream.Read(span);
+            uint byteLength = (uint)stream.Length;
+            Allocation streamData = Allocation.Create(byteLength);
+            USpan<byte> span = new(streamData.Pointer, byteLength);
+            byteLength = (uint)stream.Read(span);
             ref Pointer reader = ref Allocations.Allocate<Pointer>();
             reader = new(position, streamData, span.Length, true);
             fixed (Pointer* pointer = &reader)
@@ -152,7 +153,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(reader);
 
-            return reader->data.GetSpan(reader->byteLength);
+            return new(reader->data.Pointer, reader->byteLength);
         }
 
         /// <summary>

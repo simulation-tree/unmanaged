@@ -285,7 +285,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(writer);
 
-            return writer->data.GetSpan(writer->bytePosition);
+            return new(writer->data.Pointer, writer->bytePosition);
         }
 
         /// <inheritdoc/>

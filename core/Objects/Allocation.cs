@@ -455,7 +455,7 @@ namespace Unmanaged
             Allocation allocation = new(pointer);
             if (span.Length > 0)
             {
-                span.CopyTo(allocation.GetSpan<T>(span.Length));
+                span.CopyTo(new USpan<T>(allocation.Pointer, span.Length));
             }
 
             return allocation;

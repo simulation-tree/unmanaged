@@ -71,18 +71,18 @@ namespace Unmanaged
         public readonly bool IsEmpty => value.IsEmpty;
 
         /// <summary>
-        /// Creates a new span from the given pointer with <paramref name="byteLength"/>.
+        /// Creates a new span from the given pointer with element <paramref name="length"/>.
         /// </summary>
-        public unsafe USpan(void* pointer, uint byteLength)
+        public unsafe USpan(void* pointer, uint length)
         {
             unchecked
             {
-                value = new(pointer, (int)byteLength);
+                value = new(pointer, (int)length);
             }
         }
 
         /// <summary>
-        /// Creates a new span starting at the given reference with specified element length.
+        /// Creates a new span starting at the given reference with specified element <paramref name="length"/>.
         /// </summary>
         public unsafe USpan(ref T pointer, uint length)
         {
@@ -96,7 +96,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new span from the given native address with specified element length.
+        /// Creates a new span from the given native address with specified element <paramref name="length"/>.
         /// </summary>
         public unsafe USpan(nint address, uint length)
         {
@@ -348,6 +348,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Clear()
         {
+            //todo: efficiency: this has a branch for whether or not the span contains references
             value.Clear();
         }
 

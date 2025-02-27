@@ -108,7 +108,7 @@ namespace Unmanaged
                 this.text = pointer;
             }
 
-            text.buffer.GetSpan<char>(length).Fill(defaultCharacter);
+            new USpan<char>(text.buffer.Pointer, length).Fill(defaultCharacter);
         }
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(text);
 
-            return text->buffer.GetSpan<char>(text->length);
+            return new USpan<char>(text->buffer.Pointer, text->length);
         }
 
         /// <summary>
@@ -209,7 +209,7 @@ namespace Unmanaged
         {
             Allocations.ThrowIfNull(text);
 
-            text->buffer.GetSpan<char>(text->length).CopyTo(destination);
+            new USpan<char>(text->buffer.Pointer, text->length).CopyTo(destination);
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace Unmanaged
                 Allocation.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(text->buffer.GetSpan<char>(source.Length));
+            source.CopyTo(new USpan<char>(text->buffer.Pointer, source.Length));
         }
 
         /// <summary>
