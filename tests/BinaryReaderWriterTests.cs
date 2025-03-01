@@ -34,7 +34,7 @@ namespace Unmanaged.Tests
             {
                 USpan<char> buffer = stackalloc char[FixedString.Capacity];
                 uint length = reader.ReadUTF8(buffer);
-                name = new FixedString(buffer.Slice(0, length));
+                name = new FixedString(buffer.GetSpan(length));
             }
 
             public override bool Equals(object? obj)
