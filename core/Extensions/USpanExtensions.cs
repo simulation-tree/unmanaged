@@ -443,7 +443,7 @@ namespace Unmanaged
         /// <para>Reads until until a <see langword="default"/> character is found,
         /// or when the <paramref name="length"/> amount of <see cref="char"/> values have been read.</para>
         /// </summary>
-        /// <returns>Amount of <see cref="byte"/> values read.</returns>
+        /// <returns>Amount of <see cref="char"/> values read.</returns>
         public static uint GetUTF8Characters(this USpan<byte> bytes, uint bytePosition, uint length, USpan<char> destination)
         {
             uint charactersRead = 0;
