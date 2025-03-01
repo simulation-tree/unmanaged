@@ -153,7 +153,7 @@ namespace Unmanaged
         {
             unchecked
             {
-                Span<T> thisSpan = new(pointer, (int)span.Length * sizeof(T));
+                Span<T> thisSpan = new(pointer, (int)span.Length);
                 span.CopyTo(thisSpan);
             }
         }
