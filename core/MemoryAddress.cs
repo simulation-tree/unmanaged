@@ -52,10 +52,7 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            ThrowIfDefault();
-
-            NativeMemory.Free(pointer);
-            pointer = default;
+            Free(ref pointer);
         }
 
         /// <summary>
@@ -399,9 +396,9 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new uninitialized allocation that can contain a(n) <typeparamref name="T"/>
         /// </summary>
-        public static MemoryAddress Allocate<T>() where T : unmanaged
+        public static ref T Allocate<T>() where T : unmanaged
         {
-            return new(NativeMemory.Alloc((uint)sizeof(T)));
+            return ref *(T*)NativeMemory.Alloc((uint)sizeof(T));
         }
 
         /// <summary>
@@ -427,6 +424,30 @@ namespace Unmanaged
             {
                 return new(pointer);
             }
+        }
+
+        /// <summary>
+        /// Frees a previously created <paramref name="allocation"/> and 
+        /// assigns it to <see langword="default"/>.
+        /// </summary>
+        public static void Free<T>(ref T* allocation) where T : unmanaged
+        {
+            ThrowIfDefault(allocation);
+
+            NativeMemory.Free(allocation);
+            allocation = default;
+        }
+
+        /// <summary>
+        /// Frees a previously created <paramref name="allocation"/> and 
+        /// assigns it to <see langword="default"/>.
+        /// </summary>
+        public static void Free(ref void* allocation)
+        {
+            ThrowIfDefault(allocation);
+
+            NativeMemory.Free(allocation);
+            allocation = default;
         }
 
         /// <summary>

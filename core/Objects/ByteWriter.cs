@@ -25,13 +25,13 @@ namespace Unmanaged
         {
             get
             {
-                Allocations.ThrowIfNull(writer);
+                MemoryAddress.ThrowIfDefault(writer);
 
                 return writer->bytePosition;
             }
             set
             {
-                Allocations.ThrowIfNull(writer);
+                MemoryAddress.ThrowIfDefault(writer);
                 ThrowIfPositionPastCapacity(value);
 
                 writer->bytePosition = value;
@@ -45,7 +45,7 @@ namespace Unmanaged
         {
             get
             {
-                Allocations.ThrowIfNull(writer);
+                MemoryAddress.ThrowIfDefault(writer);
 
                 return writer->data;
             }
@@ -56,8 +56,8 @@ namespace Unmanaged
         /// </summary>
         public ByteWriter(uint initialCapacity = 4)
         {
-            initialCapacity = Allocations.GetNextPowerOf2(initialCapacity);
-            ref Pointer writer = ref Allocations.Allocate<Pointer>();
+            initialCapacity = initialCapacity.GetNextPowerOf2();
+            ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
             writer = new(MemoryAddress.Allocate(initialCapacity), 0, initialCapacity);
             fixed (Pointer* pointer = &writer)
             {
@@ -74,7 +74,7 @@ namespace Unmanaged
         /// </summary>
         public ByteWriter(USpan<byte> span)
         {
-            ref Pointer writer = ref Allocations.Allocate<Pointer>();
+            ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
             writer = new(MemoryAddress.Allocate(span), span.Length, span.Length);
             writer.bytePosition = span.Length;
             fixed (Pointer* pointer = &writer)
@@ -88,7 +88,7 @@ namespace Unmanaged
         /// </summary>
         public ByteWriter()
         {
-            ref Pointer writer = ref Allocations.Allocate<Pointer>();
+            ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
             writer = new(MemoryAddress.AllocateEmpty(), 0, 0);
             fixed (Pointer* pointer = &writer)
             {
@@ -106,13 +106,13 @@ namespace Unmanaged
         /// </summary>
         public readonly void WriteValue<T>(T value) where T : unmanaged
         {
-            Allocations.ThrowIfNull(writer);
+            MemoryAddress.ThrowIfDefault(writer);
 
             uint endPosition = writer->bytePosition + (uint)sizeof(T);
             uint capacity = writer->capacity;
             if (capacity < endPosition)
             {
-                writer->capacity = Allocations.GetNextPowerOf2(endPosition);
+                writer->capacity = endPosition.GetNextPowerOf2();
                 MemoryAddress.Resize(ref writer->data, writer->capacity);
             }
 
@@ -125,13 +125,13 @@ namespace Unmanaged
         /// </summary>
         public readonly void WriteSpan<T>(USpan<T> span) where T : unmanaged
         {
-            Allocations.ThrowIfNull(writer);
+            MemoryAddress.ThrowIfDefault(writer);
 
             uint endPosition = writer->bytePosition + (uint)sizeof(T) * span.Length;
             uint capacity = writer->capacity;
             if (capacity < endPosition)
             {
-                writer->capacity = Allocations.GetNextPowerOf2(endPosition);
+                writer->capacity = endPosition.GetNextPowerOf2();
                 MemoryAddress.Resize(ref writer->data, writer->capacity);
             }
 
@@ -144,13 +144,13 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write(MemoryAddress data, uint byteLength)
         {
-            Allocations.ThrowIfNull(writer);
+            MemoryAddress.ThrowIfDefault(writer);
 
             uint endPosition = writer->bytePosition + byteLength;
             uint capacity = writer->capacity;
             if (capacity < endPosition)
             {
-                writer->capacity = Allocations.GetNextPowerOf2(endPosition);
+                writer->capacity = endPosition.GetNextPowerOf2();
                 MemoryAddress.Resize(ref writer->data, writer->capacity);
             }
 
@@ -223,7 +223,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8(FixedString text)
+        public void WriteUTF8(ASCIIText256 text)
         {
             USpan<char> textSpan = stackalloc char[text.Length];
             text.CopyTo(textSpan);
@@ -253,10 +253,10 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            Allocations.ThrowIfNull(writer);
+            MemoryAddress.ThrowIfDefault(writer);
 
             writer->data.Dispose();
-            Allocations.Free(ref writer);
+            MemoryAddress.Free(ref writer);
         }
 
         [Conditional("DEBUG")]
@@ -273,7 +273,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Reset()
         {
-            Allocations.ThrowIfNull(writer);
+            MemoryAddress.ThrowIfDefault(writer);
 
             writer->bytePosition = 0;
         }
@@ -283,7 +283,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<byte> AsSpan()
         {
-            Allocations.ThrowIfNull(writer);
+            MemoryAddress.ThrowIfDefault(writer);
 
             return new(writer->data.Pointer, writer->bytePosition);
         }

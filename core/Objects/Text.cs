@@ -21,7 +21,7 @@ namespace Unmanaged
         {
             get
             {
-                Allocations.ThrowIfNull(text);
+                MemoryAddress.ThrowIfDefault(text);
 
                 return text->length;
             }
@@ -39,7 +39,7 @@ namespace Unmanaged
         {
             get
             {
-                Allocations.ThrowIfNull(text);
+                MemoryAddress.ThrowIfDefault(text);
 
                 return text->length == 0;
             }
@@ -52,7 +52,7 @@ namespace Unmanaged
         {
             get
             {
-                Allocations.ThrowIfNull(text);
+                MemoryAddress.ThrowIfDefault(text);
                 ThrowIfOutOfRange(index);
 
                 return ref text->buffer.ReadElement<char>(index);
@@ -85,7 +85,7 @@ namespace Unmanaged
         /// </summary>
         public Text()
         {
-            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = 0;
             text.buffer = MemoryAddress.Allocate((uint)0);
             fixed (Pointer* pointer = &text)
@@ -100,7 +100,7 @@ namespace Unmanaged
         /// </summary>
         public Text(uint length, char defaultCharacter = ' ')
         {
-            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = length;
             text.buffer = MemoryAddress.Allocate(length * sizeof(char));
             fixed (Pointer* pointer = &text)
@@ -116,7 +116,7 @@ namespace Unmanaged
         /// </summary>
         public Text(USpan<char> content)
         {
-            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = content.Length;
             text.buffer = MemoryAddress.Allocate(content);
             fixed (Pointer* pointer = &text)
@@ -130,7 +130,7 @@ namespace Unmanaged
         /// </summary>
         public Text(IEnumerable<char> content)
         {
-            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = 0;
             text.buffer = MemoryAddress.Allocate((uint)0);
             fixed (Pointer* pointer = &text)
@@ -146,7 +146,7 @@ namespace Unmanaged
         /// </summary>
         public Text(string content)
         {
-            ref Pointer text = ref Allocations.Allocate<Pointer>();
+            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = (uint)content.Length;
             USpan<char> contentSpan = content.AsSpan();
             text.buffer = MemoryAddress.Allocate(contentSpan);
@@ -167,10 +167,10 @@ namespace Unmanaged
         /// <inheritdoc/>
         public void Dispose()
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             text->buffer.Dispose();
-            Allocations.Free(ref text);
+            MemoryAddress.Free(ref text);
         }
 
         [Conditional("DEBUG")]
@@ -187,7 +187,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<char> AsSpan()
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             return new USpan<char>(text->buffer.Pointer, text->length);
         }
@@ -197,7 +197,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Clear()
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             text->length = 0;
         }
@@ -207,7 +207,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyTo(USpan<char> destination)
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             new USpan<char>(text->buffer.Pointer, text->length).CopyTo(destination);
         }
@@ -217,7 +217,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(USpan<char> source)
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             if (text->length != source.Length)
             {
@@ -233,7 +233,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(IEnumerable<char> source)
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             uint length = 0;
             foreach (char character in source)
@@ -258,7 +258,7 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             USpan<char> buffer = stackalloc char[(int)text->length];
             ToString(buffer);
@@ -270,7 +270,7 @@ namespace Unmanaged
         /// </summary>
         public readonly uint ToString(USpan<char> destination)
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             USpan<char> source = AsSpan();
             uint copyLength = Math.Min(text->length, destination.Length);
@@ -283,7 +283,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void SetLength(uint newLength, char defaultCharacter = ' ')
         {
-            Allocations.ThrowIfNull(text);
+            MemoryAddress.ThrowIfDefault(text);
 
             if (newLength == text->length)
             {

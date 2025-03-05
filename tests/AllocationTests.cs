@@ -77,15 +77,6 @@ namespace Unmanaged.Tests
         }
 
         [Test]
-        public unsafe void AllocateAndFree()
-        {
-            void* pointer = Allocations.Allocate(sizeof(int));
-            Assert.That(pointer is null, Is.False);
-            Allocations.Free(ref pointer);
-            Assert.That(pointer is null, Is.True);
-        }
-
-        [Test]
         public void CreateAndDestroy()
         {
             MemoryAddress obj = MemoryAddress.Allocate((uint)sizeof(int));

@@ -21,7 +21,7 @@ namespace Unmanaged
         {
             get
             {
-                Allocations.ThrowIfNull(reader);
+                MemoryAddress.ThrowIfDefault(reader);
 
                 return ref reader->bytePosition;
             }
@@ -34,7 +34,7 @@ namespace Unmanaged
         {
             get
             {
-                Allocations.ThrowIfNull(reader);
+                MemoryAddress.ThrowIfDefault(reader);
 
                 return reader->byteLength;
             }
@@ -50,7 +50,7 @@ namespace Unmanaged
         /// </summary>
         public ByteReader(USpan<byte> bytes, uint position = 0)
         {
-            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(position, MemoryAddress.Allocate(bytes), bytes.Length, true);
             fixed (Pointer* pointer = &reader)
             {
@@ -63,7 +63,7 @@ namespace Unmanaged
         /// </summary>
         public ByteReader(ByteWriter writer, uint position = 0)
         {
-            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(position, writer.Items, writer.Position, false);
             fixed (Pointer* pointer = &reader)
             {
@@ -80,7 +80,7 @@ namespace Unmanaged
             MemoryAddress streamData = MemoryAddress.Allocate(byteLength);
             USpan<byte> span = new(streamData.Pointer, byteLength);
             byteLength = (uint)stream.Read(span);
-            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(position, streamData, span.Length, true);
             fixed (Pointer* pointer = &reader)
             {
@@ -99,7 +99,7 @@ namespace Unmanaged
         /// </summary>
         public ByteReader()
         {
-            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(0, MemoryAddress.AllocateEmpty(), 0, true);
             fixed (Pointer* pointer = &reader)
             {
@@ -113,14 +113,14 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             if (reader->isOriginal)
             {
                 reader->data.Dispose();
             }
 
-            Allocations.Free(ref reader);
+            MemoryAddress.Free(ref reader);
         }
 
         /// <summary>
@@ -136,9 +136,9 @@ namespace Unmanaged
         /// </summary>
         public readonly ByteReader Clone()
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
-            ref Pointer clone = ref Allocations.Allocate<Pointer>();
+            ref Pointer clone = ref MemoryAddress.Allocate<Pointer>();
             clone = new(reader->bytePosition, MemoryAddress.Allocate(GetBytes()), reader->byteLength, true);
             fixed (Pointer* pointer = &clone)
             {
@@ -151,7 +151,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<byte> GetBytes()
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             return new(reader->data.Pointer, reader->byteLength);
         }
@@ -161,7 +161,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void CopyFrom(USpan<byte> data)
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             if (reader->byteLength < data.Length)
             {
@@ -178,7 +178,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<byte> GetRemainingBytes()
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             return GetBytes().Slice(reader->bytePosition);
         }
@@ -208,7 +208,7 @@ namespace Unmanaged
         /// <returns>Amount of bytes read.</returns>
         public readonly byte PeekUTF8(out char low, out char high)
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             return PeekUTF8(reader->bytePosition, out low, out high);
         }
@@ -218,7 +218,7 @@ namespace Unmanaged
         /// </summary>
         public readonly T PeekValue<T>() where T : unmanaged
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             return PeekValue<T>(reader->bytePosition);
         }
@@ -228,7 +228,7 @@ namespace Unmanaged
         /// </summary>
         public readonly T PeekValue<T>(uint bytePosition) where T : unmanaged
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             if (bytePosition + (uint)sizeof(T) > reader->byteLength)
             {
@@ -254,7 +254,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Advance(uint byteLength)
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             uint newPosition = reader->bytePosition + byteLength;
             ThrowIfReadingPastLength(newPosition);
@@ -276,7 +276,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> ReadSpan<T>(uint length) where T : unmanaged
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             USpan<T> span = PeekSpan<T>(reader->bytePosition, length);
             reader->bytePosition += (uint)sizeof(T) * length;
@@ -288,7 +288,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> PeekSpan<T>(uint length) where T : unmanaged
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             return PeekSpan<T>(reader->bytePosition, length);
         }
@@ -298,7 +298,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<T> PeekSpan<T>(uint bytePosition, uint length) where T : unmanaged
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             uint byteLength = (uint)sizeof(T) * length;
             ThrowIfReadingPastLength(bytePosition + byteLength);
@@ -334,7 +334,7 @@ namespace Unmanaged
         /// <returns>Amount of <see cref="char"/> values read.</returns>
         public readonly uint ReadUTF8(USpan<char> destination)
         {
-            Allocations.ThrowIfNull(reader);
+            MemoryAddress.ThrowIfDefault(reader);
 
             uint start = reader->bytePosition;
             uint read = PeekUTF8(start, destination.Length, destination);
@@ -365,7 +365,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the given text.
         /// </summary>
-        public static ByteReader CreateFromUTF8(FixedString text)
+        public static ByteReader CreateFromUTF8(ASCIIText256 text)
         {
             using ByteWriter writer = new(text.Length);
             writer.WriteUTF8(text);
@@ -387,7 +387,7 @@ namespace Unmanaged
         /// </summary>
         public static ByteReader Create()
         {
-            ref Pointer reader = ref Allocations.Allocate<Pointer>();
+            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(0, MemoryAddress.AllocateEmpty(), 0, true);
             fixed (Pointer* pointer = &reader)
             {

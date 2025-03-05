@@ -16,9 +16,9 @@ namespace Unmanaged.Tests
 
         public struct Something : ISerializable, IEquatable<Something>
         {
-            private FixedString name;
+            private ASCIIText256 name;
 
-            public readonly FixedString Name => name;
+            public readonly ASCIIText256 Name => name;
 
             public Something(string name)
             {
@@ -32,9 +32,9 @@ namespace Unmanaged.Tests
 
             void ISerializable.Read(ByteReader reader)
             {
-                USpan<char> buffer = stackalloc char[FixedString.Capacity];
+                USpan<char> buffer = stackalloc char[ASCIIText256.Capacity];
                 uint length = reader.ReadUTF8(buffer);
-                name = new FixedString(buffer.GetSpan(length));
+                name = new ASCIIText256(buffer.GetSpan(length));
             }
 
             public override bool Equals(object? obj)
@@ -202,16 +202,16 @@ namespace Unmanaged.Tests
             using ByteWriter writer = new();
             writer.WriteSpan<byte>([1, 2, 3, 4, 5]);
             writer.WriteSpan<int>([1, 2, 3, 4, 5]);
-            writer.WriteSpan<FixedString>(["Hello", "World", "Goodbye"]);
+            writer.WriteSpan<ASCIIText256>(["Hello", "World", "Goodbye"]);
 
             using ByteReader reader = new(writer.AsSpan());
             USpan<byte> bytes = reader.ReadSpan<byte>(5);
             USpan<int> ints = reader.ReadSpan<int>(5);
-            USpan<FixedString> strings = reader.ReadSpan<FixedString>(3);
+            USpan<ASCIIText256> strings = reader.ReadSpan<ASCIIText256>(3);
 
             Assert.That(bytes.ToArray(), Is.EquivalentTo(new byte[] { 1, 2, 3, 4, 5 }));
             Assert.That(ints.ToArray(), Is.EquivalentTo(new int[] { 1, 2, 3, 4, 5 }));
-            Assert.That(strings.ToArray(), Is.EquivalentTo(new FixedString[] { "Hello", "World", "Goodbye" }));
+            Assert.That(strings.ToArray(), Is.EquivalentTo(new ASCIIText256[] { "Hello", "World", "Goodbye" }));
         }
 
         [Test]
@@ -497,9 +497,9 @@ namespace Unmanaged.Tests
 
         public struct Cherry
         {
-            public FixedString stones;
+            public ASCIIText256 stones;
 
-            public Cherry(FixedString stones)
+            public Cherry(ASCIIText256 stones)
             {
                 this.stones = stones;
             }

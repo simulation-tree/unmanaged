@@ -8,27 +8,27 @@ namespace Unmanaged.Tests
         [Test]
         public void CheckEquality()
         {
-            FixedString a = "Hello World!";
+            ASCIIText256 a = "Hello World!";
             string b = "Hello World!";
             Assert.That(a.ToString(), Is.EqualTo(b));
-            Assert.That(a, Is.EqualTo(new FixedString(b)));
+            Assert.That(a, Is.EqualTo(new ASCIIText256(b)));
             Assert.That(a.Equals(b), Is.True);
         }
 
         [Test]
         public void CheckLengths()
         {
-            FixedString a = "Hello World!";
+            ASCIIText256 a = "Hello World!";
             Assert.That(a.Length, Is.EqualTo(12));
 
-            FixedString b = "qwertyuiopasdfghjklzxcvbnm";
+            ASCIIText256 b = "qwertyuiopasdfghjklzxcvbnm";
             Assert.That(b.Length, Is.EqualTo(26));
         }
 
         [Test]
         public void Clearing()
         {
-            FixedString a = "once upon a time";
+            ASCIIText256 a = "once upon a time";
             a.Clear();
 
             Assert.That(a.Length, Is.EqualTo(0));
@@ -38,7 +38,7 @@ namespace Unmanaged.Tests
         [Test]
         public void RemovingAt()
         {
-            FixedString a = "Hello World";
+            ASCIIText256 a = "Hello World";
             Assert.That(a.Length, Is.EqualTo(11));
             a.RemoveAt((byte)(a.Length - 1));
 
@@ -52,7 +52,7 @@ namespace Unmanaged.Tests
         [Test]
         public void CopyToUTF8Bytes()
         {
-            FixedString a = "abacus123+•◘○♠♣♦☺☻♥☺☻";
+            ASCIIText256 a = "abacus123+•◘○♠♣♦☺☻♥☺☻";
             USpan<byte> bytes = stackalloc byte[32];
             uint byteLength = a.CopyTo(bytes);
             byte[] realBytes = Encoding.UTF8.GetBytes(a.ToString());
@@ -62,7 +62,7 @@ namespace Unmanaged.Tests
         [Test]
         public void Appending()
         {
-            FixedString a = default;
+            ASCIIText256 a = default;
             a.Append("Hello");
             Assert.That(a.ToString(), Is.EqualTo("Hello"));
             a.Append(' ');
@@ -75,15 +75,15 @@ namespace Unmanaged.Tests
         [Test]
         public void ThrowIfAccessOutOfRange()
         {
-            FixedString a = "abcd";
+            ASCIIText256 a = "abcd";
             Assert.Throws<IndexOutOfRangeException>(() => { a[5] = 'e'; });
         }
 
         [Test]
         public void ThrowIfGreaterThanCapacity()
         {
-            FixedString a = default;
-            for (uint i = 0; i < FixedString.Capacity; i++)
+            ASCIIText256 a = default;
+            for (uint i = 0; i < ASCIIText256.Capacity; i++)
             {
                 a.Append('x');
             }
@@ -95,7 +95,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ModifyingTextLength()
         {
-            FixedString a = "abacus";
+            ASCIIText256 a = "abacus";
             a.Length = 4;
             Assert.That(a.Length, Is.EqualTo(4));
             Assert.That(a.ToString(), Is.EqualTo("abac"));
@@ -109,7 +109,7 @@ namespace Unmanaged.Tests
         [Test]
         public void ModifyStringManually()
         {
-            FixedString a = "abcd";
+            ASCIIText256 a = "abcd";
             Console.WriteLine(a);
             a.Length *= 2;
             a[4] = 'e';
@@ -124,7 +124,7 @@ namespace Unmanaged.Tests
         [Test]
         public void Indexing()
         {
-            FixedString a = "Hello";
+            ASCIIText256 a = "Hello";
 
             Assert.That(a.IndexOf('e'), Is.EqualTo(1));
             Assert.That(a.IndexOf('l'), Is.EqualTo(2));
@@ -137,7 +137,7 @@ namespace Unmanaged.Tests
         [Test]
         public void Insert()
         {
-            FixedString a = default;
+            ASCIIText256 a = default;
             a.Insert(0, "World");
             a.Insert(0, ' ');
             a.Insert(0, "Hello");
@@ -147,7 +147,7 @@ namespace Unmanaged.Tests
         [Test]
         public void InsertOneCharacterToTheStart()
         {
-            FixedString a = default;
+            ASCIIText256 a = default;
             a.Insert(0, 'H');
             Assert.That(a.ToString(), Is.EqualTo("H"));
         }
@@ -155,7 +155,7 @@ namespace Unmanaged.Tests
         [Test]
         public void Replace()
         {
-            FixedString a = "Hello World";
+            ASCIIText256 a = "Hello World";
             a.TryReplace("World", "Pastrami");
             Assert.That(a.ToString(), Is.EqualTo("Hello Pastrami"));
         }
@@ -163,7 +163,7 @@ namespace Unmanaged.Tests
         [Test]
         public void Contains()
         {
-            FixedString a = default;
+            ASCIIText256 a = default;
             a.Append("Hello");
 
             Assert.That(a.Contains("ll"), Is.True);
@@ -173,15 +173,15 @@ namespace Unmanaged.Tests
         [Test]
         public void Substring()
         {
-            FixedString a = "Hello World!";
-            FixedString b = a.Slice(6);
+            ASCIIText256 a = "Hello World!";
+            ASCIIText256 b = a.Slice(6);
             Assert.That(b.ToString(), Is.EqualTo("World!"));
         }
 
         [Test]
         public void EndsAndStartsWith()
         {
-            FixedString a = "Hello World!";
+            ASCIIText256 a = "Hello World!";
             Assert.That(a.StartsWith("Hello"), Is.True);
             Assert.That(a.EndsWith("World!"), Is.True);
         }
@@ -191,7 +191,7 @@ namespace Unmanaged.Tests
         {
             string a = "Hello World!";
             byte[] bytes = Encoding.UTF8.GetBytes(a);
-            FixedString b = new(bytes);
+            ASCIIText256 b = new(bytes);
             Assert.That(b.ToString(), Is.EqualTo(a));
         }
 
@@ -199,7 +199,7 @@ namespace Unmanaged.Tests
         public void CreateFromString()
         {
             string a = "Hello World!";
-            FixedString b = new(a);
+            ASCIIText256 b = new(a);
             Assert.That(b.Length, Is.EqualTo(a.Length));
             Assert.That(b.ToString(), Is.EqualTo(a));
         }

@@ -78,7 +78,7 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
-        public RandomGenerator(FixedString seed)
+        public RandomGenerator(ASCIIText256 seed)
         {
             unchecked
             {

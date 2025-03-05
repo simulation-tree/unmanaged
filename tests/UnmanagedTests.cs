@@ -12,7 +12,6 @@ namespace Unmanaged.Tests
         [TearDown]
         protected virtual void TearDown()
         {
-            Allocations.ThrowIfAny(true);
         }
 
         protected static bool IsRunningRemotely()

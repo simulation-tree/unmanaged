@@ -8,11 +8,11 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// Container of up to 255 total characters.
+    /// Container of up to 255 extended ASCII <see cref="char"/> values.
     /// </summary>
     [SkipLocalsInit]
     [StructLayout(LayoutKind.Sequential, Size = 256)]
-    public unsafe struct FixedString : IEquatable<FixedString>
+    public unsafe struct ASCIIText256 : IEquatable<ASCIIText256>
     {
         /// <summary>
         /// Maximum number of characters that can be stored.
@@ -70,9 +70,9 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new fixed string from a <see cref="string"/> value.
+        /// Creates a new instance from the given <paramref name="text"/>.
         /// </summary>
-        public FixedString(string text)
+        public ASCIIText256(string text)
         {
             ThrowIfLengthExceedsCapacity((uint)text.Length);
 
@@ -90,9 +90,9 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new fixed string from a <see cref="USpan{T}"/> of characters.
+        /// Creates a new instance from the given <paramref name="text"/>.
         /// </summary>
-        public FixedString(USpan<char> text)
+        public ASCIIText256(USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(text.Length);
 
@@ -110,9 +110,9 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new fixed string from <paramref name="text"/> collection.
+        /// Creates a new instance from the given <paramref name="text"/> collection.
         /// </summary>
-        public FixedString(IEnumerable<char> text)
+        public ASCIIText256(IEnumerable<char> text)
         {
             uint index = 0;
             foreach (char c in text)
@@ -132,9 +132,9 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new fixed string from a <see cref="USpan{T}"/> of UTF8 bytes.
+        /// Creates a new instance from the given <paramref name="utf8Bytes"/>.
         /// </summary>
-        public FixedString(USpan<byte> utf8Bytes)
+        public ASCIIText256(USpan<byte> utf8Bytes)
         {
             uint index = 0;
             while (index < utf8Bytes.Length)
@@ -200,9 +200,12 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Creates a new fixed string from a pointer to a null-terminated UTF8 string/bytes.
+        /// Creates a new instance from the given <paramref name="utf8Bytes"/> pointer.
+        /// <para>
+        /// Reads until reaching a null terminator, or 255 characters.
+        /// </para>
         /// </summary>
-        public FixedString(void* utf8Bytes)
+        public ASCIIText256(void* utf8Bytes)
         {
             USpan<byte> span = new(utf8Bytes, Capacity);
             uint index = 0;
@@ -407,12 +410,12 @@ namespace Unmanaged
         /// <summary>
         /// Slice this string from the given start index and length.
         /// </summary>
-        public readonly FixedString Slice(uint start, uint length)
+        public readonly ASCIIText256 Slice(uint start, uint length)
         {
             ThrowIfIndexOutOfRange(start);
             ThrowIfLengthExceedsCapacity(start + length);
 
-            FixedString result = default;
+            ASCIIText256 result = default;
             for (uint i = 0; i < length; i++)
             {
                 result.characters[i] = characters[start + i];
@@ -425,7 +428,7 @@ namespace Unmanaged
         /// <summary>
         /// Slice this string from the given start index to the end.
         /// </summary>
-        public readonly FixedString Slice(uint start)
+        public readonly ASCIIText256 Slice(uint start)
         {
             return Slice(start, length - start);
         }
@@ -435,15 +438,11 @@ namespace Unmanaged
         /// </summary>
         public readonly bool Contains(char c)
         {
-            for (uint i = 0; i < length; i++)
+            fixed (byte* ptr = characters)
             {
-                if (characters[i] == c)
-                {
-                    return true;
-                }
+                Span<byte> span = new(ptr, length);
+                return span.Contains((byte)c);
             }
-
-            return false;
         }
 
         /// <summary>
@@ -478,7 +477,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this string contains the given text.
         /// </summary>
-        public readonly bool Contains(FixedString text)
+        public readonly bool Contains(ASCIIText256 text)
         {
             for (uint i = 0; i < length; i++)
             {
@@ -510,11 +509,13 @@ namespace Unmanaged
         /// </summary>
         public readonly uint IndexOf(char value)
         {
-            for (uint i = 0; i < length; i++)
+            fixed (byte* ptr = characters)
             {
-                if (characters[i] == value)
+                Span<byte> span = new(ptr, length);
+                int index = span.IndexOf((byte)value);
+                if (index != -1)
                 {
-                    return i;
+                    return (uint)index;
                 }
             }
 
@@ -523,21 +524,24 @@ namespace Unmanaged
 
         /// <summary>
         /// Attempts to retrieve the first index of the given character.
+        /// <para>
+        /// The out <paramref name="index"/> value will be <see cref="uint.MaxValue"/>
+        /// in the case of <see langword="false"/>.
+        /// </para>
         /// </summary>
-        /// <returns><c>true</c> if found.</returns>
+        /// <returns><see langword="true"/> if found.</returns>
         public readonly bool TryIndexOf(char value, out uint index)
         {
-            for (uint i = 0; i < length; i++)
+            fixed (byte* ptr = characters)
             {
-                if (characters[i] == value)
+                Span<byte> span = new(ptr, length);
+                int i = span.IndexOf((byte)value);
+                unchecked
                 {
-                    index = i;
-                    return true;
+                    index = (uint)i;
+                    return i != -1;
                 }
             }
-
-            index = 0;
-            return false;
         }
 
         /// <summary>
@@ -606,7 +610,7 @@ namespace Unmanaged
         /// Retrieves the first index of the given text.
         /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
         /// </summary>
-        public readonly uint IndexOf(FixedString text)
+        public readonly uint IndexOf(ASCIIText256 text)
         {
             for (uint i = 0; i < length; i++)
             {
@@ -636,7 +640,7 @@ namespace Unmanaged
         /// Attempts to retrieve the first index of the given text.
         /// </summary>
         /// <returns><c>true</c> if found.</returns>
-        public readonly bool TryIndexOf(FixedString text, out uint index)
+        public readonly bool TryIndexOf(ASCIIText256 text, out uint index)
         {
             for (uint i = 0; i < length; i++)
             {
@@ -670,12 +674,13 @@ namespace Unmanaged
         /// </summary>
         public readonly uint LastIndexOf(char value)
         {
-            uint thisLength = Length;
-            for (uint i = thisLength - 1; i != uint.MaxValue; i--)
+            fixed (byte* ptr = characters)
             {
-                if (characters[i] == value)
+                Span<byte> span = new(ptr, length);
+                int index = span.LastIndexOf((byte)value);
+                if (index != -1)
                 {
-                    return i;
+                    return (uint)index;
                 }
             }
 
@@ -684,22 +689,24 @@ namespace Unmanaged
 
         /// <summary>
         /// Attempts to retrieve the last index of the given character.
+        /// <para>
+        /// The out <paramref name="index"/> value will be <see cref="uint.MaxValue"/> in
+        /// the case of <see langword="false"/>.
+        /// </para>
         /// </summary>
-        /// <returns><c>true</c> if found.</returns>
+        /// <returns><see langword="true"/> if found.</returns>
         public readonly bool TryLastIndexOf(char value, out uint index)
         {
-            uint thisLength = Length;
-            for (uint i = thisLength - 1; i != uint.MaxValue; i--)
+            fixed (byte* ptr = characters)
             {
-                if (characters[i] == value)
+                Span<byte> span = new(ptr, length);
+                int i = span.LastIndexOf((byte)value);
+                unchecked
                 {
-                    index = i;
-                    return true;
+                    index = (uint)i;
+                    return i != -1;
                 }
             }
-
-            index = 0;
-            return false;
         }
 
         /// <summary>
@@ -770,7 +777,7 @@ namespace Unmanaged
         /// Retrieves the last index of the given text.
         /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
         /// </summary>
-        public readonly uint LastIndexOf(FixedString text)
+        public readonly uint LastIndexOf(ASCIIText256 text)
         {
             uint thisLength = Length;
             for (uint i = thisLength - 1; i != uint.MaxValue; i--)
@@ -801,7 +808,7 @@ namespace Unmanaged
         /// Attempts to retrieve the last index of the given text.
         /// </summary>
         /// <returns><c>true</c> if found.</returns>
-        public readonly bool TryLastIndexOf(FixedString text, out uint index)
+        public readonly bool TryLastIndexOf(ASCIIText256 text, out uint index)
         {
             uint thisLength = Length;
             for (uint i = thisLength - 1; i != uint.MaxValue; i--)
@@ -854,7 +861,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this string starts with the given text.
         /// </summary>
-        public readonly bool StartsWith(FixedString text)
+        public readonly bool StartsWith(ASCIIText256 text)
         {
             if (text.length > length)
             {
@@ -896,7 +903,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this string ends with the given text.
         /// </summary>
-        public readonly bool EndsWith(FixedString text)
+        public readonly bool EndsWith(ASCIIText256 text)
         {
             if (text.length > length)
             {
@@ -917,59 +924,58 @@ namespace Unmanaged
         /// <summary>
         /// Clears the contents of this string.
         /// </summary>
-        public FixedString Clear()
+        public void Clear()
         {
             length = 0;
-            return this;
         }
 
         /// <summary>
         /// Appends a character to the end of this string.
         /// </summary>
-        public FixedString Append(char c)
+        public void Append(char c)
         {
             ThrowIfLengthExceedsCapacity(length + 1u);
+
             characters[length] = (byte)c;
             length = (byte)(length + 1);
-            return this;
         }
 
         /// <summary>
         /// Appends a formattable object to the end of this string.
         /// </summary>
 #if NET
-        public FixedString Append<T>(T formattable) where T : ISpanFormattable
+        public void Append<T>(T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[Capacity];
             formattable.TryFormat(buffer, out int charsWritten, default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)charsWritten);
+
             for (uint i = 0; i < charsWritten; i++)
             {
                 characters[length + i] = (byte)buffer[(int)i];
             }
 
             length = (byte)(length + charsWritten);
-            return this;
         }
 #else
-        public FixedString Append<T>(T formattable) where T : IFormattable
+        public void Append<T>(T formattable) where T : IFormattable
         {
             string text = formattable.ToString(default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)text.Length);
+
             for (uint i = 0; i < text.Length; i++)
             {
                 characters[length + i] = (byte)text[(int)i];
             }
 
             length = (byte)(length + text.Length);
-            return this;
         }
 #endif
 
         /// <summary>
         /// Appends a text span to the end of this string.
         /// </summary>
-        public FixedString Append(USpan<char> text)
+        public void Append(USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(length + text.Length);
             for (uint i = 0; i < text.Length; i++)
@@ -978,13 +984,12 @@ namespace Unmanaged
             }
 
             length = (byte)(length + text.Length);
-            return this;
         }
 
         /// <summary>
         /// Appends a text span to the end of this string.
         /// </summary>
-        public FixedString Append(FixedString text)
+        public void Append(ASCIIText256 text)
         {
             uint textLength = text.Length;
             ThrowIfLengthExceedsCapacity(length + textLength);
@@ -994,13 +999,12 @@ namespace Unmanaged
             }
 
             length = (byte)(length + textLength);
-            return this;
         }
 
         /// <summary>
         /// Removes the character at the given index.
         /// </summary>
-        public FixedString RemoveAt(uint index)
+        public void RemoveAt(uint index)
         {
             ThrowIfIndexOutOfRange(index);
 
@@ -1010,13 +1014,12 @@ namespace Unmanaged
             }
 
             length = (byte)(length - 1);
-            return this;
         }
 
         /// <summary>
         /// Removes a range of characters starting at the given index.
         /// </summary>
-        public FixedString RemoveRange(uint start, uint length)
+        public void RemoveRange(uint start, uint length)
         {
             uint thisLength = Length;
             ThrowIfIndexOutOfRange(start);
@@ -1027,13 +1030,12 @@ namespace Unmanaged
             }
 
             this.length = (byte)(thisLength - length);
-            return this;
         }
 
         /// <summary>
         /// Inserts a character at the given index.
         /// </summary>
-        public FixedString Insert(uint index, char c)
+        public void Insert(uint index, char c)
         {
             ThrowIfLengthExceedsCapacity(length + 1u);
             ThrowIfIndexIsPastRange(index);
@@ -1045,14 +1047,13 @@ namespace Unmanaged
 
             characters[index] = (byte)c;
             length = (byte)(length + 1);
-            return this;
         }
 
         /// <summary>
         /// Inserts a formattable object at the given index.
         /// </summary>
 #if NET
-        public FixedString Insert<T>(uint index, T formattable) where T : ISpanFormattable
+        public void Insert<T>(uint index, T formattable) where T : ISpanFormattable
         {
             Span<char> buffer = stackalloc char[Capacity];
             formattable.TryFormat(buffer, out int charsWritten, default, default);
@@ -1070,10 +1071,9 @@ namespace Unmanaged
             }
 
             length = (byte)(length + charsWritten);
-            return this;
         }
 #else
-        public FixedString Insert<T>(uint index, T formattable) where T : IFormattable
+        public void Insert<T>(uint index, T formattable) where T : IFormattable
         {
             string text = formattable.ToString(default, default);
             ThrowIfLengthExceedsCapacity(length + (uint)text.Length);
@@ -1090,14 +1090,13 @@ namespace Unmanaged
             }
 
             length = (byte)(length + text.Length);
-            return this;
         }
 #endif
 
         /// <summary>
         /// Inserts a text span at the given index.
         /// </summary>
-        public FixedString Insert(uint index, USpan<char> text)
+        public void Insert(uint index, USpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(length + text.Length);
             ThrowIfIndexIsPastRange(index);
@@ -1113,13 +1112,12 @@ namespace Unmanaged
             }
 
             length = (byte)(length + text.Length);
-            return this;
         }
 
         /// <summary>
         /// Inserts a text span at the given index.
         /// </summary>
-        public FixedString Insert(uint index, FixedString text)
+        public void Insert(uint index, ASCIIText256 text)
         {
             uint textLength = text.Length;
             ThrowIfLengthExceedsCapacity(length + textLength);
@@ -1135,7 +1133,6 @@ namespace Unmanaged
             }
 
             length = (byte)(length + textLength);
-            return this;
         }
 
         /// <summary>
@@ -1220,7 +1217,7 @@ namespace Unmanaged
         /// Attempts to replace all instances of the given text with another.
         /// </summary>
         /// <returns><c>true</c> if a replacement was done.</returns>
-        public bool TryReplace(FixedString oldValue, FixedString newValue)
+        public bool TryReplace(ASCIIText256 oldValue, ASCIIText256 newValue)
         {
             for (uint i = 0; i < length; i++)
             {
@@ -1275,7 +1272,7 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public readonly bool Equals(FixedString other)
+        public readonly bool Equals(ASCIIText256 other)
         {
             if (length != other.length)
             {
@@ -1334,7 +1331,7 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override bool Equals([NotNullWhen(true)] object? obj)
         {
-            return obj is FixedString other && Equals(other);
+            return obj is ASCIIText256 other && Equals(other);
         }
 
         /// <inheritdoc/>
@@ -1455,25 +1452,25 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public static implicit operator FixedString(string text)
+        public static implicit operator ASCIIText256(string text)
         {
             return new(text);
         }
 
         /// <inheritdoc/>
-        public static implicit operator FixedString(USpan<char> text)
+        public static implicit operator ASCIIText256(USpan<char> text)
         {
             return new(text);
         }
 
         /// <inheritdoc/>
-        public static bool operator ==(FixedString a, FixedString b)
+        public static bool operator ==(ASCIIText256 a, ASCIIText256 b)
         {
             return a.Equals(b);
         }
 
         /// <inheritdoc/>
-        public static bool operator !=(FixedString a, FixedString b)
+        public static bool operator !=(ASCIIText256 a, ASCIIText256 b)
         {
             return !a.Equals(b);
         }
