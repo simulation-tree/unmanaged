@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System;
 using System.Collections.Immutable;
 
 namespace Unmanaged.Analyzers
@@ -9,7 +10,6 @@ namespace Unmanaged.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class DontAllowDefaultInitializationDisposeStructs : DiagnosticAnalyzer
     {
-        private const string DisposableInterface = "System.IDisposable";
         private const string ID = "U0001";
         private const string Title = "Disposable instance must be initialized";
         private const string Format = "An instance of a disposable type `{0}` cannot be initialized with a default value";
@@ -50,51 +50,54 @@ namespace Unmanaged.Analyzers
                     return;
                 }
 
-                if (!typeSymbol.HasInterface(DisposableInterface))
+                if (!typeSymbol.HasInterface<IDisposable>())
                 {
                     return;
                 }
 
-                string? name = null;
-                bool assignedToDefault = false;
-                foreach (SyntaxNode child in variableDeclaration.ChildNodes())
+                Diagnostic? diagnostic = GetDiagnostic(type, typeSymbol, variableDeclaration);
+                if (diagnostic is not null)
                 {
-                    if (child is IdentifierNameSyntax identifierName)
-                    {
-                        name = identifierName.Identifier.Text;
-                    }
+                    context.ReportDiagnostic(diagnostic);
+                }
+            }
+        }
 
-                    if (name is not null)
+        private static Diagnostic? GetDiagnostic(TypeSyntax type, ITypeSymbol typeSymbol, SyntaxNode node)
+        {
+            bool assignedToDefault = false;
+            foreach (SyntaxNode child in node.ChildNodes())
+            {
+                if (child is VariableDeclaratorSyntax variableDeclarator)
+                {
+                    foreach (SyntaxNode grandChild in child.ChildNodes())
                     {
-                        if (child is VariableDeclaratorSyntax variableDeclarator)
+                        if (grandChild is EqualsValueClauseSyntax equalsValueClause)
                         {
-                            foreach (SyntaxNode grandChild in child.ChildNodes())
+                            foreach (SyntaxNode greatGrandChild in grandChild.ChildNodes())
                             {
-                                if (grandChild is EqualsValueClauseSyntax equalsValueClause)
+                                if (greatGrandChild is LiteralExpressionSyntax literalExpression)
                                 {
-                                    foreach (SyntaxNode greatGrandChild in grandChild.ChildNodes())
+                                    if (literalExpression.Token.Text == "default")
                                     {
-                                        if (greatGrandChild is LiteralExpressionSyntax literalExpression)
-                                        {
-                                            if (literalExpression.Token.Text == "default")
-                                            {
-                                                assignedToDefault = true;
-                                            }
-                                        }
+                                        assignedToDefault = true;
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                if (assignedToDefault)
-                {
-                    Location location = context.Node.GetLocation();
-                    string typeName = type.ToString();
-                    Diagnostic diagnostic = Diagnostic.Create(rule, location, typeName);
-                    context.ReportDiagnostic(diagnostic);
-                }
+            if (assignedToDefault)
+            {
+                Location location = node.GetLocation();
+                string typeName = type.ToString();
+                return Diagnostic.Create(rule, location, typeName);
+            }
+            else
+            {
+                return null;
             }
         }
     }

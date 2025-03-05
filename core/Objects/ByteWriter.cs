@@ -41,7 +41,7 @@ namespace Unmanaged
         /// <summary>
         /// The underlying memory allocation of the writer containg all of the bytes.
         /// </summary>
-        public readonly Allocation Items
+        public readonly MemoryAddress Items
         {
             get
             {
@@ -58,7 +58,7 @@ namespace Unmanaged
         {
             initialCapacity = Allocations.GetNextPowerOf2(initialCapacity);
             ref Pointer writer = ref Allocations.Allocate<Pointer>();
-            writer = new(Allocation.Create(initialCapacity), 0, initialCapacity);
+            writer = new(MemoryAddress.Allocate(initialCapacity), 0, initialCapacity);
             fixed (Pointer* pointer = &writer)
             {
                 this.writer = pointer;
@@ -75,7 +75,7 @@ namespace Unmanaged
         public ByteWriter(USpan<byte> span)
         {
             ref Pointer writer = ref Allocations.Allocate<Pointer>();
-            writer = new(Allocation.Create(span), span.Length, span.Length);
+            writer = new(MemoryAddress.Allocate(span), span.Length, span.Length);
             writer.bytePosition = span.Length;
             fixed (Pointer* pointer = &writer)
             {
@@ -89,7 +89,7 @@ namespace Unmanaged
         public ByteWriter()
         {
             ref Pointer writer = ref Allocations.Allocate<Pointer>();
-            writer = new(Allocation.CreateEmpty(), 0, 0);
+            writer = new(MemoryAddress.AllocateEmpty(), 0, 0);
             fixed (Pointer* pointer = &writer)
             {
                 this.writer = pointer;
@@ -113,7 +113,7 @@ namespace Unmanaged
             if (capacity < endPosition)
             {
                 writer->capacity = Allocations.GetNextPowerOf2(endPosition);
-                Allocation.Resize(ref writer->data, writer->capacity);
+                MemoryAddress.Resize(ref writer->data, writer->capacity);
             }
 
             writer->data.Write(writer->bytePosition, value);
@@ -132,7 +132,7 @@ namespace Unmanaged
             if (capacity < endPosition)
             {
                 writer->capacity = Allocations.GetNextPowerOf2(endPosition);
-                Allocation.Resize(ref writer->data, writer->capacity);
+                MemoryAddress.Resize(ref writer->data, writer->capacity);
             }
 
             writer->data.Write(writer->bytePosition, span);
@@ -142,7 +142,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes memory from the given <paramref name="data"/> with a specified <paramref name="byteLength"/>.
         /// </summary>
-        public readonly void Write(Allocation data, uint byteLength)
+        public readonly void Write(MemoryAddress data, uint byteLength)
         {
             Allocations.ThrowIfNull(writer);
 
@@ -151,7 +151,7 @@ namespace Unmanaged
             if (capacity < endPosition)
             {
                 writer->capacity = Allocations.GetNextPowerOf2(endPosition);
-                Allocation.Resize(ref writer->data, writer->capacity);
+                MemoryAddress.Resize(ref writer->data, writer->capacity);
             }
 
             writer->data.Write(writer->bytePosition, byteLength, data);

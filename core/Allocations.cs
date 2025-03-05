@@ -7,14 +7,9 @@ namespace Unmanaged
     /// <summary>
     /// Contains functions for allocating, freeing and tracking unmanaged memory.
     /// </summary>
-    public static unsafe partial class Allocations
+    public static unsafe class Allocations
     {
         private static uint count;
-
-        /// <summary>
-        /// Amount of allocations made that have not been freed yet.
-        /// </summary>
-        public static uint Count => count;
 
         static Allocations()
         {
@@ -32,11 +27,11 @@ namespace Unmanaged
         /// </summary>
         public static void ThrowIfAny(bool free = false)
         {
-            if (Count > 0)
+            if (count > 0)
             {
                 System.Collections.Generic.List<char> stringBuilder = new(1024);
                 Append("Allocations present: ");
-                AppendLine(Count.ToString());
+                AppendLine(count.ToString());
 
                 Tracker.AppendAllocations(stringBuilder, free);
 

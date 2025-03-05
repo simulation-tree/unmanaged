@@ -51,7 +51,7 @@ namespace Unmanaged
         public ByteReader(USpan<byte> bytes, uint position = 0)
         {
             ref Pointer reader = ref Allocations.Allocate<Pointer>();
-            reader = new(position, Allocation.Create(bytes), bytes.Length, true);
+            reader = new(position, MemoryAddress.Allocate(bytes), bytes.Length, true);
             fixed (Pointer* pointer = &reader)
             {
                 this.reader = pointer;
@@ -77,7 +77,7 @@ namespace Unmanaged
         public ByteReader(Stream stream, uint position = 0)
         {
             uint byteLength = (uint)stream.Length;
-            Allocation streamData = Allocation.Create(byteLength);
+            MemoryAddress streamData = MemoryAddress.Allocate(byteLength);
             USpan<byte> span = new(streamData.Pointer, byteLength);
             byteLength = (uint)stream.Read(span);
             ref Pointer reader = ref Allocations.Allocate<Pointer>();
@@ -100,7 +100,7 @@ namespace Unmanaged
         public ByteReader()
         {
             ref Pointer reader = ref Allocations.Allocate<Pointer>();
-            reader = new(0, Allocation.CreateEmpty(), 0, true);
+            reader = new(0, MemoryAddress.AllocateEmpty(), 0, true);
             fixed (Pointer* pointer = &reader)
             {
                 this.reader = pointer;
@@ -139,7 +139,7 @@ namespace Unmanaged
             Allocations.ThrowIfNull(reader);
 
             ref Pointer clone = ref Allocations.Allocate<Pointer>();
-            clone = new(reader->bytePosition, Allocation.Create(GetBytes()), reader->byteLength, true);
+            clone = new(reader->bytePosition, MemoryAddress.Allocate(GetBytes()), reader->byteLength, true);
             fixed (Pointer* pointer = &clone)
             {
                 return new(pointer);
@@ -165,7 +165,7 @@ namespace Unmanaged
 
             if (reader->byteLength < data.Length)
             {
-                Allocation.Resize(ref reader->data, data.Length);
+                MemoryAddress.Resize(ref reader->data, data.Length);
             }
 
             reader->bytePosition = 0;
@@ -388,7 +388,7 @@ namespace Unmanaged
         public static ByteReader Create()
         {
             ref Pointer reader = ref Allocations.Allocate<Pointer>();
-            reader = new(0, Allocation.CreateEmpty(), 0, true);
+            reader = new(0, MemoryAddress.AllocateEmpty(), 0, true);
             fixed (Pointer* pointer = &reader)
             {
                 return new(pointer);

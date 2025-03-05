@@ -2,11 +2,11 @@
 {
     internal unsafe struct ByteWriter
     {
-        internal Allocation data;
+        internal MemoryAddress data;
         internal uint bytePosition;
         internal uint capacity;
 
-        internal ByteWriter(Allocation items, uint length, uint capacity)
+        internal ByteWriter(MemoryAddress items, uint length, uint capacity)
         {
             this.data = items;
             this.bytePosition = length;

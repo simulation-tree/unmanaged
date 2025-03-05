@@ -253,7 +253,7 @@ namespace Unmanaged.Tests
 
         public struct Complicated : IDisposable, ISerializable
         {
-            private Allocation players;
+            private MemoryAddress players;
             private uint count;
             private uint capacity;
 
@@ -261,7 +261,7 @@ namespace Unmanaged.Tests
 
             public Complicated()
             {
-                players = Allocation.Create(Player.TypeSize);
+                players = MemoryAddress.Allocate(Player.TypeSize);
                 capacity = 1;
             }
 
@@ -270,7 +270,7 @@ namespace Unmanaged.Tests
                 if (count == capacity)
                 {
                     capacity *= 2;
-                    Allocation.Resize(ref players, capacity * Player.TypeSize);
+                    MemoryAddress.Resize(ref players, capacity * Player.TypeSize);
                 }
 
                 players.Write(count * Player.TypeSize, player);
@@ -291,7 +291,7 @@ namespace Unmanaged.Tests
             void ISerializable.Read(ByteReader reader)
             {
                 byte add = reader.ReadValue<byte>();
-                players = Allocation.Create(Player.TypeSize);
+                players = MemoryAddress.Allocate(Player.TypeSize);
                 capacity = 1;
                 for (uint i = 0; i < add; i++)
                 {
@@ -319,7 +319,7 @@ namespace Unmanaged.Tests
 
             private uint count;
             private uint capacity;
-            private Allocation inventory;
+            private MemoryAddress inventory;
 
             public readonly USpan<Fruit> Inventory => inventory.AsSpan<Fruit>(0, count);
 
@@ -327,7 +327,7 @@ namespace Unmanaged.Tests
             {
                 this.hp = hp;
                 this.damage = damage;
-                this.inventory = Allocation.Create(Fruit.TypeSize);
+                this.inventory = MemoryAddress.Allocate(Fruit.TypeSize);
                 capacity = 1;
             }
 
@@ -346,7 +346,7 @@ namespace Unmanaged.Tests
                 if (count == capacity)
                 {
                     capacity *= 2;
-                    Allocation.Resize(ref inventory, capacity * Fruit.TypeSize);
+                    MemoryAddress.Resize(ref inventory, capacity * Fruit.TypeSize);
                 }
 
                 inventory.Write(count * Fruit.TypeSize, fruit);
@@ -358,7 +358,7 @@ namespace Unmanaged.Tests
                 hp = reader.ReadValue<uint>();
                 damage = reader.ReadValue<uint>();
                 uint add = reader.ReadValue<uint>();
-                inventory = Allocation.Create(Fruit.TypeSize);
+                inventory = MemoryAddress.Allocate(Fruit.TypeSize);
                 capacity = 1;
                 for (uint i = 0; i < add; i++)
                 {
@@ -426,7 +426,7 @@ namespace Unmanaged.Tests
             public readonly int a = a;
             public readonly Cherry apple = apple;
             public readonly byte count = (byte)fruits.Length;
-            public readonly Allocation fruits = Allocation.Create(fruits);
+            public readonly MemoryAddress fruits = MemoryAddress.Allocate(fruits);
 
             public void Dispose()
             {

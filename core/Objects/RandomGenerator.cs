@@ -9,7 +9,7 @@ namespace Unmanaged
     {
         private static uint counter;
 
-        private Allocation pointer;
+        private MemoryAddress pointer;
 
         /// <summary>
         /// The current state of the generator.
@@ -19,7 +19,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if the generator has been disposed.
         /// </summary>
-        public readonly bool IsDisposed => pointer.IsDisposed;
+        public readonly bool IsDisposed => pointer == default;
 
 #if NET
         /// <summary>
@@ -27,7 +27,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator()
         {
-            pointer = Allocation.CreateFromValue(GetRandomSeed());
+            pointer = MemoryAddress.Allocate(GetRandomSeed());
         }
 #endif
         /// <summary>
@@ -35,7 +35,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(ulong seed)
         {
-            pointer = Allocation.CreateFromValue(seed);
+            pointer = MemoryAddress.Allocate(seed);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocation.CreateFromValue((ulong)hash);
+                pointer = MemoryAddress.Allocate((ulong)hash);
             }
         }
 
@@ -70,7 +70,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocation.CreateFromValue((ulong)hash);
+                pointer = MemoryAddress.Allocate((ulong)hash);
             }
         }
 
@@ -88,7 +88,7 @@ namespace Unmanaged
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = Allocation.CreateFromValue((ulong)hash);
+                pointer = MemoryAddress.Allocate((ulong)hash);
             }
         }
 
@@ -105,7 +105,7 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            Allocations.ThrowIfNull(pointer);
+            MemoryAddress.ThrowIfDefault(pointer);
 
             pointer.Dispose();
         }

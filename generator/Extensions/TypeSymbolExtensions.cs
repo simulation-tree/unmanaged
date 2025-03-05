@@ -1,10 +1,15 @@
 ﻿using Microsoft.CodeAnalysis;
+using System;
 using System.Collections.Generic;
 
 namespace Unmanaged
 {
     public static class TypeSymbolExtensions
     {
+        //todo: tried to use a pool for the stack but for some god forsaken reason it just wouldnt not work
+        //either the pool would be null, or the stack rented would be null, or elements in the stack would be null
+        //i gave up
+
         /// <summary>
         /// Checks if the type is a true value type and doesnt contain any references.
         /// </summary>
@@ -185,6 +190,20 @@ namespace Unmanaged
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Checks if the type implements the <typeparamref name="T"/> interface.
+        /// </summary>
+        public static bool HasInterface<T>(this ITypeSymbol type) where T : class
+        {
+            string? fullInterfaceName = typeof(T)?.FullName;
+            if (fullInterfaceName is null)
+            {
+                throw new InvalidOperationException("Type name is null when checking interface");
+            }
+
+            return type.HasInterface(fullInterfaceName);
         }
 
         /// <summary>

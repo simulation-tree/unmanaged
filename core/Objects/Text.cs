@@ -87,7 +87,7 @@ namespace Unmanaged
         {
             ref Pointer text = ref Allocations.Allocate<Pointer>();
             text.length = 0;
-            text.buffer = Allocation.Create(0);
+            text.buffer = MemoryAddress.Allocate((uint)0);
             fixed (Pointer* pointer = &text)
             {
                 this.text = pointer;
@@ -102,7 +102,7 @@ namespace Unmanaged
         {
             ref Pointer text = ref Allocations.Allocate<Pointer>();
             text.length = length;
-            text.buffer = Allocation.Create(length * sizeof(char));
+            text.buffer = MemoryAddress.Allocate(length * sizeof(char));
             fixed (Pointer* pointer = &text)
             {
                 this.text = pointer;
@@ -118,7 +118,7 @@ namespace Unmanaged
         {
             ref Pointer text = ref Allocations.Allocate<Pointer>();
             text.length = content.Length;
-            text.buffer = Allocation.Create(content);
+            text.buffer = MemoryAddress.Allocate(content);
             fixed (Pointer* pointer = &text)
             {
                 this.text = pointer;
@@ -132,7 +132,7 @@ namespace Unmanaged
         {
             ref Pointer text = ref Allocations.Allocate<Pointer>();
             text.length = 0;
-            text.buffer = Allocation.Create(0);
+            text.buffer = MemoryAddress.Allocate((uint)0);
             fixed (Pointer* pointer = &text)
             {
                 this.text = pointer;
@@ -149,7 +149,7 @@ namespace Unmanaged
             ref Pointer text = ref Allocations.Allocate<Pointer>();
             text.length = (uint)content.Length;
             USpan<char> contentSpan = content.AsSpan();
-            text.buffer = Allocation.Create(contentSpan);
+            text.buffer = MemoryAddress.Allocate(contentSpan);
             fixed (Pointer* pointer = &text)
             {
                 this.text = pointer;
@@ -222,7 +222,7 @@ namespace Unmanaged
             if (text->length != source.Length)
             {
                 text->length = source.Length;
-                Allocation.Resize(ref text->buffer, source.Length * sizeof(char));
+                MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
             source.CopyTo(new USpan<char>(text->buffer.Pointer, source.Length));
@@ -244,7 +244,7 @@ namespace Unmanaged
             if (text->length != length)
             {
                 text->length = length;
-                Allocation.Resize(ref text->buffer, length * sizeof(char));
+                MemoryAddress.Resize(ref text->buffer, length * sizeof(char));
             }
 
             USpan<char> buffer = AsSpan();
@@ -295,7 +295,7 @@ namespace Unmanaged
             if (newLength > oldLength)
             {
                 uint copyLength = newLength - oldLength;
-                Allocation.Resize(ref text->buffer, newLength * sizeof(char));
+                MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
                 text->buffer.AsSpan<char>(oldLength, copyLength).Fill(defaultCharacter);
             }
         }

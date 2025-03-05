@@ -7,18 +7,16 @@ namespace Unmanaged.Tests
         [Test]
         public void DefaultSizelessAllocation()
         {
-            Allocation allocation = Allocation.CreateEmpty();
-            Assert.That(allocation.IsDisposed, Is.False);
-            Assert.That(Allocations.Count, Is.EqualTo(1));
+            MemoryAddress allocation = MemoryAddress.AllocateEmpty();
+            Assert.That(allocation == default, Is.False);
             allocation.Dispose();
-            Assert.That(allocation.IsDisposed, Is.True);
-            Assert.That(Allocations.Count, Is.EqualTo(0));
+            Assert.That(allocation == default, Is.True);
         }
 
         [Test]
         public void WriteMultipleValues()
         {
-            using Allocation allocation = Allocation.Create(sizeof(uint) * 4);
+            using MemoryAddress allocation = MemoryAddress.Allocate((uint)(sizeof(uint) * 4));
             allocation.Write(0 * sizeof(uint), 5);
             allocation.Write(1 * sizeof(uint), 15);
             allocation.Write(2 * sizeof(uint), 25);
@@ -35,7 +33,7 @@ namespace Unmanaged.Tests
         [Test]
         public void WriteSpan()
         {
-            using Allocation a = Allocation.Create(sizeof(int) * 4);
+            using MemoryAddress a = MemoryAddress.Allocate((uint)(sizeof(int) * 4));
             a.Write(0, [2, 3, 4, 5]);
             USpan<int> bufferSpan = a.AsSpan<int>(0, 4);
             Assert.That(bufferSpan.Length, Is.EqualTo(4));
@@ -48,23 +46,21 @@ namespace Unmanaged.Tests
         [Test]
         public void ResizeAllocation()
         {
-            Allocation a = Allocation.Create(sizeof(int));
+            MemoryAddress a = MemoryAddress.Allocate((uint)sizeof(int));
             a.Write(0 * sizeof(int), 1337);
-            Allocation.Resize(ref a, sizeof(int) * 2);
+            MemoryAddress.Resize(ref a, sizeof(int) * 2);
             a.Write(1 * sizeof(int), 1338);
-            Assert.That(Allocations.Count, Is.EqualTo(1));
 
             USpan<int> span = a.AsSpan<int>(0, 2);
             Assert.That(span[0], Is.EqualTo(1337));
             Assert.That(span[1], Is.EqualTo(1338));
             a.Dispose();
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
         [Test]
         public void ReadPartsOfTuple()
         {
-            using Allocation tuple = Allocation.Create(8);
+            using MemoryAddress tuple = MemoryAddress.Allocate((uint)8);
             tuple.Write(0, (5, 1337));
 
             int a = tuple.Read<int>(0 * sizeof(int));
@@ -92,18 +88,18 @@ namespace Unmanaged.Tests
         [Test]
         public void CreateAndDestroy()
         {
-            Allocation obj = Allocation.Create(sizeof(int));
-            Assert.That(obj.IsDisposed, Is.False);
+            MemoryAddress obj = MemoryAddress.Allocate((uint)sizeof(int));
+            Assert.That(obj == default, Is.False);
             obj.Dispose();
-            Assert.That(obj.IsDisposed, Is.True);
+            Assert.That(obj == default, Is.True);
         }
 
         [Test]
         public void CheckDefault()
         {
-            using Allocation obj = Allocation.Create(sizeof(long));
+            using MemoryAddress obj = MemoryAddress.Allocate((uint)sizeof(long));
             obj.Clear(sizeof(long));
-            Assert.That(obj.IsDisposed, Is.False);
+            Assert.That(obj == default, Is.False);
 
             USpan<byte> data = obj.AsSpan<byte>(0, sizeof(long));
             Assert.That(data.Length, Is.EqualTo(sizeof(long)));
@@ -111,47 +107,20 @@ namespace Unmanaged.Tests
             Assert.That(value, Is.EqualTo(0));
         }
 
+#if DEBUG
         [Test]
         public void ThrowOnDisposeTwice()
         {
-            Allocation obj = Allocation.Create(sizeof(int));
+            MemoryAddress obj = MemoryAddress.Allocate((uint)sizeof(int));
             obj.Dispose();
-            Assert.Throws<NullReferenceException>(() => obj.Dispose());
-        }
-
-        [Test]
-        public void ThrowIfLeaks()
-        {
-            Allocation obj = Allocation.Create(sizeof(int));
-            Assert.Throws<Exception>(() => Allocations.ThrowIfAny());
-            obj.Dispose();
-        }
-
-#if DEBUG
-        [Test]
-        public void ThrowIfIndexingOutOfBounds()
-        {
-            Allocation obj = Allocation.Create(4);
-            Assert.Throws<IndexOutOfRangeException>(() => obj[4] = 5);
-            obj.Dispose();
-
-            obj = Allocation.Create(16);
-            Assert.Throws<IndexOutOfRangeException>(() =>
-            {
-                unchecked
-                {
-                    obj[(uint)-1] = 232;
-                }
-            });
-
-            obj.Dispose();
+            Assert.Throws<InvalidOperationException>(() => obj.Dispose());
         }
 #endif
 
         [Test]
         public void ClearAllocation()
         {
-            using Allocation obj = Allocation.Create(sizeof(int) * 4);
+            using MemoryAddress obj = MemoryAddress.Allocate((uint)(sizeof(int) * 4));
             USpan<int> span = obj.AsSpan<int>(0, 4);
             span[0] = 5;
             Assert.That(obj.AsSpan<int>(0, 1)[0], Is.EqualTo(5));
@@ -167,25 +136,9 @@ namespace Unmanaged.Tests
         }
 
         [Test]
-        public void CheckAllocationsForDebugging()
-        {
-            Allocation a = Allocation.Create(sizeof(int));
-            Allocation b = Allocation.Create(sizeof(int));
-            Allocation c = Allocation.Create(sizeof(int));
-
-            Assert.That(Allocations.Count, Is.EqualTo(3));
-
-            a.Dispose();
-            b.Dispose();
-            c.Dispose();
-
-            Assert.That(Allocations.Count, Is.EqualTo(0));
-        }
-
-        [Test]
         public void ModifyingThroughDifferentInterfaces()
         {
-            using Allocation obj = Allocation.Create(sizeof(int));
+            using MemoryAddress obj = MemoryAddress.Allocate((uint)sizeof(int));
             USpan<int> bufferSpan = obj.AsSpan<int>(0, 1);
             ref int x = ref obj.AsSpan<int>(0, 1)[0];
             x = 5;
@@ -197,8 +150,8 @@ namespace Unmanaged.Tests
         [Test]
         public void CopyingIntoAnother()
         {
-            using Allocation a = Allocation.Create(sizeof(int) * 4);
-            using Allocation b = Allocation.Create(sizeof(int) * 8);
+            using MemoryAddress a = MemoryAddress.Allocate((uint)(sizeof(int) * 4));
+            using MemoryAddress b = MemoryAddress.Allocate((uint)(sizeof(int) * 8));
             a.Write(0 * sizeof(int), 1);
             a.Write(1 * sizeof(int), 2);
             a.Write(2 * sizeof(int), 3);

@@ -3,6 +3,6 @@
     internal struct Text
     {
         internal uint length;
-        internal Allocation buffer;
+        internal MemoryAddress buffer;
     }
 }

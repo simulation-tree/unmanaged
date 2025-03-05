@@ -32,7 +32,6 @@ namespace Unmanaged.Tests
 
             Assert.That(data[0], Is.EqualTo(1));
             Assert.That(data[1], Is.EqualTo(2));
-            Assert.That(Allocations.Count, Is.EqualTo(0));
         }
 
 #if DEBUG
@@ -190,7 +189,7 @@ namespace Unmanaged.Tests
             array[2] = new StrangeType(15, 16, new Vector4(17, 18, 19, 20), 21);
             array[3] = new StrangeType(22, 23, new Vector4(24, 25, 26, 27), 28);
 
-            using Allocation allocation = Allocation.Create(array);
+            using MemoryAddress allocation = MemoryAddress.Allocate(array);
 
             StrangeType firstRead = allocation.Read<StrangeType>(typeSize * 0);
             Assert.That(firstRead.a, Is.EqualTo(1));
@@ -216,13 +215,13 @@ namespace Unmanaged.Tests
             Assert.That(fourthRead.c, Is.EqualTo(new Vector4(24, 25, 26, 27)));
             Assert.That(fourthRead.d, Is.EqualTo(28));
 
-            Allocation first = allocation.Read(0);
+            MemoryAddress first = allocation.Read(0);
             Assert.That(first.Read<byte>(0), Is.EqualTo(1));
             Assert.That(first.Read<float>(1), Is.EqualTo(2));
             Assert.That(first.Read<Vector4>(5), Is.EqualTo(new Vector4(3, 4, 5, 6)));
             Assert.That(first.Read<uint>(21), Is.EqualTo(7));
 
-            Allocation secondElementThirdField = allocation.Read(typeSize + sizeof(byte) + sizeof(float));
+            MemoryAddress secondElementThirdField = allocation.Read(typeSize + sizeof(byte) + sizeof(float));
             Vector4 value = secondElementThirdField.Read<Vector4>();
 
             Assert.That(value, Is.EqualTo(new Vector4(10, 11, 12, 13)));

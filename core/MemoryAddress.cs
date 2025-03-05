@@ -9,17 +9,11 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// An unmanaged allocation of memory.
+    /// An address referring to either stack or heap memory.
     /// </summary>
-    [DebuggerTypeProxy(typeof(AllocationDebugView))]
-    public unsafe struct Allocation : IDisposable, IEquatable<Allocation>
+    public unsafe struct MemoryAddress : IDisposable, IEquatable<MemoryAddress>
     {
-        private void* pointer;
-
-        /// <summary>
-        /// Has this allocation been disposed? Also counts for instances that weren't allocated.
-        /// </summary>
-        public readonly bool IsDisposed => pointer is null;
+        private byte* pointer;
 
         /// <summary>
         /// Native address of this memory.
@@ -29,34 +23,25 @@ namespace Unmanaged
         /// <summary>
         /// Native pointer of this memory.
         /// </summary>
-        public readonly void* Pointer => pointer;
+        public readonly byte* Pointer => pointer;
 
         /// <summary>
         /// Gets or sets a byte at the given index.
         /// </summary>
-        public readonly ref byte this[uint index]
-        {
-            get
-            {
-                Allocations.ThrowIfNull(pointer);
-                ThrowIfIndexOutOfRange(index);
-
-                return ref *(byte*)((nint)pointer + index);
-            }
-        }
+        public readonly ref byte this[uint index] => ref pointer[index];
 
         /// <summary>
-        /// Creates an existing allocation from the given <paramref name="pointer"/>.
+        /// Initializes an existing allocation from the given <paramref name="pointer"/>.
         /// </summary>
-        public Allocation(void* pointer)
+        public MemoryAddress(void* pointer)
         {
-            this.pointer = pointer;
+            this.pointer = (byte*)pointer;
         }
 
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
-        public Allocation()
+        public MemoryAddress()
         {
             throw new NotSupportedException();
         }
@@ -67,25 +52,21 @@ namespace Unmanaged
         /// </summary>
         public void Dispose()
         {
-            Allocations.ThrowIfNull(pointer);
-            Allocations.Free(ref pointer);
+            ThrowIfDefault();
+
+            NativeMemory.Free(pointer);
+            pointer = default;
         }
 
-        [Conditional("TRACK")]
-        private readonly void ThrowIfIndexOutOfRange(uint index)
+        /// <summary>
+        /// In debug mode, throws an exception if this is <see langword="default"/>.
+        /// </summary>
+        [Conditional("DEBUG")]
+        public readonly void ThrowIfDefault()
         {
-            if (Allocations.Tracker.TryGetSize(Address, out uint byteLength) && index >= byteLength)
+            if (pointer is null)
             {
-                throw new IndexOutOfRangeException($"Index {index} is out of range for allocation of size {byteLength}");
-            }
-        }
-
-        [Conditional("TRACK")]
-        private readonly void ThrowIfPastRange(uint index)
-        {
-            if (Allocations.Tracker.TryGetSize(Address, out uint byteLength) && index > byteLength)
-            {
-                throw new IndexOutOfRangeException($"Index {index} is past the range of allocation of size {byteLength}");
+                throw new InvalidOperationException("Memory address is default");
             }
         }
 
@@ -94,9 +75,7 @@ namespace Unmanaged
         /// </summary>
         public readonly override string ToString()
         {
-            USpan<char> buffer = stackalloc char[16];
-            uint length = ToString(buffer);
-            return buffer.GetSpan(length).ToString();
+            return Address.ToString();
         }
 
         /// <summary>
@@ -112,7 +91,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
-            *(T*)((nint)pointer + bytePosition) = value;
+            *(T*)(pointer + bytePosition) = value;
         }
 
         /// <summary>
@@ -141,7 +120,7 @@ namespace Unmanaged
         {
             unchecked
             {
-                Span<T> thisSpan = new((void*)((nint)pointer + bytePosition), (int)span.Length);
+                Span<T> thisSpan = new(pointer + bytePosition, (int)span.Length);
                 span.CopyTo(thisSpan);
             }
         }
@@ -159,14 +138,15 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Writes the given data with a custom length into memory starting at this position in bytes.
+        /// Writes <paramref name="otherData"/> with a custom <paramref name="byteLength"/> into memory starting 
+        /// at <paramref name="bytePosition"/>.
         /// </summary>
-        public readonly void Write(uint bytePosition, uint byteLength, Allocation data)
+        public readonly void Write(uint bytePosition, uint byteLength, MemoryAddress otherData)
         {
             unchecked
             {
-                Span<byte> bytes = new(data, (int)byteLength);
-                bytes.CopyTo(new Span<byte>((byte*)pointer + (int)bytePosition, (int)byteLength));
+                Span<byte> bytes = new(otherData, (int)byteLength);
+                bytes.CopyTo(new Span<byte>(pointer + (int)bytePosition, (int)byteLength));
             }
         }
 
@@ -175,7 +155,7 @@ namespace Unmanaged
         /// </summary>
         public readonly USpan<byte> AsSpan(uint bytePosition, uint byteLength)
         {
-            return new USpan<byte>((void*)((nint)pointer + bytePosition), byteLength);
+            return new USpan<byte>(pointer + bytePosition, byteLength);
         }
 
         /// <summary>
@@ -204,7 +184,7 @@ namespace Unmanaged
         {
             unchecked
             {
-                return new USpan<T>((void*)((nint)pointer + start * (uint)sizeof(T)), length);
+                return new USpan<T>(pointer + start * (uint)sizeof(T), length);
             }
         }
 
@@ -213,7 +193,7 @@ namespace Unmanaged
         /// </summary>
         public readonly ref T Read<T>(uint bytePosition) where T : unmanaged
         {
-            return ref *(T*)((nint)pointer + bytePosition);
+            return ref *(T*)(pointer + bytePosition);
         }
 
         /// <summary>
@@ -238,9 +218,9 @@ namespace Unmanaged
         /// <summary>
         /// Reads data from the memory starting from the given <paramref name="bytePosition"/>.
         /// </summary>
-        public readonly Allocation Read(uint bytePosition)
+        public readonly MemoryAddress Read(uint bytePosition)
         {
-            return new((void*)((nint)pointer + bytePosition));
+            return new(pointer + bytePosition);
         }
 
         /// <summary>
@@ -248,9 +228,6 @@ namespace Unmanaged
         /// </summary>
         public readonly void Clear(uint byteLength)
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(byteLength);
-
             NativeMemory.Clear(pointer, byteLength);
         }
 
@@ -259,11 +236,7 @@ namespace Unmanaged
         /// </summary>
         public readonly void Clear(uint bytePosition, uint byteLength)
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(bytePosition + byteLength);
-
-            nint address = (nint)((nint)pointer + bytePosition);
-            NativeMemory.Clear((void*)address, byteLength);
+            NativeMemory.Clear(pointer + bytePosition, byteLength);
         }
 
         /// <summary>
@@ -271,9 +244,6 @@ namespace Unmanaged
         /// </summary>
         public readonly void Fill(uint byteLength, byte value)
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(byteLength);
-
             NativeMemory.Fill(pointer, byteLength, value);
         }
 
@@ -282,22 +252,18 @@ namespace Unmanaged
         /// </summary>
         public readonly void Fill(uint bytePosition, uint byteLength, byte value)
         {
-            Allocations.ThrowIfNull(pointer);
-            ThrowIfPastRange(bytePosition + byteLength);
-
-            nint address = (nint)((nint)pointer + bytePosition);
-            NativeMemory.Fill((void*)address, byteLength, value);
+            NativeMemory.Fill(pointer + bytePosition, byteLength, value);
         }
 
         /// <summary>
         /// Copies bytes of this allocation into the <paramref name="destination"/>.
         /// </summary>
-        public readonly void CopyTo(Allocation destination, uint sourceBytePosition, uint destinationBytePosition, uint byteLength)
+        public readonly void CopyTo(MemoryAddress destination, uint sourceBytePosition, uint destinationBytePosition, uint byteLength)
         {
             unchecked
             {
-                Span<byte> source = new((byte*)pointer + (int)sourceBytePosition, (int)byteLength);
-                Span<byte> dest = new((byte*)destination.pointer + (int)destinationBytePosition, (int)byteLength);
+                Span<byte> source = new(pointer + (int)sourceBytePosition, (int)byteLength);
+                Span<byte> dest = new(destination.pointer + (int)destinationBytePosition, (int)byteLength);
                 source.CopyTo(dest);
             }
         }
@@ -305,7 +271,7 @@ namespace Unmanaged
         /// <summary>
         /// Copies bytes of this allocation into the <paramref name="destination"/>.
         /// </summary>
-        public readonly void CopyTo(Allocation destination, uint byteLength)
+        public readonly void CopyTo(MemoryAddress destination, uint byteLength)
         {
             unchecked
             {
@@ -331,7 +297,7 @@ namespace Unmanaged
         /// <summary>
         /// Copies the bytes from <paramref name="source"/> and writes them into this allocation.
         /// </summary>
-        public readonly void CopyFrom(Allocation source, uint byteLength)
+        public readonly void CopyFrom(MemoryAddress source, uint byteLength)
         {
             unchecked
             {
@@ -357,41 +323,40 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override bool Equals(object? obj)
         {
-            return obj is Allocation allocation && Equals(allocation);
+            return obj is MemoryAddress allocation && Equals(allocation);
         }
 
         /// <inheritdoc/>
-        public readonly bool Equals(Allocation other)
+        public readonly bool Equals(MemoryAddress other)
         {
-            if (IsDisposed && other.IsDisposed)
-            {
-                return true;
-            }
-
             return pointer == other.pointer;
         }
 
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine((nint)pointer);
+            unchecked
+            {
+                nint address = (nint)pointer;
+                return (int)address;
+            }
         }
 
         /// <summary>
-        /// Moves existing memory into a new allocation of the given size.
+        /// Moves existing memory into a new allocation of the given <paramref name="newByteLength"/>.
         /// </summary>
-        public static void Resize(ref Allocation allocation, uint newLength)
+        public static void Resize(ref MemoryAddress allocation, uint newByteLength)
         {
-            Allocations.ThrowIfNull(allocation.pointer);
+            allocation.ThrowIfDefault();
 
-            allocation = new(Allocations.Reallocate(allocation.pointer, newLength));
+            allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, newByteLength);
         }
 
         /// <summary>
         /// Moves existing memory into a new allocation that is able to
-        /// fit the given type.
+        /// fit <typeparamref name="T"/>.
         /// </summary>
-        public static void Resize<T>(ref Allocation allocation) where T : unmanaged
+        public static void Resize<T>(ref MemoryAddress allocation) where T : unmanaged
         {
             Resize(ref allocation, (uint)sizeof(T));
         }
@@ -399,72 +364,64 @@ namespace Unmanaged
         /// <summary>
         /// Creates an empty allocation of size 0.
         /// </summary>
-        public static Allocation CreateEmpty()
+        public static MemoryAddress AllocateEmpty()
         {
-            void* pointer = Allocations.Allocate(0);
-            return new(pointer);
+            return new(NativeMemory.Alloc(0));
         }
 
         /// <summary>
         /// Creates an allocation of size <paramref name="byteLength"/>, initialized
         /// to <see langword="default"/> memory.
         /// </summary>
-        public static Allocation CreateZeroed(uint byteLength)
+        public static MemoryAddress AllocateZeroed(uint byteLength)
         {
-            void* pointer = Allocations.AllocateZeroed(byteLength);
-            return new(pointer);
+            return new(NativeMemory.AllocZeroed(byteLength));
         }
 
         /// <summary>
         /// Creates a new non-zeroed allocation of size <paramref name="byteLength"/>.
         /// </summary>
-        public static Allocation Create(uint byteLength)
+        public static MemoryAddress Allocate(uint byteLength)
         {
-            void* pointer = Allocations.Allocate(byteLength);
-            return new(pointer);
+            return new(NativeMemory.Alloc(byteLength));
         }
 
         /// <summary>
         /// Creates a new allocation that contains the data of the given <paramref name="value"/>.
         /// </summary>
-        public static Allocation CreateFromValue<T>(T value) where T : unmanaged
+        public static MemoryAddress Allocate<T>(T value) where T : unmanaged
         {
-            ref T reference = ref Allocations.Allocate<T>();
-            reference = value;
-            fixed (T* pointer = &reference)
-            {
-                return new(pointer);
-            }
+            void* pointer = NativeMemory.Alloc((uint)sizeof(T));
+            *(T*)pointer = value;
+            return new(pointer);
         }
 
         /// <summary>
         /// Creates a new uninitialized allocation that can contain a(n) <typeparamref name="T"/>
         /// </summary>
-        public static Allocation Create<T>() where T : unmanaged
+        public static MemoryAddress Allocate<T>() where T : unmanaged
         {
-            void* pointer = Allocations.Allocate((uint)sizeof(T));
-            return new(pointer);
+            return new(NativeMemory.Alloc((uint)sizeof(T)));
         }
 
         /// <summary>
         /// Creates a new allocation containg the given <paramref name="span"/>.
         /// </summary>
-        public static Allocation Create<T>(USpan<T> span) where T : unmanaged
+        public static MemoryAddress Allocate<T>(USpan<T> span) where T : unmanaged
         {
-            void* pointer = Allocations.Allocate(span.Length * (uint)sizeof(T));
-            Allocation allocation = new(pointer);
-            if (span.Length > 0)
-            {
-                span.CopyTo(new USpan<T>(allocation.Pointer, span.Length));
-            }
-
-            return allocation;
+            uint byteLength = (uint)sizeof(T) * span.Length;
+            void* pointer = NativeMemory.Alloc(byteLength);
+            span.CopyTo(pointer, byteLength);
+            return new(pointer);
         }
 
         /// <summary>
-        /// Retrieves an existing allocation from the reference to <paramref name="value"/>.
+        /// Retrieves an allocation containing <paramref name="value"/> on the stack.
+        /// <para>
+        /// Doesn't allocate memory on the heap.
+        /// </para>
         /// </summary>
-        public static Allocation Get<T>(ref T value) where T : unmanaged
+        public static MemoryAddress Get<T>(ref T value) where T : unmanaged
         {
             fixed (T* pointer = &value)
             {
@@ -472,50 +429,46 @@ namespace Unmanaged
             }
         }
 
+        /// <summary>
+        /// In debug mode, throws an exception if the given <paramref name="address"/> is <see langword="default"/>.
+        /// </summary>
+        [Conditional("DEBUG")]
+        public static void ThrowIfDefault(MemoryAddress address)
+        {
+            if (address.pointer is null)
+            {
+                throw new InvalidOperationException("Memory address is default");
+            }
+        }
+
+        /// <summary>
+        /// In debug mode, throws an exception if the given <paramref name="pointer"/> is <see langword="default"/>.
+        /// </summary>
+        [Conditional("DEBUG")]
+        public static void ThrowIfDefault(void* pointer)
+        {
+            if (pointer is null)
+            {
+                throw new InvalidOperationException("Memory address is default");
+            }
+        }
+
         /// <inheritdoc/>
-        public static bool operator ==(Allocation left, Allocation right)
+        public static bool operator ==(MemoryAddress left, MemoryAddress right)
         {
             return left.Equals(right);
         }
 
         /// <inheritdoc/>
-        public static bool operator !=(Allocation left, Allocation right)
+        public static bool operator !=(MemoryAddress left, MemoryAddress right)
         {
             return !(left == right);
         }
 
         /// <inheritdoc/>
-        public static implicit operator void*(Allocation allocation)
+        public static implicit operator void*(MemoryAddress allocation)
         {
             return allocation.pointer;
-        }
-
-        /// <inheritdoc/>
-        public static implicit operator Allocation*(Allocation allocation)
-        {
-            return (Allocation*)allocation.pointer;
-        }
-
-        /// <inheritdoc/>
-        public static implicit operator nint(Allocation allocation)
-        {
-            return allocation.Address;
-        }
-
-        internal class AllocationDebugView
-        {
-#if DEBUG
-            public readonly Allocation allocation;
-            public readonly nint address;
-            public readonly uint byteLength;
-
-            public AllocationDebugView(Allocation allocation)
-            {
-                this.allocation = allocation;
-                address = allocation.Address;
-                byteLength = Allocations.Tracker.TryGetSize(address, out uint size) ? size : 0;
-            }
-#endif
         }
     }
 }
