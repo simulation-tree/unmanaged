@@ -4,48 +4,49 @@
 
 Library containing primitives for working with native C#.
 
-### Allocations
+### Memory Addresses
 
-`Allocation`s are a reference to heap memory, and they must be manually disposed.
-The equivalent of `alloc` and `free`:
+`MemoryAddress` instances can point to either heap or stack memory. They can be
+allocated using static methods, in which case they must also be disposed:
 ```cs
 //an allocation that is 10 bytes in size
-using (Allocation allocation = new(sizeof(char) * 5))
+using (MemoryAddress allocation = MemoryAddress.Allocate(sizeof(char) * 5))
 {
     allocation.Write("Hello".AsSpan());
     USpan<char> text = allocation.AsSpan<char>();
 }
 
 //an allocation containing a float
-using (Allocation allocation = Allocation.Create(3.14f))
+using (MemoryAddress allocation = MemoryAddress.Create(3.14f))
 {
     ref float floatValue = ref allocation.Read<float>();
     floatValue *= 2;
 }
 ```
 
-### Fixed String
+### ASCII Text
 
-The `FixedString` type can store up to 255 `char` values. Useful for when text is known
-to be short enough until a list/array is needed:
+The `ASCIIText256` type can store up to 255 extended ASCII `char` values. 
+Useful for when text is known to be short, until a list/array is needed:
 ```cs
-FixedString text = new("Hello World");
-USpan<char> textBuffer = stackalloc char[FixedString.Capacity];
-uint length = text.CopyTo(textBuffer);
+ASCIIText256 text = new("Hello there");
+USpan<char> textBuffer = stackalloc char[text.Length];
+text.CopyTo(textBuffer);
 
 //get utf8 bytes from the text
-USpan<byte> utf8bytes = stackalloc char[FixedString.Capacity];
+USpan<byte> utf8bytes = stackalloc char[ASCIIText256.Capacity];
 uint bytesCopied = text.CopyTo(utf8bytes);
 
 //get text from utf8 bytes using System.Text.Encoding
-FixedString textFromBytes = new(utf8bytes.Slice(0, bytesCopied));
-Assert.That(textFromBytes.ToString, Is.EqualTo(Encoding.UTF8.GetString(textBuffer.Slice(0, length))));
+ASCIIText256 textFromBytes = new(utf8bytes.Slice(0, bytesCopied));
+string systemString = Encoding.UTF8.GetString(textBuffer.Slice(0, length));
+Assert.That(textFromBytes.ToString, Is.EqualTo(systemString));
 ```
 
 ### Text
 
-Accompanying the above is the disposable `Text` type. Which is a reference to an arbitrary amount
-of `char`s, and behaves like a `string`:
+Accompanying the above is the disposable `Text` type, which is a reference to an arbitrary amount of `char`s values.
+And behaves like a `string`:
 ```cs
 using Text builder = new();
 builder.Append("Hello");
@@ -63,52 +64,26 @@ using RandomGenerator random = new();
 int fairDiceRoll = random.NextInt(0, 6);
 ```
 
-### Optional checks
+### Safety
 
-When compiling with `#DEBUG` or `#TRACK` flag set, all allocations originating from `Allocations` or
-`Allocation` will be tracked. Providing disposed and access out of bounds checks. In addition to a 
-final check when the app domain exits, and there are still allocations present (aka leaks).
+There are no safe guards when working with `MemoryAddress` values. As they
+can represent any pointer, and can originate from anywhere. Including the stack.
 
-Because these checks are an additional branch at runtime, they are made optional for efficiency. It's
-the programmers responsibility and decision for when, and how allocations should be disposed.
+It is the programmers responsibility for how memory should be managed. Including
+when created allocations should be disposed, and how to interact with them.
 
 ### Included `default` analyzer
 
-Included is an analyzer that emits errors where a disposable struct type is being created and
-initialized to `default`. Because disposable types imply they must be disposed, and so must have a 
-way to properly initialize them:
+Included is an analyzer that emits errors where a disposable struct type is 
+being created, but then initialized to `default`. Because disposable types 
+imply they have a way to properly initialize them:
 ```cs
 Allocation allocation = default; //U0001 error
 ```
 
-There is no analysis for `new()` however. Because a default constructor can be used on purpose,
-but if not, they can be declared with an `[Obsolete]` attribute:
-```cs
-SomeData someData = new(); //CS0619 error
-
-public readonly struct SomeData : IDisposable
-{
-    private readonly Allocation allocation;
-
-    public readonly ref int Value => ref allocation.Read<int>();
-
-    [Obsolete("Default constructor not supported", true)] //disallows default constructor
-    public SomeData() 
-    {
-        throw new NotSupportedException();
-    }
-
-    public SomeData(int value)
-    {
-        allocation = Allocation.Create(value);
-    }
-
-    public readonly void Dispose()
-    {
-        allocation.Dispose();
-    }
-}
-```
+There is no analysis for `new()` however, because a default constructor with
+value types can be by design. Though if not, they can be declared with an 
+`[Obsolete("", true)]` attribute with the parameter `true` to enforce usage.
 
 ### Contributing and direction
 
