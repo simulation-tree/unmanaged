@@ -213,7 +213,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Copies <paramref name="source"/> into this text.
+        /// Makes this text match <paramref name="source"/> exactly.
         /// </summary>
         public readonly void CopyFrom(USpan<char> source)
         {
@@ -229,7 +229,39 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Copies <paramref name="source"/> into this text.
+        /// Makes this text match <paramref name="source"/> exactly.
+        /// </summary>
+        public readonly void CopyFrom(string source)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            if (text->length != source.Length)
+            {
+                text->length = (uint)source.Length;
+                MemoryAddress.Resize(ref text->buffer, (uint)source.Length * sizeof(char));
+            }
+
+            source.CopyTo(new USpan<char>(text->buffer.Pointer, (uint)source.Length));
+        }
+
+        /// <summary>
+        /// Makes this text match <paramref name="source"/> exactly.
+        /// </summary>
+        public readonly void CopyFrom(ASCIIText256 source)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+            
+            if (text->length != source.Length)
+            {
+                text->length = source.Length;
+                MemoryAddress.Resize(ref text->buffer, (uint)source.Length * sizeof(char));
+            }
+
+            source.CopyTo(new USpan<char>(text->buffer.Pointer, source.Length));
+        }
+
+        /// <summary>
+        /// Makes this text match <paramref name="source"/> exactly.
         /// </summary>
         public readonly void CopyFrom(IEnumerable<char> source)
         {
