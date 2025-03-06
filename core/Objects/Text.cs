@@ -333,6 +333,26 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Retrieves a slice of the remaining text starting at <paramref name="start"/>.
+        /// </summary>
+        public readonly USpan<char> Slice(uint start)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            return new USpan<char>(text->buffer.Pointer + start * sizeof(char), text->length - start);
+        }
+
+        /// <summary>
+        /// Retrieves a slice with <paramref name="length"/> starting at <paramref name="start"/>.
+        /// </summary>
+        public readonly USpan<char> Slice(uint start, uint length)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            return new USpan<char>(text->buffer.Pointer + start * sizeof(char), text->length);
+        }
+
+        /// <summary>
         /// Appends a single <paramref name="character"/>.
         /// </summary>
         public readonly void Append(char character, uint repeat = 1)
@@ -378,6 +398,27 @@ namespace Unmanaged
             }
 
             length--;
+        }
+
+        /// <summary>
+        /// Retrieves the index for the first occurance of the given <paramref name="character"/>.
+        /// <para>
+        /// Will be <see cref="uint.MaxValue"/> if not found.
+        /// </para>
+        /// </summary>
+        public readonly uint IndexOf(char character)
+        {
+            return AsSpan().IndexOf(character);
+        }
+        /// <summary>
+        /// Retrieves the index for the last occurance of the given <paramref name="character"/>.
+        /// <para>
+        /// Will be <see cref="uint.MaxValue"/> if not found.
+        /// </para>
+        /// </summary>
+        public readonly uint LastIndexOf(char character)
+        {
+            return AsSpan().LastIndexOf(character);
         }
 
         /// <summary>
