@@ -1334,7 +1334,9 @@ namespace Unmanaged
             return obj is ASCIIText256 other && Equals(other);
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Hash code based on contents and the length.
+        /// </summary>
         public readonly override int GetHashCode()
         {
             unchecked
@@ -1343,60 +1345,6 @@ namespace Unmanaged
                 for (uint i = 0; i < length; i++)
                 {
                     hash = (hash * 31) + characters[i];
-                }
-
-                return hash;
-            }
-        }
-
-        /// <summary>
-        /// Generates a double precision hash code for this text.
-        /// </summary>
-        public readonly long GetLongHashCode()
-        {
-            unchecked
-            {
-                long hash = 3074457345618258791;
-                for (uint i = 0; i < length; i++)
-                {
-                    hash += characters[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
-            }
-        }
-
-        /// <summary>
-        /// Generates a double precision hash code for this <paramref name="text"/>.
-        /// </summary>
-        public static long GetLongHashCode(string text)
-        {
-            unchecked
-            {
-                long hash = 3074457345618258791;
-                for (int i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
-            }
-        }
-
-        /// <summary>
-        /// Generates a double precision hash code for this <paramref name="text"/>.
-        /// </summary>
-        public static long GetLongHashCode(USpan<char> text)
-        {
-            unchecked
-            {
-                long hash = 3074457345618258791;
-                for (uint i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
                 }
 
                 return hash;
