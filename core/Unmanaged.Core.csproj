@@ -16,7 +16,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryUrl>https://github.com/game-simulations/unmanaged</RepositoryUrl>
         <PackageTags>native;unmanaged</PackageTags>
-        <Company>game-simulation</Company>
+        <Company>game-simulations</Company>
         <IsAotCompatible>true</IsAotCompatible>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <WarningLevel>8</WarningLevel>
