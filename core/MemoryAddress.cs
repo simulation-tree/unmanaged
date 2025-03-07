@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
-{
+{    
     /// <summary>
     /// An address referring to either stack or heap memory.
     /// </summary>

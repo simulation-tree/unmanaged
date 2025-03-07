@@ -92,6 +92,17 @@
         }
 
         [Test]
+        public void SliceText()
+        {
+            using Text text = new("Some kind of sample");
+
+            Assert.That(text.Slice(0, 4).ToString(), Is.EqualTo("Some"));
+            Assert.That(text.Slice(5, 4).ToString(), Is.EqualTo("kind"));
+            Assert.That(text.Slice(10, 2).ToString(), Is.EqualTo("of"));
+            Assert.That(text.Slice(13, 6).ToString(), Is.EqualTo("sample"));
+        }
+
+        [Test]
         public void RemoveFromEnd()
         {
             using Text text = new(0);
@@ -104,6 +115,41 @@
             text.RemoveAt(text.Length - 1);
 
             Assert.That(text.ToString(), Is.EqualTo("Item, Item, Item, Item, Item"));
+        }
+
+        [Test]
+        public void InsertSingleCharacter()
+        {
+            using Text text = new("abacus");
+            text.Insert(3, 'x');
+
+            Assert.That(text.ToString(), Is.EqualTo("abaxcus"));
+
+            text.RemoveAt(3);
+            text.Insert(text.Length, 'a');
+
+            Assert.That(text.ToString(), Is.EqualTo("abacusa"));
+        }
+
+        [Test]
+        public void InsertWords()
+        {
+            using Text text = new();
+            text.Insert(0, "there");
+
+            Assert.That(text.ToString(), Is.EqualTo("there"));
+
+            text.Insert(0, "Hello ");
+
+            Assert.That(text.ToString(), Is.EqualTo("Hello there"));
+
+            text.Insert(6, "world, ");
+
+            Assert.That(text.ToString(), Is.EqualTo("Hello world, there"));
+
+            text.Insert(text.Length, " is");
+
+            Assert.That(text.ToString(), Is.EqualTo("Hello world, there is"));
         }
     }
 }

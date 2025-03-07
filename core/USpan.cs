@@ -148,7 +148,7 @@ namespace Unmanaged
         {
             if (length < Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(length), $"Destination span is too small to fit within {length}");
+                throw new ArgumentOutOfRangeException(nameof(length), $"Destination span of length {length} is too small to contain another span of length {Length}");
             }
         }
 
