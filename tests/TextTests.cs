@@ -1,4 +1,6 @@
-﻿namespace Unmanaged.Tests
+﻿using System;
+
+namespace Unmanaged.Tests
 {
     public class TextTests : UnmanagedTests
     {
@@ -115,6 +117,33 @@
             text.RemoveAt(text.Length - 1);
 
             Assert.That(text.ToString(), Is.EqualTo("Item, Item, Item, Item, Item"));
+        }
+
+        [Test]
+        public void AppendWords()
+        {
+            using Text text = new();
+            text.Append("Item".AsSpan());
+
+            Assert.That(text.ToString(), Is.EqualTo("Item"));
+
+            text.Append("ization");
+
+            Assert.That(text.ToString(), Is.EqualTo("Itemization"));
+        }
+
+        [Test]
+        public void AppendCharacters()
+        {
+            using Text text = new();
+            text.Append('L');
+
+            Assert.That(text.ToString(), Is.EqualTo("L"));
+
+            text.Append('o', 5);
+            text.Append('l');
+
+            Assert.That(text.ToString(), Is.EqualTo("Loooool"));
         }
 
         [Test]

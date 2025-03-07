@@ -393,7 +393,7 @@ namespace Unmanaged
 
             uint newLength = text->length + repeat;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            Slice(text->length).Fill(character);
+            Slice(text->length, repeat).Fill(character);
             text->length = newLength;
         }
 
