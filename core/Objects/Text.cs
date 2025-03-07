@@ -938,6 +938,11 @@ namespace Unmanaged
             /// </summary>
             public readonly uint Length => text.Length;
 
+            /// <summary>
+            /// Checks if the text is empty.
+            /// </summary>
+            public readonly bool IsEmpty => text.IsEmpty;
+
             int IReadOnlyCollection<char>.Count => (int)text.Length;
 
             internal Borrowed(Text text)
@@ -989,6 +994,14 @@ namespace Unmanaged
             /// Makes this text match <paramref name="otherText"/> exactly.
             /// </summary>
             public readonly void CopyFrom(USpan<char> otherText)
+            {
+                text.CopyFrom(otherText);
+            }
+
+            /// <summary>
+            /// Makes this text match <paramref name="otherText"/> exactly.
+            /// </summary>
+            public readonly void CopyFrom(ASCIIText256 otherText)
             {
                 text.CopyFrom(otherText);
             }
