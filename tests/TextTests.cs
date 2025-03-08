@@ -130,6 +130,11 @@ namespace Unmanaged.Tests
             text.Append("ization");
 
             Assert.That(text.ToString(), Is.EqualTo("Itemization"));
+
+            using Text otherText = new(" of stuff");
+            text.Append(otherText.Borrow());
+
+            Assert.That(text.ToString(), Is.EqualTo("Itemization of stuff"));
         }
 
         [Test]

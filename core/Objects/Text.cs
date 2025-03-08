@@ -432,7 +432,7 @@ namespace Unmanaged
 
             uint newLength = text->length + (uint)otherText.Count;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            USpan<char> buffer = AsSpan();
+            USpan<char> buffer = text->buffer.GetSpan<char>(newLength);
             uint index = text->length;
             foreach (char character in otherText)
             {
