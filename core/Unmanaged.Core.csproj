@@ -14,9 +14,9 @@
         <Authors>popcron</Authors>
         <Description>The building blocks of native C# projects</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <RepositoryUrl>https://github.com/game-simulations/unmanaged</RepositoryUrl>
+        <RepositoryUrl>https://github.com/simulation-tree/unmanaged</RepositoryUrl>
         <PackageTags>native;unmanaged</PackageTags>
-        <Company>game-simulations</Company>
+        <Company>simulation-tree</Company>
         <IsAotCompatible>true</IsAotCompatible>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <WarningLevel>8</WarningLevel>

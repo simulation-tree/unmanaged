@@ -11,9 +11,9 @@
         <GenerateDocumentationFile>True</GenerateDocumentationFile>
         <Title>Worlds</Title>
         <Authors>popcron</Authors>
-        <Company>game-simulations</Company>
+        <Company>simulation-tree</Company>
         <Description>The building blocks of native C# projects</Description>
-        <RepositoryUrl>https://github.com/game-simulations/unmanaged</RepositoryUrl>
+        <RepositoryUrl>https://github.com/simulation-tree/unmanaged</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IsAotCompatible>True</IsAotCompatible>
         <IsTrimmable>True</IsTrimmable>
