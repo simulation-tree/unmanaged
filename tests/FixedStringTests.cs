@@ -53,10 +53,15 @@ namespace Unmanaged.Tests
         public void CopyToUTF8Bytes()
         {
             ASCIIText256 a = "abacus123+•◘○♠♣♦☺☻♥☺☻";
-            USpan<byte> bytes = stackalloc byte[32];
-            uint byteLength = a.CopyTo(bytes);
+            Span<byte> bytes = stackalloc byte[32];
+            int byteLength = a.CopyTo(bytes);
             byte[] realBytes = Encoding.UTF8.GetBytes(a.ToString());
             Assert.That(byteLength, Is.EqualTo(realBytes.Length));
+
+            ASCIIText256 b = "VK_LAYER_KHRONOS_validation";
+            byteLength = b.CopyTo(bytes);
+            string realString = Encoding.UTF8.GetString(bytes.Slice(0, byteLength));
+            Assert.That(realString, Is.EqualTo(b.ToString()));
         }
 
         [Test]

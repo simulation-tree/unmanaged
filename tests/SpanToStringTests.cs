@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 
 namespace Unmanaged.Tests
 {
@@ -7,8 +8,8 @@ namespace Unmanaged.Tests
         [Test]
         public void PrimitivesToUSpanString()
         {
-            USpan<char> buffer = stackalloc char[64];
-            uint length = 0;
+            Span<char> buffer = stackalloc char[64];
+            int length = 0;
 
             byte byteValue1 = 128;
             byte byteValue2 = 29;

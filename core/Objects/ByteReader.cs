@@ -17,7 +17,7 @@ namespace Unmanaged
         /// <summary>
         /// Position of the reader in the byte stream.
         /// </summary>
-        public readonly ref uint Position
+        public readonly ref int Position
         {
             get
             {
@@ -30,7 +30,7 @@ namespace Unmanaged
         /// <summary>
         /// Length of the byte stream.
         /// </summary>
-        public readonly uint Length
+        public readonly int Length
         {
             get
             {
@@ -48,7 +48,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the given <paramref name="bytes"/>.
         /// </summary>
-        public ByteReader(USpan<byte> bytes, uint position = 0)
+        public ByteReader(Span<byte> bytes, int position = 0)
         {
             ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(position, MemoryAddress.Allocate(bytes), bytes.Length, true);
@@ -61,7 +61,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the data in the <paramref name="writer"/>.
         /// </summary>
-        public ByteReader(ByteWriter writer, uint position = 0)
+        public ByteReader(ByteWriter writer, int position = 0)
         {
             ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(position, writer.Items, writer.Position, false);
@@ -74,12 +74,12 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader using the data inside the stream.
         /// </summary>
-        public ByteReader(Stream stream, uint position = 0)
+        public ByteReader(Stream stream, int position = 0)
         {
-            uint byteLength = (uint)stream.Length;
+            int byteLength = (int)stream.Length;
             MemoryAddress streamData = MemoryAddress.Allocate(byteLength);
-            USpan<byte> span = new(streamData.Pointer, byteLength);
-            byteLength = (uint)stream.Read(span);
+            Span<byte> span = new(streamData.Pointer, byteLength);
+            byteLength = stream.Read(span);
             ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(position, streamData, span.Length, true);
             fixed (Pointer* pointer = &reader)
@@ -149,7 +149,7 @@ namespace Unmanaged
         /// <summary>
         /// Returns all bytes in the reader.
         /// </summary>
-        public readonly USpan<byte> GetBytes()
+        public readonly Span<byte> GetBytes()
         {
             MemoryAddress.ThrowIfDefault(reader);
 
@@ -159,7 +159,7 @@ namespace Unmanaged
         /// <summary>
         /// Resets this reader and loads data from the given <paramref name="data"/>.
         /// </summary>
-        public readonly void CopyFrom(USpan<byte> data)
+        public readonly void CopyFrom(Span<byte> data)
         {
             MemoryAddress.ThrowIfDefault(reader);
 
@@ -176,7 +176,7 @@ namespace Unmanaged
         /// <summary>
         /// Returns the remaining bytes.
         /// </summary>
-        public readonly USpan<byte> GetRemainingBytes()
+        public readonly Span<byte> GetRemainingBytes()
         {
             MemoryAddress.ThrowIfDefault(reader);
 
@@ -184,7 +184,7 @@ namespace Unmanaged
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfReadingPastLength(uint position)
+        private readonly void ThrowIfReadingPastLength(int position)
         {
             if (position > Length)
             {
@@ -196,10 +196,10 @@ namespace Unmanaged
         /// Peeks the next UTF-8 character in the stream.
         /// </summary>
         /// <returns>Amount of bytes read.</returns>
-        public readonly byte PeekUTF8(uint position, out char low, out char high)
+        public readonly byte PeekUTF8(int bytePosition, out char low, out char high)
         {
-            USpan<byte> bytes = GetBytes();
-            return bytes.GetUTF8Character(position, out low, out high);
+            Span<byte> bytes = GetBytes();
+            return bytes.GetUTF8Character(bytePosition, out low, out high);
         }
 
         /// <summary>
@@ -226,11 +226,11 @@ namespace Unmanaged
         /// <summary>
         /// Peeks a <typeparamref name="T"/> value at the specified <paramref name="bytePosition"/>.
         /// </summary>
-        public readonly T PeekValue<T>(uint bytePosition) where T : unmanaged
+        public readonly T PeekValue<T>(int bytePosition) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            if (bytePosition + (uint)sizeof(T) > reader->byteLength)
+            if (bytePosition + sizeof(T) > reader->byteLength)
             {
                 return default;
             }
@@ -252,11 +252,11 @@ namespace Unmanaged
         /// <summary>
         /// Advances the reader by the specified amount of <paramref name="byteLength"/>.
         /// </summary>
-        public readonly void Advance(uint byteLength)
+        public readonly void Advance(int byteLength)
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            uint newPosition = reader->bytePosition + byteLength;
+            int newPosition = reader->bytePosition + byteLength;
             ThrowIfReadingPastLength(newPosition);
 
             reader->bytePosition = newPosition;
@@ -265,28 +265,28 @@ namespace Unmanaged
         /// <summary>
         /// Advances the reader by the size of <typeparamref name="T"/> elements.
         /// </summary>
-        public readonly void Advance<T>(uint length = 1) where T : unmanaged
+        public readonly void Advance<T>(int elementCount = 1) where T : unmanaged
         {
-            Advance((uint)sizeof(T) * length);
+            Advance(sizeof(T) * elementCount);
         }
 
         /// <summary>
         /// Reads a span of values from the reader with the specified length
         /// in <typeparamref name="T"/> elements.
         /// </summary>
-        public readonly USpan<T> ReadSpan<T>(uint length) where T : unmanaged
+        public readonly Span<T> ReadSpan<T>(int length) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            USpan<T> span = PeekSpan<T>(reader->bytePosition, length);
-            reader->bytePosition += (uint)sizeof(T) * length;
+            Span<T> span = PeekSpan<T>(reader->bytePosition, length);
+            reader->bytePosition += sizeof(T) * length;
             return span;
         }
 
         /// <summary>
         /// Peeks a span of values with <paramref name="length"/>.
         /// </summary>
-        public readonly USpan<T> PeekSpan<T>(uint length) where T : unmanaged
+        public readonly Span<T> PeekSpan<T>(int length) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
@@ -296,24 +296,24 @@ namespace Unmanaged
         /// <summary>
         /// Reads a span with <paramref name="length"/> starting at the given <paramref name="bytePosition"/>.
         /// </summary>
-        public readonly USpan<T> PeekSpan<T>(uint bytePosition, uint length) where T : unmanaged
+        public readonly Span<T> PeekSpan<T>(int bytePosition, int length) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            uint byteLength = (uint)sizeof(T) * length;
+            int byteLength = sizeof(T) * length;
             ThrowIfReadingPastLength(bytePosition + byteLength);
 
-            nint address = reader->data.Address + (nint)bytePosition;
-            return new(address, length);
+            void* pointer = reader->data.Pointer + bytePosition;
+            return new(pointer, length);
         }
 
         /// <summary>
         /// Peeks UTF8 bytes as characters into the given <paramref name="destination"/>.
         /// </summary>
         /// <returns>Amount of <see cref="char"/> values read.</returns>
-        public readonly uint PeekUTF8(uint bytePosition, uint length, USpan<char> destination)
+        public readonly int PeekUTF8(int bytePosition, int length, Span<char> destination)
         {
-            USpan<byte> bytes = GetBytes();
+            Span<byte> bytes = GetBytes();
             return bytes.GetUTF8Characters(bytePosition, length, destination);
         }
 
@@ -332,12 +332,12 @@ namespace Unmanaged
         /// until a terminator is found, or no bytes are left.
         /// </summary>
         /// <returns>Amount of <see cref="char"/> values read.</returns>
-        public readonly uint ReadUTF8(USpan<char> destination)
+        public readonly int ReadUTF8(Span<char> destination)
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            uint start = reader->bytePosition;
-            uint read = PeekUTF8(start, destination.Length, destination);
+            int start = reader->bytePosition;
+            int read = PeekUTF8(start, destination.Length, destination);
             reader->bytePosition += read;
             return read;
         }
@@ -355,7 +355,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the given text.
         /// </summary>
-        public static ByteReader CreateFromUTF8(USpan<char> text)
+        public static ByteReader CreateFromUTF8(Span<char> text)
         {
             using ByteWriter writer = new(text.Length);
             writer.WriteUTF8(text);
@@ -377,7 +377,7 @@ namespace Unmanaged
         /// </summary>
         public static ByteReader CreateFromUTF8(string text)
         {
-            using ByteWriter writer = new((uint)text.Length);
+            using ByteWriter writer = new(text.Length);
             writer.WriteUTF8(text);
             return new ByteReader(writer.AsSpan());
         }

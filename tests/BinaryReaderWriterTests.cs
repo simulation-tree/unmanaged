@@ -32,9 +32,9 @@ namespace Unmanaged.Tests
 
             void ISerializable.Read(ByteReader reader)
             {
-                USpan<char> buffer = stackalloc char[ASCIIText256.Capacity];
-                uint length = reader.ReadUTF8(buffer);
-                name = new ASCIIText256(buffer.GetSpan(length));
+                Span<char> buffer = stackalloc char[ASCIIText256.Capacity];
+                int length = reader.ReadUTF8(buffer);
+                name = new ASCIIText256(buffer.Slice(0, length));
             }
 
             public override bool Equals(object? obj)
@@ -87,7 +87,7 @@ namespace Unmanaged.Tests
         public void WriteSpan()
         {
             using ByteWriter writer = new();
-            writer.WriteSpan<char>("Hello there".AsSpan());
+            writer.WriteSpan<char>("Hello there");
 
             using ByteReader reader = new(writer.AsSpan());
             Assert.That(reader.ReadSpan<char>(11).ToString(), Is.EqualTo("Hello there"));
@@ -111,7 +111,7 @@ namespace Unmanaged.Tests
         [Test]
         public void CreateReaderFromStream()
         {
-            using var stream = new System.IO.MemoryStream();
+            using System.IO.MemoryStream stream = new System.IO.MemoryStream();
             stream.Write([32, 0, 0, 0, 64, 0, 0, 0, 128, 0, 0, 0]);
             stream.Position = 0;
             using ByteReader reader = new(stream);
@@ -125,9 +125,9 @@ namespace Unmanaged.Tests
         {
             byte[] data = new byte[] { 239, 187, 191, 60, 80, 114, 111, 106, 101, 99, 116, 32, 83, 100, 107 };
             using ByteReader reader = new(data);
-            USpan<char> sample = stackalloc char[16];
-            uint length = reader.ReadUTF8(sample);
-            USpan<char> result = sample.Slice(0, length);
+            Span<char> sample = stackalloc char[16];
+            int length = reader.ReadUTF8(sample);
+            Span<char> result = sample.Slice(0, length);
             Assert.That(result.ToString(), Is.EqualTo("<Project Sdk"));
         }
 
@@ -138,9 +138,9 @@ namespace Unmanaged.Tests
             using ByteWriter writer = new();
             writer.WriteUTF8(myString);
             using ByteReader reader = new(writer.AsSpan());
-            USpan<char> sample = stackalloc char[32];
-            uint length = reader.ReadUTF8(sample);
-            USpan<char> result = sample.Slice(0, length);
+            Span<char> sample = stackalloc char[32];
+            int length = reader.ReadUTF8(sample);
+            Span<char> result = sample.Slice(0, length);
             string resultString = result.ToString();
             Assert.That(resultString, Is.EqualTo(myString));
         }
@@ -165,14 +165,14 @@ namespace Unmanaged.Tests
             writer.WriteValue(128);
 
             Assert.That(writer.Position, Is.EqualTo(sizeof(int) * 3));
-            int[] values = writer.AsSpan().Reinterpret<int>().ToArray();
+            int[] values = writer.AsSpan().Reinterpret<byte, int>().ToArray();
             writer.Position = 0;
             Assert.That(writer.Position, Is.EqualTo(0));
             Assert.That(values, Has.Length.EqualTo(3));
             Assert.That(values, Contains.Item(32));
             Assert.That(values, Contains.Item(64));
             Assert.That(values, Contains.Item(128));
-            Assert.That(writer.AsSpan().Reinterpret<int>().Length, Is.EqualTo(0));
+            Assert.That(writer.AsSpan().Reinterpret<byte, int>().Length, Is.EqualTo(0));
 
             writer.Dispose();
         }
@@ -180,7 +180,7 @@ namespace Unmanaged.Tests
         [Test]
         public void BinaryReadAndWrite()
         {
-            USpan<Fruit> fruits =
+            Span<Fruit> fruits =
             [
                 new(1),
                 new(3),
@@ -205,9 +205,9 @@ namespace Unmanaged.Tests
             writer.WriteSpan<ASCIIText256>(["Hello", "World", "Goodbye"]);
 
             using ByteReader reader = new(writer.AsSpan());
-            USpan<byte> bytes = reader.ReadSpan<byte>(5);
-            USpan<int> ints = reader.ReadSpan<int>(5);
-            USpan<ASCIIText256> strings = reader.ReadSpan<ASCIIText256>(3);
+            Span<byte> bytes = reader.ReadSpan<byte>(5);
+            Span<int> ints = reader.ReadSpan<int>(5);
+            Span<ASCIIText256> strings = reader.ReadSpan<ASCIIText256>(3);
 
             Assert.That(bytes.ToArray(), Is.EquivalentTo(new byte[] { 1, 2, 3, 4, 5 }));
             Assert.That(ints.ToArray(), Is.EquivalentTo(new int[] { 1, 2, 3, 4, 5 }));
@@ -235,12 +235,12 @@ namespace Unmanaged.Tests
             using Complicated loadedComplicated = reader.ReadObject<Complicated>();
 
             Assert.That(loadedComplicated.List.Length, Is.EqualTo(complicated.List.Length));
-            for (uint i = 0; i < complicated.List.Length; i++)
+            for (int i = 0; i < complicated.List.Length; i++)
             {
                 Player actual = loadedComplicated.List[i];
                 Player expected = complicated.List[i];
                 Assert.That(actual.Inventory.Length, Is.EqualTo(expected.Inventory.Length));
-                for (uint j = 0; j < actual.Inventory.Length; j++)
+                for (int j = 0; j < actual.Inventory.Length; j++)
                 {
                     Fruit actualFruit = actual.Inventory[j];
                     Fruit expectedFruit = expected.Inventory[j];
@@ -254,10 +254,10 @@ namespace Unmanaged.Tests
         public struct Complicated : IDisposable, ISerializable
         {
             private MemoryAddress players;
-            private uint count;
-            private uint capacity;
+            private int count;
+            private int capacity;
 
-            public readonly USpan<Player> List => players.AsSpan<Player>(0, count);
+            public readonly Span<Player> List => players.AsSpan<Player>(0, count);
 
             public Complicated()
             {
@@ -279,7 +279,7 @@ namespace Unmanaged.Tests
 
             public readonly void Dispose()
             {
-                USpan<Player> list = List;
+                Span<Player> list = List;
                 foreach (Player player in list)
                 {
                     player.Dispose();
@@ -312,16 +312,16 @@ namespace Unmanaged.Tests
 
         public struct Player : IDisposable, ISerializable, IEquatable<Player>
         {
-            public unsafe static readonly uint TypeSize = (uint)sizeof(Player);
+            public unsafe static readonly int TypeSize = sizeof(Player);
 
             public uint hp;
             public uint damage;
 
-            private uint count;
-            private uint capacity;
+            private int count;
+            private int capacity;
             private MemoryAddress inventory;
 
-            public readonly USpan<Fruit> Inventory => inventory.AsSpan<Fruit>(0, count);
+            public readonly Span<Fruit> Inventory => inventory.AsSpan<Fruit>(0, count);
 
             public Player(uint hp, uint damage)
             {
@@ -394,7 +394,7 @@ namespace Unmanaged.Tests
                     return false;
                 }
 
-                for (uint i = 0; i < count; i++)
+                for (int i = 0; i < count; i++)
                 {
                     if (inventory[i] != other.inventory[i])
                     {
@@ -421,7 +421,7 @@ namespace Unmanaged.Tests
             }
         }
 
-        public readonly struct Big(int a, Cherry apple, USpan<Fruit> fruits) : IDisposable, IEquatable<Big>
+        public readonly struct Big(int a, Cherry apple, Span<Fruit> fruits) : IDisposable, IEquatable<Big>
         {
             public readonly int a = a;
             public readonly Cherry apple = apple;
@@ -460,7 +460,7 @@ namespace Unmanaged.Tests
         }
         public readonly struct Fruit : IEquatable<Fruit>
         {
-            public unsafe static readonly uint TypeSize = (uint)sizeof(Fruit);
+            public unsafe static readonly int TypeSize = sizeof(Fruit);
 
             public readonly int data;
 

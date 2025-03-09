@@ -2,7 +2,7 @@
 {
     internal struct Text
     {
-        internal uint length;
+        internal int length;
         internal MemoryAddress buffer;
     }
 }

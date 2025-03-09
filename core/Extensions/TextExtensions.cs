@@ -28,24 +28,6 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a <see cref="long"/> hash for the input <paramref name="text"/>.
         /// </summary>
-        public static long GetLongHashCode(this USpan<char> text)
-        {
-            unchecked
-            {
-                long hash = 3074457345618258791;
-                for (uint i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
-            }
-        }
-
-        /// <summary>
-        /// Retrieves a <see cref="long"/> hash for the input <paramref name="text"/>.
-        /// </summary>
         public static long GetLongHashCode(this Span<char> text)
         {
             unchecked
@@ -87,7 +69,7 @@ namespace Unmanaged
             unchecked
             {
                 long hash = 3074457345618258791;
-                for (uint i = 0; i < text.Length; i++)
+                for (int i = 0; i < text.Length; i++)
                 {
                     hash += text[i];
                     hash *= 3074457345618258799;

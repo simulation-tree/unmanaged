@@ -27,7 +27,7 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator()
         {
-            pointer = MemoryAddress.Allocate(GetRandomSeed());
+            pointer = MemoryAddress.AllocateValue(GetRandomSeed());
         }
 #endif
         /// <summary>
@@ -35,24 +35,24 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(ulong seed)
         {
-            pointer = MemoryAddress.Allocate(seed);
+            pointer = MemoryAddress.AllocateValue(seed);
         }
 
         /// <summary>
         /// Creates a new disposable randomness generator using the given byte
         /// sequence as the initialization seed.
         /// </summary>
-        public RandomGenerator(USpan<byte> seed)
+        public RandomGenerator(Span<byte> seed)
         {
             unchecked
             {
                 long hash = 17;
-                for (uint i = 0; i < seed.Length; i++)
+                for (int i = 0; i < seed.Length; i++)
                 {
                     hash = hash * 31 + seed[i];
                 }
 
-                pointer = MemoryAddress.Allocate((ulong)hash);
+                pointer = MemoryAddress.AllocateValue((ulong)hash);
             }
         }
 
@@ -60,17 +60,12 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
-        public RandomGenerator(USpan<char> seed)
+        public RandomGenerator(Span<char> seed)
         {
             unchecked
             {
-                long hash = 17;
-                for (uint i = 0; i < seed.Length; i++)
-                {
-                    hash = hash * 31 + seed[i];
-                }
-
-                pointer = MemoryAddress.Allocate((ulong)hash);
+                long hash = seed.GetLongHashCode();
+                pointer = MemoryAddress.AllocateValue((ulong)hash);
             }
         }
 
@@ -82,13 +77,8 @@ namespace Unmanaged
         {
             unchecked
             {
-                long hash = 17;
-                for (uint i = 0; i < seed.Length; i++)
-                {
-                    hash = hash * 31 + seed[i];
-                }
-
-                pointer = MemoryAddress.Allocate((ulong)hash);
+                long hash = seed.GetLongHashCode();
+                pointer = MemoryAddress.AllocateValue((ulong)hash);
             }
         }
 
@@ -96,8 +86,13 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
-        public RandomGenerator(string seed) : this(seed.AsSpan())
+        public RandomGenerator(string seed)
         {
+            unchecked
+            {
+                long hash = seed.GetLongHashCode();
+                pointer = MemoryAddress.AllocateValue((ulong)hash);
+            }
         }
 
         /// <summary>
@@ -319,11 +314,11 @@ namespace Unmanaged
         /// <summary>
         /// Fills the given span buffer with random bytes.
         /// </summary>
-        public readonly void NextBytes(USpan<byte> bytes)
+        public readonly void NextBytes(Span<byte> bytes)
         {
             ulong* t = (ulong*)pointer;
             ulong value = *t;
-            for (uint i = 0; i < bytes.Length; i++)
+            for (int i = 0; i < bytes.Length; i++)
             {
                 value ^= value >> 13;
                 value ^= value << 7;

@@ -21,7 +21,7 @@ namespace Unmanaged
         /// <summary>
         /// The current position of the writer in bytes.
         /// </summary>
-        public readonly uint Position
+        public readonly int Position
         {
             get
             {
@@ -54,7 +54,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary writer with the specified <paramref name="initialCapacity"/>.
         /// </summary>
-        public ByteWriter(uint initialCapacity = 4)
+        public ByteWriter(int initialCapacity = 4)
         {
             initialCapacity = initialCapacity.GetNextPowerOf2();
             ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
@@ -72,7 +72,7 @@ namespace Unmanaged
         /// Position of the writer will be at the end of the span.
         /// </para>
         /// </summary>
-        public ByteWriter(USpan<byte> span)
+        public ByteWriter(Span<byte> span)
         {
             ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
             writer = new(MemoryAddress.Allocate(span), span.Length, span.Length);
@@ -108,8 +108,8 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(writer);
 
-            uint endPosition = writer->bytePosition + (uint)sizeof(T);
-            uint capacity = writer->capacity;
+            int endPosition = writer->bytePosition + sizeof(T);
+            int capacity = writer->capacity;
             if (capacity < endPosition)
             {
                 writer->capacity = endPosition.GetNextPowerOf2();
@@ -123,12 +123,31 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="span"/> of values to the writer.
         /// </summary>
-        public readonly void WriteSpan<T>(USpan<T> span) where T : unmanaged
+        public readonly void WriteSpan<T>(Span<T> span) where T : unmanaged
         {
             MemoryAddress.ThrowIfDefault(writer);
 
-            uint endPosition = writer->bytePosition + (uint)sizeof(T) * span.Length;
-            uint capacity = writer->capacity;
+            int endPosition = writer->bytePosition + sizeof(T) * span.Length;
+            int capacity = writer->capacity;
+            if (capacity < endPosition)
+            {
+                writer->capacity = endPosition.GetNextPowerOf2();
+                MemoryAddress.Resize(ref writer->data, writer->capacity);
+            }
+
+            writer->data.Write(writer->bytePosition, span);
+            writer->bytePosition = endPosition;
+        }
+
+        /// <summary>
+        /// Writes the given <paramref name="span"/> of values to the writer.
+        /// </summary>
+        public readonly void WriteSpan<T>(ReadOnlySpan<T> span) where T : unmanaged
+        {
+            MemoryAddress.ThrowIfDefault(writer);
+
+            int endPosition = writer->bytePosition + sizeof(T) * span.Length;
+            int capacity = writer->capacity;
             if (capacity < endPosition)
             {
                 writer->capacity = endPosition.GetNextPowerOf2();
@@ -142,12 +161,12 @@ namespace Unmanaged
         /// <summary>
         /// Writes memory from the given <paramref name="data"/> with a specified <paramref name="byteLength"/>.
         /// </summary>
-        public readonly void Write(MemoryAddress data, uint byteLength)
+        public readonly void Write(MemoryAddress data, int byteLength)
         {
             MemoryAddress.ThrowIfDefault(writer);
 
-            uint endPosition = writer->bytePosition + byteLength;
-            uint capacity = writer->capacity;
+            int endPosition = writer->bytePosition + byteLength;
+            int capacity = writer->capacity;
             if (capacity < endPosition)
             {
                 writer->capacity = endPosition.GetNextPowerOf2();
@@ -190,9 +209,9 @@ namespace Unmanaged
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8(USpan<char> text)
+        public void WriteUTF8(Span<char> text)
         {
-            for (uint i = 0; i < text.Length; i++)
+            for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
                 if (c < 0x7F)
@@ -225,7 +244,7 @@ namespace Unmanaged
         /// </summary>
         public void WriteUTF8(ASCIIText256 text)
         {
-            USpan<char> textSpan = stackalloc char[text.Length];
+            Span<char> textSpan = stackalloc char[text.Length];
             text.CopyTo(textSpan);
             WriteUTF8(textSpan);
         }
@@ -235,7 +254,7 @@ namespace Unmanaged
         /// </summary>
         public void WriteUTF8(string text)
         {
-            USpan<char> textSpan = stackalloc char[text.Length];
+            Span<char> textSpan = stackalloc char[text.Length];
             text.AsSpan().CopyTo(textSpan);
             WriteUTF8(textSpan);
         }
@@ -260,7 +279,7 @@ namespace Unmanaged
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfPositionPastCapacity(uint newPosition)
+        private readonly void ThrowIfPositionPastCapacity(int newPosition)
         {
             if (newPosition > writer->capacity)
             {
@@ -281,7 +300,7 @@ namespace Unmanaged
         /// <summary>
         /// All bytes written into the writer.
         /// </summary>
-        public readonly USpan<byte> AsSpan()
+        public readonly Span<byte> AsSpan()
         {
             MemoryAddress.ThrowIfDefault(writer);
 

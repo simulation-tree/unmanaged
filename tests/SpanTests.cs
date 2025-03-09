@@ -6,38 +6,11 @@ namespace Unmanaged.Tests
 {
     public class SpanTests : UnmanagedTests
     {
-        [Test]
-        public void VerifyRangeProperties()
-        {
-            URange a = new(5, 8);
-            Assert.That(a.start, Is.EqualTo(5));
-            Assert.That(a.end, Is.EqualTo(8));
-            Assert.That(a.Length, Is.EqualTo(3));
-
-            URange b = new(5, 8);
-            Assert.That(a, Is.EqualTo(b));
-            Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
-            Assert.That(a.ToString(), Is.EqualTo("5..8"));
-            Assert.That(a.ToString(), Is.EqualTo(b.ToString()));
-        }
-
-        [Test]
-        public void CreatingUsingStackalloc()
-        {
-            USpan<byte> data = stackalloc byte[8];
-            Assert.That(data.Length, Is.EqualTo(8));
-            data[0] = 1;
-            data[1] = 2;
-
-            Assert.That(data[0], Is.EqualTo(1));
-            Assert.That(data[1], Is.EqualTo(2));
-        }
-
 #if DEBUG
         [Test]
         public void ThrowIfAccessingSpanOutOfRange()
         {
-            USpan<byte> data = stackalloc byte[8];
+            Span<byte> data = stackalloc byte[8];
             try
             {
                 data[8] = 0;
@@ -65,10 +38,10 @@ namespace Unmanaged.Tests
                 Assert.Fail();
             }
 
-            USpan<byte> uData = stackalloc byte[8];
+            Span<byte> uData = stackalloc byte[8];
             try
             {
-                USpan<byte> slice = uData.Slice(8, 1);
+                Span<byte> slice = uData.Slice(8, 1);
                 Assert.Fail();
             }
             catch (ArgumentOutOfRangeException)
@@ -83,106 +56,22 @@ namespace Unmanaged.Tests
         [Test]
         public void ThrowIfReinterpretSpanOfDifferentSize()
         {
-            Assert.Throws<ArgumentException>(() =>
+            Assert.Throws<InvalidCastException>(() =>
             {
-                USpan<byte> data = stackalloc byte[8];
+                Span<byte> data = stackalloc byte[8];
                 data[0] = 1;
                 data[1] = 2;
 
-                USpan<int> intData = data.As<int>();
+                Span<int> intData = data.As<byte, int>();
             });
         }
 #endif
 
         [Test]
-        public void Slicing()
-        {
-            USpan<byte> data = stackalloc byte[8];
-            Span<byte> referenceData = stackalloc byte[8];
-            for (uint i = 0; i < 8; i++)
-            {
-                data[i] = (byte)i;
-                referenceData[(int)i] = (byte)i;
-            }
-
-            URange range = new(2, 4);
-            USpan<byte> slice = data.Slice(range);
-            Span<byte> referenceSlice = referenceData[(Range)range];
-
-            Assert.That(slice.Length, Is.EqualTo(referenceSlice.Length));
-            Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
-
-            using RandomGenerator rng = new();
-            for (uint i = 0; i < 32; i++)
-            {
-                uint length = rng.NextUInt(8, 16);
-                uint sliceLength = rng.NextUInt(1, 4);
-                uint sliceStart = rng.NextUInt(0, length - sliceLength);
-                TestRandomSlice(length, sliceStart, sliceLength);
-            }
-
-            static void TestRandomSlice(uint length, uint sliceStart, uint sliceLength)
-            {
-                USpan<byte> data = stackalloc byte[(int)length];
-                Span<byte> referenceData = stackalloc byte[(int)length];
-                for (uint i = 0; i < length; i++)
-                {
-                    data[i] = (byte)i;
-                    referenceData[(int)i] = (byte)i;
-                }
-
-                USpan<byte> slice = data.Slice(sliceStart, sliceLength);
-                Span<byte> referenceSlice = referenceData.Slice((int)sliceStart, (int)sliceLength);
-                Assert.That(slice.Length, Is.EqualTo(referenceSlice.Length));
-                Assert.That(slice.ToArray(), Is.EqualTo(referenceSlice.ToArray()));
-            }
-        }
-
-        [Test]
-        public void SliceText()
-        {
-            USpan<char> text = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'];
-            USpan<char> slice = text.Slice(0, 5);
-            Assert.That(slice.Length, Is.EqualTo(5));
-            Assert.That(slice[0], Is.EqualTo('H'));
-            Assert.That(slice[1], Is.EqualTo('e'));
-            Assert.That(slice[2], Is.EqualTo('l'));
-            Assert.That(slice[3], Is.EqualTo('l'));
-            Assert.That(slice[4], Is.EqualTo('o'));
-
-            slice = text.Slice(2, 2);
-            Assert.That(slice.Length, Is.EqualTo(2));
-            Assert.That(slice[0], Is.EqualTo('l'));
-            Assert.That(slice[1], Is.EqualTo('l'));
-        }
-
-        [Test]
-        public void FillingAndClearing()
-        {
-            USpan<byte> data = stackalloc byte[8];
-            for (uint i = 0; i < 8; i++)
-            {
-                Assert.That(data[i], Is.EqualTo(0));
-            }
-
-            data.Fill(1);
-            for (uint i = 0; i < 8; i++)
-            {
-                Assert.That(data[i], Is.EqualTo(1));
-            }
-
-            data.Clear();
-            for (uint i = 0; i < 8; i++)
-            {
-                Assert.That(data[i], Is.EqualTo(0));
-            }
-        }
-
-        [Test]
         public unsafe void NonPowerOf2SizedSpan()
         {
-            uint typeSize = (uint)sizeof(StrangeType);
-            USpan<StrangeType> array = stackalloc StrangeType[4];
+            int typeSize = sizeof(StrangeType);
+            Span<StrangeType> array = stackalloc StrangeType[4];
             array[0] = new StrangeType(1, 2, new Vector4(3, 4, 5, 6), 7);
             array[1] = new StrangeType(8, 9, new Vector4(10, 11, 12, 13), 14);
             array[2] = new StrangeType(15, 16, new Vector4(17, 18, 19, 20), 21);
@@ -241,65 +130,6 @@ namespace Unmanaged.Tests
                 this.c = c;
                 this.d = d;
             }
-        }
-
-        [Test]
-        public void CopyIntoAnotherSpan()
-        {
-            USpan<byte> data = stackalloc byte[8];
-            data[0] = 1;
-            data[1] = 2;
-            USpan<byte> otherData = stackalloc byte[8];
-            data.CopyTo(otherData);
-
-            Assert.That(otherData[0], Is.EqualTo(1));
-            Assert.That(otherData[1], Is.EqualTo(2));
-
-#if DEBUG
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-            {
-                USpan<byte> data = stackalloc byte[8];
-                data[0] = 1;
-                data[1] = 2;
-                USpan<byte> lessData = stackalloc byte[1];
-                data.CopyTo(lessData);
-            });
-#endif
-        }
-
-        [Test]
-        public void CreateFromCollectionExpression()
-        {
-            USpan<byte> data = [1, 2, 3, 4, 5];
-            Assert.That(data.Length, Is.EqualTo(5));
-            Assert.That(data[0], Is.EqualTo(1));
-            Assert.That(data[1], Is.EqualTo(2));
-            Assert.That(data[2], Is.EqualTo(3));
-            Assert.That(data[3], Is.EqualTo(4));
-            Assert.That(data[4], Is.EqualTo(5));
-        }
-
-        [Test]
-        public void ToStringWithChars()
-        {
-            USpan<char> text = ['H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd'];
-            Assert.That(text.ToString(), Is.EqualTo("Hello World"));
-        }
-
-        [Test]
-        public void GetDefaultSpanFromEmpty()
-        {
-            USpan<char> emptyUnmanaged = default;
-            Span<char> emptySystem = emptyUnmanaged;
-            Assert.That(emptySystem.IsEmpty, Is.True);
-        }
-
-        [Test]
-        public void CopyEmptySpan()
-        {
-            USpan<char> empty = default;
-            USpan<char> destination = stackalloc char[5];
-            empty.CopyTo(destination);
         }
     }
 }

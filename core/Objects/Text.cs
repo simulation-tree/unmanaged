@@ -17,7 +17,7 @@ namespace Unmanaged
         /// <summary>
         /// Length of the text.
         /// </summary>
-        public readonly uint Length
+        public readonly int Length
         {
             get
             {
@@ -48,7 +48,7 @@ namespace Unmanaged
         /// <summary>
         /// Indexer for the text.
         /// </summary>
-        public readonly ref char this[uint index]
+        public readonly ref char this[int index]
         {
             get
             {
@@ -72,17 +72,17 @@ namespace Unmanaged
         readonly bool ICollection<char>.IsReadOnly => false;
         readonly char IList<char>.this[int index]
         {
-            get => this[(uint)index];
-            set => this[(uint)index] = value;
+            get => this[index];
+            set => this[index] = value;
         }
 
         readonly char IReadOnlyList<char>.this[int index]
         {
             get
             {
-                ThrowIfOutOfRange((uint)index);
+                ThrowIfOutOfRange(index);
 
-                return text->buffer.ReadElement<char>((uint)index);
+                return text->buffer.ReadElement<char>(index);
             }
         }
 
@@ -94,7 +94,7 @@ namespace Unmanaged
         {
             ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = 0;
-            text.buffer = MemoryAddress.Allocate((uint)0);
+            text.buffer = MemoryAddress.AllocateEmpty();
             fixed (Pointer* pointer = &text)
             {
                 this.text = pointer;
@@ -105,7 +105,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a text container with the given <paramref name="length"/>.
         /// </summary>
-        public Text(uint length, char defaultCharacter = ' ')
+        public Text(int length, char defaultCharacter = ' ')
         {
             ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = length;
@@ -115,13 +115,13 @@ namespace Unmanaged
                 this.text = pointer;
             }
 
-            new USpan<char>(text.buffer.Pointer, length).Fill(defaultCharacter);
+            new Span<char>(text.buffer.Pointer, length).Fill(defaultCharacter);
         }
 
         /// <summary>
         /// Creates a container of the given <paramref name="content"/>.
         /// </summary>
-        public Text(USpan<char> content)
+        public Text(ReadOnlySpan<char> content)
         {
             ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
             text.length = content.Length;
@@ -138,8 +138,8 @@ namespace Unmanaged
         public Text(IReadOnlyCollection<char> content)
         {
             ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
-            text.length = 0;
-            text.buffer = MemoryAddress.Allocate((uint)0);
+            text.length = content.Count;
+            text.buffer = MemoryAddress.Allocate(content.Count * sizeof(char));
             fixed (Pointer* pointer = &text)
             {
                 this.text = pointer;
@@ -154,8 +154,8 @@ namespace Unmanaged
         public Text(string content)
         {
             ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
-            text.length = (uint)content.Length;
-            USpan<char> contentSpan = content.AsSpan();
+            text.length = content.Length;
+            ReadOnlySpan<char> contentSpan = content.AsSpan();
             text.buffer = MemoryAddress.Allocate(contentSpan);
             fixed (Pointer* pointer = &text)
             {
@@ -181,7 +181,7 @@ namespace Unmanaged
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfOutOfRange(uint index)
+        private readonly void ThrowIfOutOfRange(int index)
         {
             if (index >= Length)
             {
@@ -190,7 +190,7 @@ namespace Unmanaged
         }
 
         [Conditional("DEBUG")]
-        private readonly void ThrowIfGreaterThanRange(uint index)
+        private readonly void ThrowIfGreaterThanRange(int index)
         {
             if (index > Length)
             {
@@ -209,11 +209,11 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves this text as a span.
         /// </summary>
-        public readonly USpan<char> AsSpan()
+        public readonly Span<char> AsSpan()
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            return new USpan<char>(text->buffer.Pointer, text->length);
+            return new Span<char>(text->buffer.Pointer, text->length);
         }
 
         /// <summary>
@@ -229,17 +229,17 @@ namespace Unmanaged
         /// <summary>
         /// Copies this text into the given <paramref name="destination"/>.
         /// </summary>
-        public readonly void CopyTo(USpan<char> destination)
+        public readonly void CopyTo(Span<char> destination)
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            new USpan<char>(text->buffer.Pointer, text->length).CopyTo(destination);
+            new Span<char>(text->buffer.Pointer, text->length).CopyTo(destination);
         }
 
         /// <summary>
         /// Makes this text match <paramref name="source"/> exactly.
         /// </summary>
-        public readonly void CopyFrom(USpan<char> source)
+        public readonly void CopyFrom(ReadOnlySpan<char> source)
         {
             MemoryAddress.ThrowIfDefault(text);
 
@@ -249,7 +249,7 @@ namespace Unmanaged
                 MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(new USpan<char>(text->buffer.Pointer, source.Length));
+            source.CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
         }
 
         /// <summary>
@@ -261,11 +261,11 @@ namespace Unmanaged
 
             if (text->length != source.Length)
             {
-                text->length = (uint)source.Length;
-                MemoryAddress.Resize(ref text->buffer, (uint)source.Length * sizeof(char));
+                text->length = source.Length;
+                MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(new USpan<char>(text->buffer.Pointer, (uint)source.Length));
+            source.CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
         }
 
         /// <summary>
@@ -278,10 +278,10 @@ namespace Unmanaged
             if (text->length != source.Length)
             {
                 text->length = source.Length;
-                MemoryAddress.Resize(ref text->buffer, (uint)source.Length * sizeof(char));
+                MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(new USpan<char>(text->buffer.Pointer, source.Length));
+            source.CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
         }
 
         /// <summary>
@@ -291,14 +291,14 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            uint length = (uint)source.Count;
+            int length = source.Count;
             if (text->length != length)
             {
                 text->length = length;
                 MemoryAddress.Resize(ref text->buffer, length * sizeof(char));
             }
 
-            USpan<char> buffer = AsSpan();
+            Span<char> buffer = AsSpan();
             length = 0;
             foreach (char character in source)
             {
@@ -311,7 +311,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            USpan<char> buffer = stackalloc char[(int)text->length];
+            Span<char> buffer = stackalloc char[text->length];
             ToString(buffer);
             return buffer.ToString();
         }
@@ -319,20 +319,20 @@ namespace Unmanaged
         /// <summary>
         /// Copies this text into the given <paramref name="destination"/>.
         /// </summary>
-        public readonly uint ToString(USpan<char> destination)
+        public readonly int ToString(Span<char> destination)
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            USpan<char> source = AsSpan();
-            uint copyLength = Math.Min(text->length, destination.Length);
-            source.GetSpan(copyLength).CopyTo(destination);
+            Span<char> source = AsSpan();
+            int copyLength = Math.Min(text->length, destination.Length);
+            source.Slice(0, copyLength).CopyTo(destination);
             return copyLength;
         }
 
         /// <summary>
         /// Modifies the length of this text.
         /// </summary>
-        public readonly void SetLength(uint newLength, char defaultCharacter = ' ')
+        public readonly void SetLength(int newLength, char defaultCharacter = ' ')
         {
             MemoryAddress.ThrowIfDefault(text);
 
@@ -341,11 +341,11 @@ namespace Unmanaged
                 return;
             }
 
-            uint oldLength = text->length;
+            int oldLength = text->length;
             text->length = newLength;
             if (newLength > oldLength)
             {
-                uint copyLength = newLength - oldLength;
+                int copyLength = newLength - oldLength;
                 MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
                 text->buffer.AsSpan<char>(oldLength, copyLength).Fill(defaultCharacter);
             }
@@ -354,21 +354,21 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a slice of the remaining text starting at <paramref name="start"/>.
         /// </summary>
-        public readonly USpan<char> Slice(uint start)
+        public readonly Span<char> Slice(int start)
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            return new USpan<char>(text->buffer.Pointer + start * sizeof(char), text->length - start);
+            return new Span<char>(text->buffer.Pointer + start * sizeof(char), text->length - start);
         }
 
         /// <summary>
         /// Retrieves a slice with <paramref name="length"/> starting at <paramref name="start"/>.
         /// </summary>
-        public readonly USpan<char> Slice(uint start, uint length)
+        public readonly Span<char> Slice(int start, int length)
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            return new USpan<char>(text->buffer.Pointer + start * sizeof(char), length);
+            return new Span<char>(text->buffer.Pointer + start * sizeof(char), length);
         }
 
         /// <summary>
@@ -378,7 +378,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            uint newLength = text->length + 1;
+            int newLength = text->length + 1;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
             text->buffer.WriteElement(text->length, character);
             text->length = newLength;
@@ -387,11 +387,11 @@ namespace Unmanaged
         /// <summary>
         /// Appends a single <paramref name="character"/>.
         /// </summary>
-        public readonly void Append(char character, uint repeat)
+        public readonly void Append(char character, int repeat)
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            uint newLength = text->length + repeat;
+            int newLength = text->length + repeat;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
             Slice(text->length, repeat).Fill(character);
             text->length = newLength;
@@ -404,20 +404,20 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            uint newLength = text->length + (uint)otherText.Length;
+            int newLength = text->length + otherText.Length;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            otherText.CopyTo(Slice(text->length, (uint)otherText.Length));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
             text->length = newLength;
         }
 
         /// <summary>
         /// Appends the given <paramref name="otherText"/>.
         /// </summary>
-        public readonly void Append(USpan<char> otherText)
+        public readonly void Append(ReadOnlySpan<char> otherText)
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            uint newLength = text->length + otherText.Length;
+            int newLength = text->length + otherText.Length;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
             otherText.CopyTo(Slice(text->length, otherText.Length));
             text->length = newLength;
@@ -430,10 +430,10 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            uint newLength = text->length + (uint)otherText.Count;
+            int newLength = text->length + otherText.Count;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            USpan<char> buffer = text->buffer.GetSpan<char>(newLength);
-            uint index = text->length;
+            Span<char> buffer = text->buffer.AsSpan<char>(0, newLength);
+            int index = text->length;
             foreach (char character in otherText)
             {
                 buffer[index++] = character;
@@ -453,7 +453,7 @@ namespace Unmanaged
         /// <summary>
         /// Appends the given <paramref name="text"/> and a new line feed character.
         /// </summary>
-        public readonly void AppendLine(USpan<char> text)
+        public readonly void AppendLine(ReadOnlySpan<char> text)
         {
             Append(text);
             AppendLine();
@@ -480,11 +480,11 @@ namespace Unmanaged
         /// <summary>
         /// Removes the character at <paramref name="index"/>.
         /// </summary>
-        public readonly void RemoveAt(uint index)
+        public readonly void RemoveAt(int index)
         {
             ThrowIfOutOfRange(index);
 
-            uint newLength = text->length - 1;
+            int newLength = text->length - 1;
             if (index < newLength)
             {
                 Slice(index + 1).CopyTo(Slice(index));
@@ -495,22 +495,16 @@ namespace Unmanaged
 
         /// <summary>
         /// Retrieves the index for the first occurance of the given <paramref name="character"/>.
-        /// <para>
-        /// Will be <see cref="uint.MaxValue"/> if not found.
-        /// </para>
         /// </summary>
-        public readonly uint IndexOf(char character)
+        public readonly int IndexOf(char character)
         {
             return AsSpan().IndexOf(character);
         }
 
         /// <summary>
         /// Retrieves the index for the last occurance of the given <paramref name="character"/>.
-        /// <para>
-        /// Will be <see cref="uint.MaxValue"/> if not found.
-        /// </para>
         /// </summary>
-        public readonly uint LastIndexOf(char character)
+        public readonly int LastIndexOf(char character)
         {
             return AsSpan().LastIndexOf(character);
         }
@@ -534,16 +528,16 @@ namespace Unmanaged
         /// <summary>
         /// Inserts the <paramref name="character"/> at the given <paramref name="index"/>.
         /// </summary>
-        public readonly void Insert(uint index, char character)
+        public readonly void Insert(int index, char character)
         {
             MemoryAddress.ThrowIfDefault(text);
             ThrowIfGreaterThanRange(index);
 
-            uint newLength = text->length + 1;
+            int newLength = text->length + 1;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
             if (text->length > index)
             {
-                USpan<char> left = Slice(index);
+                Span<char> left = Slice(index);
                 left.CopyTo(Slice(index + 1, left.Length));
             }
 
@@ -554,14 +548,14 @@ namespace Unmanaged
         /// <summary>
         /// Inserts the <paramref name="otherText"/> at the given <paramref name="index"/>.
         /// </summary>
-        public readonly void Insert(uint index, USpan<char> otherText)
+        public readonly void Insert(int index, Span<char> otherText)
         {
             MemoryAddress.ThrowIfDefault(text);
             ThrowIfGreaterThanRange(index);
 
-            uint newLength = text->length + otherText.Length;
+            int newLength = text->length + otherText.Length;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            USpan<char> left = Slice(index, otherText.Length);
+            Span<char> left = Slice(index, otherText.Length);
             if (text->length > index)
             {
                 left.CopyTo(Slice(index + otherText.Length, otherText.Length));
@@ -574,15 +568,15 @@ namespace Unmanaged
         /// <summary>
         /// Inserts the <paramref name="otherText"/> at the given <paramref name="index"/>.
         /// </summary>
-        public readonly void Insert(uint index, string otherText)
+        public readonly void Insert(int index, string otherText)
         {
             MemoryAddress.ThrowIfDefault(text);
             ThrowIfGreaterThanRange(index);
 
-            uint otherTextLength = (uint)otherText.Length;
-            uint newLength = text->length + otherTextLength;
+            int otherTextLength = otherText.Length;
+            int newLength = text->length + otherTextLength;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            USpan<char> left = Slice(index, otherTextLength);
+            Span<char> left = Slice(index, otherTextLength);
             if (text->length > index)
             {
                 left.CopyTo(Slice(index + otherTextLength, otherTextLength));
@@ -619,33 +613,33 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this text ends with <paramref name="otherText"/>.
         /// </summary>
-        public readonly bool EndsWith(USpan<char> otherText)
+        public readonly bool EndsWith(ReadOnlySpan<char> otherText)
         {
-            uint length = Length;
-            uint textLength = otherText.Length;
+            int length = Length;
+            int textLength = otherText.Length;
             if (length < textLength)
             {
                 return false;
             }
 
-            USpan<char> buffer = AsSpan();
+            Span<char> buffer = AsSpan();
             return buffer.Slice(length - textLength).SequenceEqual(otherText);
         }
 
         /// <summary>
         /// Checks if this text starts with <paramref name="otherText"/>.
         /// </summary>
-        public readonly bool StartsWith(USpan<char> otherText)
+        public readonly bool StartsWith(ReadOnlySpan<char> otherText)
         {
-            uint length = Length;
-            uint textLength = otherText.Length;
+            int length = Length;
+            int textLength = otherText.Length;
             if (length < textLength)
             {
                 return false;
             }
 
-            USpan<char> buffer = AsSpan();
-            return buffer.GetSpan(textLength).SequenceEqual(otherText);
+            Span<char> buffer = AsSpan();
+            return buffer.Slice(0, textLength).SequenceEqual(otherText);
         }
 
         /// <inheritdoc/>
@@ -683,7 +677,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this text equals to <paramref name="otherText"/>.
         /// </summary>
-        public readonly bool Equals(USpan<char> otherText)
+        public readonly bool Equals(ReadOnlySpan<char> otherText)
         {
             if (Length != otherText.Length)
             {
@@ -699,9 +693,9 @@ namespace Unmanaged
             unchecked
             {
                 int hash = 17;
-                uint length = Length;
+                int length = Length;
                 hash = hash * 23 + length.GetHashCode();
-                for (uint i = 0; i < length; i++)
+                for (int i = 0; i < length; i++)
                 {
                     char c = text->buffer.ReadElement<char>(i);
                     hash = hash * 23 + c.GetHashCode();
@@ -715,9 +709,9 @@ namespace Unmanaged
         /// Appends the given <paramref name="character"/> to <paramref name="originalText"/>
         /// and copies the result to the <paramref name="destination"/>.
         /// </summary>
-        public static void Append(USpan<char> originalText, char character, USpan<char> destination)
+        public static void Append(ReadOnlySpan<char> originalText, char character, Span<char> destination)
         {
-            originalText.CopyTo(destination.GetSpan(originalText.Length));
+            originalText.CopyTo(destination.Slice(0, originalText.Length));
             destination[originalText.Length] = character;
         }
 
@@ -725,7 +719,7 @@ namespace Unmanaged
         /// Appends the given <paramref name="newText"/> to <paramref name="originalText"/>
         /// and copies the result to the <paramref name="destination"/>.
         /// </summary>
-        public static void Append(USpan<char> originalText, string newText, USpan<char> destination)
+        public static void Append(ReadOnlySpan<char> originalText, string newText, Span<char> destination)
         {
             Append(originalText, newText.AsSpan(), destination);
         }
@@ -734,14 +728,14 @@ namespace Unmanaged
         /// Appends the given <paramref name="newText"/> to <paramref name="originalText"/>
         /// and copies the result to the <paramref name="destination"/>.
         /// </summary>
-        public static void Append(USpan<char> originalText, USpan<char> newText, USpan<char> destination)
+        public static void Append(ReadOnlySpan<char> originalText, ReadOnlySpan<char> newText, Span<char> destination)
         {
-            uint originalLength = originalText.Length;
-            uint newLength = newText.Length;
-            uint destinationLength = destination.Length;
-            uint copyLength = Math.Min(originalLength + newLength, destinationLength);
-            originalText.CopyTo(destination.GetSpan(originalLength));
-            newText.GetSpan(copyLength - originalLength).CopyTo(destination.Slice(originalLength));
+            int originalLength = originalText.Length;
+            int newLength = newText.Length;
+            int destinationLength = destination.Length;
+            int copyLength = Math.Min(originalLength + newLength, destinationLength);
+            originalText.CopyTo(destination.Slice(0, originalLength));
+            newText.Slice(0, copyLength - originalLength).CopyTo(destination.Slice(originalLength));
         }
 
         /// <summary>
@@ -749,7 +743,7 @@ namespace Unmanaged
         /// and copies the result to the <paramref name="destination"/>.
         /// </summary>
         /// <returns>The length copied into the <paramref name="destination"/>.</returns>
-        public static uint Replace(USpan<char> originalText, string target, string replacement, USpan<char> destination)
+        public static int Replace(ReadOnlySpan<char> originalText, string target, string replacement, Span<char> destination)
         {
             return Replace(originalText, target.AsSpan(), replacement.AsSpan(), destination);
         }
@@ -758,14 +752,14 @@ namespace Unmanaged
         /// Replaces all occurrences of <paramref name="target"/> with <paramref name="replacement"/>,
         /// and copies the result to the <paramref name="destination"/>.
         /// </summary>
-        public static uint Replace(USpan<char> originalText, USpan<char> target, USpan<char> replacement, USpan<char> destination)
+        public static int Replace(ReadOnlySpan<char> originalText, ReadOnlySpan<char> target, ReadOnlySpan<char> replacement, Span<char> destination)
         {
-            uint length = 0;
-            uint originalStart = 0;
-            uint destinationStart = 0;
+            int length = 0;
+            int originalStart = 0;
+            int destinationStart = 0;
             while (true)
             {
-                if (originalText.Slice(originalStart).TryIndexOf(target, out uint index))
+                if (originalText.Slice(originalStart).TryIndexOf(target, out int index))
                 {
                     originalText.Slice(originalStart).CopyTo(destination.Slice(destinationStart));
                     replacement.CopyTo(destination.Slice(destinationStart + index));
@@ -783,7 +777,7 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public readonly Span<char>.Enumerator GetEnumerator()
+        public readonly System.Span<char>.Enumerator GetEnumerator()
         {
             return AsSpan().GetEnumerator();
         }
@@ -798,32 +792,9 @@ namespace Unmanaged
             return new Enumerator(this);
         }
 
-        readonly int IList<char>.IndexOf(char item)
-        {
-            unchecked
-            {
-                return (int)AsSpan().IndexOf(item);
-            }
-        }
-
-        readonly void IList<char>.Insert(int index, char item)
-        {
-            Insert((uint)index, item);
-        }
-
-        readonly void IList<char>.RemoveAt(int index)
-        {
-            RemoveAt((uint)index);
-        }
-
         readonly void ICollection<char>.Add(char item)
         {
             Append(item);
-        }
-
-        readonly bool ICollection<char>.Contains(char item)
-        {
-            return Contains(item);
         }
 
         readonly void ICollection<char>.CopyTo(char[] array, int arrayIndex)
@@ -833,8 +804,8 @@ namespace Unmanaged
 
         readonly bool ICollection<char>.Remove(char item)
         {
-            uint index = IndexOf(item);
-            if (index != uint.MaxValue)
+            int index = IndexOf(item);
+            if (index != -1)
             {
                 RemoveAt(index);
                 return true;
@@ -850,7 +821,7 @@ namespace Unmanaged
             private int index;
 
             /// <inheritdoc/>
-            public readonly char Current => text[(uint)index];
+            public readonly char Current => text[index];
 
             readonly object IEnumerator.Current => Current;
 
@@ -936,7 +907,7 @@ namespace Unmanaged
             /// <summary>
             /// Length of the text.
             /// </summary>
-            public readonly uint Length => text.Length;
+            public readonly int Length => text.Length;
 
             /// <summary>
             /// Checks if the text is empty.
@@ -977,7 +948,15 @@ namespace Unmanaged
             /// <summary>
             /// Checks if this text equals to the <paramref name="other"/> text.
             /// </summary>
-            public readonly bool Equals(USpan<char> other)
+            public readonly bool Equals(Span<char> other)
+            {
+                return text.Equals(other);
+            }
+
+            /// <summary>
+            /// Checks if this text equals to the <paramref name="other"/> text.
+            /// </summary>
+            public readonly bool Equals(ReadOnlySpan<char> other)
             {
                 return text.Equals(other);
             }
@@ -985,7 +964,7 @@ namespace Unmanaged
             /// <summary>
             /// Retrieves the text as a span of <see cref="char"/> values.
             /// </summary>
-            public readonly USpan<char> AsSpan()
+            public readonly Span<char> AsSpan()
             {
                 return text.AsSpan();
             }
@@ -993,7 +972,7 @@ namespace Unmanaged
             /// <summary>
             /// Makes this text match <paramref name="otherText"/> exactly.
             /// </summary>
-            public readonly void CopyFrom(USpan<char> otherText)
+            public readonly void CopyFrom(ReadOnlySpan<char> otherText)
             {
                 text.CopyFrom(otherText);
             }

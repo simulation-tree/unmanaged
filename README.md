@@ -13,7 +13,7 @@ allocated using static methods, in which case they must also be disposed:
 using (MemoryAddress allocation = MemoryAddress.Allocate(sizeof(char) * 5))
 {
     allocation.Write("Hello".AsSpan());
-    USpan<char> text = allocation.AsSpan<char>();
+    Span<char> text = allocation.AsSpan<char>();
 }
 
 //an allocation containing a float
@@ -30,11 +30,11 @@ The `ASCIIText256` type can store up to 255 extended ASCII `char` values.
 Useful for when text is known to be short, until a list/array is needed:
 ```cs
 ASCIIText256 text = new("Hello there");
-USpan<char> textBuffer = stackalloc char[text.Length];
+Span<char> textBuffer = stackalloc char[text.Length];
 text.CopyTo(textBuffer);
 
 //get utf8 bytes from the text
-USpan<byte> utf8bytes = stackalloc char[ASCIIText256.Capacity];
+Span<byte> utf8bytes = stackalloc char[ASCIIText256.Capacity];
 uint bytesCopied = text.CopyTo(utf8bytes);
 
 //get text from utf8 bytes using System.Text.Encoding
@@ -52,7 +52,7 @@ using Text builder = new();
 builder.Append("Hello");
 builder.Append(" there");
 
-USpan<char> text = builder.AsSpan();
+Span<char> text = builder.AsSpan();
 Console.WriteLine(text.ToString());
 ```
 

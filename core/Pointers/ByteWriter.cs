@@ -1,12 +1,12 @@
 ﻿namespace Unmanaged.Pointers
 {
-    internal unsafe struct ByteWriter
+    internal struct ByteWriter
     {
         internal MemoryAddress data;
-        internal uint bytePosition;
-        internal uint capacity;
+        internal int bytePosition;
+        internal int capacity;
 
-        internal ByteWriter(MemoryAddress items, uint length, uint capacity)
+        internal ByteWriter(MemoryAddress items, int length, int capacity)
         {
             this.data = items;
             this.bytePosition = length;

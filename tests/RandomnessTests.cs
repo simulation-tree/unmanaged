@@ -112,12 +112,12 @@ namespace Unmanaged.Tests
         public void GenerateBytes()
         {
             using RandomGenerator rng = new(1337);
-            USpan<byte> data = stackalloc byte[30000];
+            Span<byte> data = stackalloc byte[30000];
             rng.NextBytes(data);
             byte min = byte.MaxValue;
             byte max = byte.MinValue;
             uint total = 0;
-            for (uint i = 0; i < data.Length; i++)
+            for (int i = 0; i < data.Length; i++)
             {
                 byte value = data[i];
                 min = Math.Min(min, value);

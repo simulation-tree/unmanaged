@@ -61,8 +61,8 @@ namespace Unmanaged.Tests
         public void ReplaceAll()
         {
             using Text text = new("Hello there");
-            USpan<char> destination = stackalloc char[256];
-            uint newLength = Text.Replace(text.AsSpan(), "e", "x", destination);
+            Span<char> destination = stackalloc char[256];
+            int newLength = Text.Replace(text.AsSpan(), "e", "x", destination);
             Assert.That(destination.Slice(0, newLength).ToString(), Is.EqualTo("Hxllo thxrx"));
 
             text.CopyFrom("This is another is");

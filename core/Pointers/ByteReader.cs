@@ -1,14 +1,14 @@
 ﻿namespace Unmanaged.Pointers
 {
-    internal unsafe struct ByteReader
+    internal struct ByteReader
     {
         public readonly bool isOriginal;
 
-        internal uint bytePosition;
+        internal int bytePosition;
         internal MemoryAddress data;
-        internal uint byteLength;
+        internal int byteLength;
 
-        internal ByteReader(uint position, MemoryAddress data, uint length, bool isOriginal)
+        internal ByteReader(int position, MemoryAddress data, int length, bool isOriginal)
         {
             this.bytePosition = position;
             this.data = data;
