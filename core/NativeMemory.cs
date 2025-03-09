@@ -1,6 +1,13 @@
 #if !NET
 using System.Buffers;
-using System.Runtime.CompilerServices;
+
+namespace System.Runtime.CompilerServices
+{
+    public class SkipLocalsInit : Attribute
+    {
+
+    }
+}
 
 namespace System.Runtime.InteropServices
 {
@@ -11,17 +18,15 @@ namespace System.Runtime.InteropServices
             return Marshal.AllocHGlobal((int)size).ToPointer();
         }
 
-        public static void* AlignedAlloc(uint size, uint alignment)
+        public static void* AllocZeroed(uint size)
         {
-            return Marshal.AllocHGlobal((int)size).ToPointer();
+            IntPtr address = Marshal.AllocHGlobal((int)size);
+            Span<byte> span = new(address.ToPointer(), (int)size);
+            span.Clear();
+            return address.ToPointer();
         }
 
         public static void Free(void* ptr)
-        {
-            Marshal.FreeHGlobal(new IntPtr(ptr));
-        }
-
-        public static void AlignedFree(void* ptr)
         {
             Marshal.FreeHGlobal(new IntPtr(ptr));
         }

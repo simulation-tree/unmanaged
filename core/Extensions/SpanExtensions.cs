@@ -121,15 +121,29 @@ namespace System
             return formattable.TryFormat(destination, out int charsWritten, default, default) ? charsWritten : 0;
         }
 #else
-        public static int ToString<T>(this T formattable, USpan<char> destination) where T : unmanaged, IFormattable
+        public static int ToString<T>(this T formattable, Span<char> destination) where T : unmanaged, IFormattable
         {
-            string? result = formattable.ToString(default, default);
-            if (result is null)
+            string result = formattable.ToString(default, default);
+            if (string.IsNullOrEmpty(result))
             {
                 return 0;
             }
 
-            result.CopyTo(destination);
+            result.AsSpan().CopyTo(destination);
+            return result.Length;
+        }
+
+        public static int ToString(this nint value, Span<char> destination)
+        {
+            string result = value.ToString();
+            result.AsSpan().CopyTo(destination);
+            return result.Length;
+        }
+
+        public static int ToString(this nuint value, Span<char> destination)
+        {
+            string result = value.ToString();
+            result.AsSpan().CopyTo(destination);
             return result.Length;
         }
 #endif

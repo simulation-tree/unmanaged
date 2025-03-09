@@ -265,7 +265,7 @@ namespace Unmanaged
                 MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
+            source.AsSpan().CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
         }
 
         /// <summary>
@@ -406,7 +406,7 @@ namespace Unmanaged
 
             int newLength = text->length + otherText.Length;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            otherText.CopyTo(Slice(text->length, otherText.Length));
+            otherText.AsSpan().CopyTo(Slice(text->length, otherText.Length));
             text->length = newLength;
         }
 
@@ -582,7 +582,7 @@ namespace Unmanaged
                 left.CopyTo(Slice(index + otherTextLength, otherTextLength));
             }
 
-            otherText.CopyTo(left);
+            otherText.AsSpan().CopyTo(left);
             text->length = newLength;
         }
 
