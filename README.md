@@ -52,7 +52,7 @@ using Text builder = new();
 builder.Append("Hello");
 builder.Append(" there");
 
-Span<char> text = builder.AsSpan();
+ReadOnlySpan<char> text = builder.AsSpan();
 Console.WriteLine(text.ToString());
 ```
 
@@ -66,11 +66,13 @@ int fairDiceRoll = random.NextInt(0, 6);
 
 ### Safety
 
-There are no safe guards when working with `MemoryAddress` values. As they
-can represent any pointer, and can originate from anywhere. Including the stack.
+When working with `MemoryAddress` values, there are checks available to ensure
+that the memory is not accessed after it has been disposed, or accessed out of bounds.
+This only occurs in debug mode, or with the `#TRACK` directive defined, and only on
+heap allocated memory through the `MemoryAddress` methods.
 
-It is the programmers responsibility for how memory should be managed. Including
-when created allocations should be disposed, and how to interact with them.
+Ultimately, it is the programmer's responsibility for how memory should be managed. Including
+when allocations should be disposed, and how they should be accessed.
 
 ### Included `default` analyzer
 
@@ -83,7 +85,7 @@ Allocation allocation = default; //U0001 error
 
 There is no analysis for `new()` however, because a default constructor with
 value types can be by design. Though if not, they can be declared with an 
-`[Obsolete("", true)]` attribute with the parameter `true` to enforce usage.
+`[Obsolete("", true)]` attribute with the parameter `true` to disallow it.
 
 ### Contributing and direction
 
