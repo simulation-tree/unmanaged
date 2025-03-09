@@ -1,0 +1,116 @@
+﻿#if DEBUG
+#define TRACK
+#endif
+
+using System;
+using System.Collections.Generic;
+
+#if !TRACK
+using System.Diagnostics;
+#endif
+
+namespace Unmanaged
+{
+    internal unsafe static class MemoryTracker
+    {
+#if TRACK
+        private static readonly List<nint> disposals = new();
+        private static readonly Dictionary<nint, int> allocations = new();
+
+        private static void RemoveDisposedPointer(void* pointer)
+        {
+            nint address = (nint)pointer;
+            for (int i = 0; i < disposals.Count; i++)
+            {
+                if (disposals[i] == address)
+                {
+                    disposals.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        public static void Track(void* pointer, int byteLength)
+        {
+            RemoveDisposedPointer(pointer);
+            allocations.TryAdd((nint)pointer, byteLength);
+        }
+
+        public static void Untrack(void* pointer)
+        {
+            disposals.Add((nint)pointer);
+            allocations.Remove((nint)pointer);
+        }
+
+        public static void Move(void* previousPointer, void* newPointer, int newByteLength)
+        {
+            disposals.Add((nint)previousPointer);
+            allocations.Remove((nint)previousPointer);
+            RemoveDisposedPointer(newPointer);
+            allocations.TryAdd((nint)newPointer, newByteLength);
+        }
+
+        public static void ThrowIfDisposed(void* pointer)
+        {
+            nint address = (nint)pointer;
+            if (disposals.Contains(address))
+            {
+                throw new ObjectDisposedException($"The pointer at address {address} has been disposed");
+            }
+        }
+
+        public static void ThrowIfOutOfBounds(void* pointer, int byteIndex)
+        {
+            if (allocations.TryGetValue((nint)pointer, out int byteLength))
+            {
+                if (byteIndex < 0 || byteIndex >= byteLength)
+                {
+                    throw new IndexOutOfRangeException($"The pointer at address {(nint)pointer} is out of bounds at index {byteIndex}");
+                }
+            }
+        }
+
+        public static void ThrowIfGreaterThanBounds(void* pointer, int byteIndex)
+        {
+            if (allocations.TryGetValue((nint)pointer, out int byteLength))
+            {
+                if (byteIndex > byteLength)
+                {
+                    throw new IndexOutOfRangeException($"The pointer at address {(nint)pointer} is out of bounds at index {byteIndex}");
+                }
+            }
+        }
+
+#else
+        [Conditional("TRACK")]
+        public static void Track(void* pointer, int byteLength)
+        {
+        }
+        
+        [Conditional("TRACK")]
+        public static void Untrack(void* pointer)
+        {
+        }
+
+        [Conditional("TRACK")]
+        public static void Move(void* previousPointer, void* newPointer, int newByteLength)
+        {
+        }
+
+        [Conditional("TRACK")]
+        public static void ThrowIfDisposed(void* pointer)
+        {
+        }
+
+        [Conditional("TRACK")]
+        public static void ThrowIfOutOfBounds(void* pointer, int byteIndex)
+        {
+        }
+
+        [Conditional("TRACK")]
+        public static void ThrowIfGreaterThanBounds(void* pointer, int byteIndex)
+        {
+        }
+#endif
+    }
+}
