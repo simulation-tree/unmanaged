@@ -26,21 +26,25 @@ using (MemoryAddress allocation = MemoryAddress.Create(3.14f))
 
 ### ASCII Text
 
-The `ASCIIText256` type can store up to 255 extended ASCII `char` values. 
+The types prefixed with `ASCIIText` store extended ASCII `char` values. 
 Useful for when text is known to be short, until a list/array is needed:
 ```cs
-ASCIIText256 text = new("Hello there");
+ASCIIText16 text = new("Hello there");
 Span<char> textBuffer = stackalloc char[text.Length];
 text.CopyTo(textBuffer);
 
 //get utf8 bytes from the text
-Span<byte> utf8bytes = stackalloc char[ASCIIText256.Capacity];
+Span<byte> utf8bytes = stackalloc char[ASCIIText16.Capacity];
 uint bytesCopied = text.CopyTo(utf8bytes);
 
 //get text from utf8 bytes using System.Text.Encoding
-ASCIIText256 textFromBytes = new(utf8bytes.Slice(0, bytesCopied));
+ASCIIText1024 textFromBytes = new(utf8bytes.Slice(0, bytesCopied));
 string systemString = Encoding.UTF8.GetString(textBuffer.Slice(0, length));
-Assert.That(textFromBytes.ToString, Is.EqualTo(systemString));
+Assert.That(textFromBytes.ToString(), Is.EqualTo(systemString));
+
+//casting to a smaller type
+ASCIIText32 textFromBytesButSmaller = textFromBytes;
+Assert.That(textFromBytesButSmaller.ToString(), Is.EqualTo(systemString));
 ```
 
 ### Text
@@ -63,6 +67,8 @@ Can generate random data and values using the XORshift technique:
 using RandomGenerator random = new();
 int fairDiceRoll = random.NextInt(0, 6);
 ```
+
+> The default random seed is based on process ID, current time, and instance index.
 
 ### Safety
 
