@@ -152,7 +152,7 @@ namespace Unmanaged
         }
 
         [Conditional("TRACK")]
-        public static void ThrowIfGreaterThanBounds(void* pointer, int byteIndex)
+        public static void ThrowIfGreaterThanLength(void* pointer, int byteIndex)
         {
         }
 #endif
