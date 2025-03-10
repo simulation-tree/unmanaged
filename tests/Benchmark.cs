@@ -18,12 +18,6 @@ namespace Unmanaged.Tests
             this.action = action;
         }
 
-        [Obsolete("ToString() is not supported", true)]
-        public readonly override string ToString()
-        {
-            throw new NotSupportedException();
-        }
-
         public readonly void Run(out double elapsed, out double average, uint iterations = 10000)
         {
             action();
