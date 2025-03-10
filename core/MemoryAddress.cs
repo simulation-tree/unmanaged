@@ -84,13 +84,76 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Retrieves a span of bytes with <paramref name="byteLength"/>.
+        /// </summary>
+        public readonly Span<byte> GetSpan(int byteLength)
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfDisposed(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
+
+            return new(pointer, byteLength);
+        }
+
+
+        /// <summary>
+        /// Retrieves a span of <typeparamref name="T"/> elements with <paramref name="length"/>.
+        /// </summary>
+        public readonly Span<T> GetSpan<T>(int length) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfDisposed(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, length * sizeof(T));
+
+            return new(pointer, length);
+        }
+
+        /// <summary>
+        /// Retrieves a span slice of the bytes in this allocation.
+        /// </summary>
+        public readonly Span<byte> AsSpan(int bytePosition, int byteLength)
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfDisposed(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
+
+            return new Span<byte>(pointer + bytePosition, byteLength);
+        }
+
+        /// <summary>
+        /// Retrieves a span of <typeparamref name="T"/> elements with the given <paramref name="length"/>.
+        /// </summary>
+        public readonly Span<T> AsSpan<T>(int length) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfDisposed(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, length * sizeof(T));
+
+            return new Span<T>(pointer, length);
+        }
+
+        /// <summary>
+        /// Gets a span of elements from the memory.
+        /// <para>Both <paramref name="start"/> and <paramref name="length"/> are expected
+        /// to be in <typeparamref name="T"/> elements.</para>
+        /// </summary>
+        public readonly Span<T> AsSpan<T>(int start, int length) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfDisposed(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (start + length) * sizeof(T));
+
+            return new Span<T>(pointer + start * sizeof(T), length);
+        }
+
+        /// <summary>
         /// Writes a single given value into the memory into this byte position.
         /// </summary>
         public readonly void Write<T>(int bytePosition, T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + sizeof(T));
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
             *(T*)(pointer + bytePosition) = value;
         }
@@ -113,7 +176,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, (index + 1) * sizeof(T));
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
             ((T*)pointer)[index] = value;
         }
@@ -125,7 +188,20 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + sizeof(T) * span.Length);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
+
+            Span<T> thisSpan = new(pointer + bytePosition, span.Length);
+            span.CopyTo(thisSpan);
+        }
+
+        /// <summary>
+        /// Writes the given <paramref name="span"/> into memory starting at <paramref name="bytePosition"/>.
+        /// </summary>
+        public readonly void Write<T>(int bytePosition, ReadOnlySpan<T> span) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfDisposed(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
 
             Span<T> thisSpan = new(pointer + bytePosition, span.Length);
             span.CopyTo(thisSpan);
@@ -138,22 +214,9 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, sizeof(T) * span.Length);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * span.Length);
 
             Span<T> thisSpan = new(pointer, span.Length);
-            span.CopyTo(thisSpan);
-        }
-
-        /// <summary>
-        /// Writes the given <paramref name="span"/> into memory starting at <paramref name="bytePosition"/>.
-        /// </summary>
-        public readonly void Write<T>(int bytePosition, ReadOnlySpan<T> span) where T : unmanaged
-        {
-            ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + sizeof(T) * span.Length);
-
-            Span<T> thisSpan = new(pointer + bytePosition, span.Length);
             span.CopyTo(thisSpan);
         }
 
@@ -164,7 +227,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, sizeof(T) * span.Length);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * span.Length);
 
             Span<T> thisSpan = new(pointer, span.Length);
             span.CopyTo(thisSpan);
@@ -179,36 +242,10 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfDisposed(otherData.pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             Span<byte> bytes = new(otherData, byteLength);
             bytes.CopyTo(new Span<byte>(pointer + bytePosition, byteLength));
-        }
-
-        /// <summary>
-        /// Retrieves a span slice of the bytes in this allocation.
-        /// </summary>
-        public readonly Span<byte> AsSpan(int bytePosition, int byteLength)
-        {
-            ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + byteLength);
-
-            return new Span<byte>(pointer + bytePosition, byteLength);
-        }
-
-        /// <summary>
-        /// Gets a span of elements from the memory.
-        /// <para>Both <paramref name="start"/> and <paramref name="length"/> are expected
-        /// to be in <typeparamref name="T"/> elements.</para>
-        /// </summary>
-        public readonly Span<T> AsSpan<T>(int start, int length) where T : unmanaged
-        {
-            ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, (start + length) * sizeof(T));
-
-            return new Span<T>(pointer + start * (uint)sizeof(T), length);
         }
 
         /// <summary>
@@ -218,7 +255,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + sizeof(T));
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
             return ref *(T*)(pointer + bytePosition);
         }
@@ -230,7 +267,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, (index + 1) * sizeof(T));
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
             return ref ((T*)pointer)[index];
         }
@@ -265,7 +302,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             NativeMemory.Clear(pointer, (uint)byteLength);
         }
@@ -277,7 +314,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             NativeMemory.Clear(pointer + bytePosition, (uint)byteLength);
         }
@@ -289,7 +326,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             NativeMemory.Fill(pointer, (uint)byteLength, value);
         }
@@ -301,7 +338,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, bytePosition + byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             NativeMemory.Fill(pointer + bytePosition, (uint)byteLength, value);
         }
@@ -314,7 +351,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfDisposed(destination.pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, sourceBytePosition + byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, sourceBytePosition + byteLength);
 
             Span<byte> source = new(pointer + sourceBytePosition, byteLength);
             Span<byte> dest = new(destination.pointer + destinationBytePosition, byteLength);
@@ -329,8 +366,8 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfDisposed(destination.pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteLength);
-            MemoryTracker.ThrowIfGreaterThanBounds(destination.pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(destination.pointer, byteLength);
 
             Span<byte> source = new(pointer, byteLength);
             Span<byte> dest = new(destination.pointer, byteLength);
@@ -344,11 +381,23 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             Span<byte> source = new(pointer, byteLength);
             Span<byte> dest = new(destination, byteLength);
             source.CopyTo(dest);
+        }
+
+        /// <summary>
+        /// Copies elements from this memory to fit into the <paramref name="destination"/>.
+        /// </summary>
+        public readonly void CopyTo<T>(Span<T> destination) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfDisposed(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * destination.Length);
+
+            new Span<T>(pointer, destination.Length).CopyTo(destination);
         }
 
         /// <summary>
@@ -359,8 +408,8 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfDisposed(source.pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteLength);
-            MemoryTracker.ThrowIfGreaterThanBounds(source.pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(source.pointer, byteLength);
 
             Span<byte> sourceSpan = new(source.pointer, byteLength);
             Span<byte> destSpan = new(pointer, byteLength);
@@ -370,11 +419,11 @@ namespace Unmanaged
         /// <summary>
         /// Copies the bytes from <paramref name="source"/> and writes them into this allocation.
         /// </summary>
-        public readonly void CopyFrom<T>(ReadOnlySpan<T> source) where T : unmanaged
+        public readonly void CopyFrom<T>(Span<T> source) where T : unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, sizeof(T) * source.Length);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer, source.Length));
         }
@@ -382,35 +431,37 @@ namespace Unmanaged
         /// <summary>
         /// Copies the bytes from <paramref name="source"/> and writes them into this allocation.
         /// </summary>
-        public readonly void CopyFrom<T>(Span<T> source) where T : unmanaged
+        public readonly void CopyFrom<T>(ReadOnlySpan<T> source) where T : unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, sizeof(T) * source.Length);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer, source.Length));
         }
 
         /// <summary>
-        /// Copies the bytes from <paramref name="source"/> and writes them into this allocation.
+        /// Copies the bytes from <paramref name="source"/> and writes them into this allocation
+        /// starting at <paramref name="byteStart"/>.
         /// </summary>
         public readonly void CopyFrom<T>(Span<T> source, int byteStart) where T : unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteStart + sizeof(T) * source.Length);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteStart + sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer + byteStart, source.Length));
         }
 
         /// <summary>
-        /// Copies the bytes from <paramref name="source"/> and writes them into this allocation.
+        /// Copies the bytes from <paramref name="source"/> and writes them into this allocation
+        /// starting at <paramref name="byteStart"/>.
         /// </summary>
         public readonly void CopyFrom<T>(ReadOnlySpan<T> source, int byteStart) where T : unmanaged
         {
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteStart + sizeof(T) * source.Length);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteStart + sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer + byteStart, source.Length));
         }
@@ -421,9 +472,8 @@ namespace Unmanaged
         public readonly void CopyFrom(void* source, int byteLength)
         {
             ThrowIfDefault(pointer);
-
             MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanBounds(pointer, byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             Span<byte> sourceSpan = new(source, byteLength);
             Span<byte> destSpan = new(pointer, byteLength);
@@ -447,8 +497,7 @@ namespace Unmanaged
         {
             unchecked
             {
-                nint address = (nint)pointer;
-                return (int)address;
+                return (int)pointer;
             }
         }
 
