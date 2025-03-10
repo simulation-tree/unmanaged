@@ -432,7 +432,7 @@ namespace Unmanaged
 
             int newLength = text->length + otherText.Count;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            Span<char> buffer = text->buffer.AsSpan<char>(0, newLength);
+            Span<char> buffer = text->buffer.GetSpan<char>(newLength);
             int index = text->length;
             foreach (char character in otherText)
             {
@@ -777,7 +777,7 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public readonly System.Span<char>.Enumerator GetEnumerator()
+        public readonly Span<char>.Enumerator GetEnumerator()
         {
             return AsSpan().GetEnumerator();
         }

@@ -48,7 +48,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the given <paramref name="bytes"/>.
         /// </summary>
-        public ByteReader(Span<byte> bytes, int position = 0)
+        public ByteReader(ReadOnlySpan<byte> bytes, int position = 0)
         {
             ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
             reader = new(position, MemoryAddress.Allocate(bytes), bytes.Length, true);
