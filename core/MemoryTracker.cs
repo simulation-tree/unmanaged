@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 #if !TRACK
 using System.Diagnostics;
@@ -14,6 +15,7 @@ namespace Unmanaged
     internal unsafe static class MemoryTracker
     {
 #if TRACK
+        private static readonly ReaderWriterLockSlim threadLock = new();
         private static readonly List<nint> disposals = new();
         private static readonly Dictionary<nint, int> allocations = new();
 
@@ -33,21 +35,47 @@ namespace Unmanaged
         public static void Track(void* pointer, int byteLength)
         {
             RemoveDisposedPointer(pointer);
-            allocations.TryAdd((nint)pointer, byteLength);
+
+            threadLock.EnterWriteLock();
+            try
+            {
+                allocations.TryAdd((nint)pointer, byteLength);
+            }
+            finally
+            {
+                threadLock.ExitWriteLock();
+            }
         }
 
         public static void Untrack(void* pointer)
         {
             disposals.Add((nint)pointer);
-            allocations.Remove((nint)pointer);
+
+            threadLock.EnterWriteLock();
+            try
+            {
+                allocations.Remove((nint)pointer);
+            }
+            finally
+            {
+                threadLock.ExitWriteLock();
+            }
         }
 
         public static void Move(void* previousPointer, void* newPointer, int newByteLength)
         {
-            disposals.Add((nint)previousPointer);
-            allocations.Remove((nint)previousPointer);
-            RemoveDisposedPointer(newPointer);
-            allocations.TryAdd((nint)newPointer, newByteLength);
+            threadLock.EnterWriteLock();
+            try
+            {
+                disposals.Add((nint)previousPointer);
+                allocations.Remove((nint)previousPointer);
+                RemoveDisposedPointer(newPointer);
+                allocations.TryAdd((nint)newPointer, newByteLength);
+            }
+            finally
+            {
+                threadLock.ExitWriteLock();
+            }
         }
 
         public static void ThrowIfDisposed(void* pointer)
@@ -61,23 +89,39 @@ namespace Unmanaged
 
         public static void ThrowIfOutOfBounds(void* pointer, int byteIndex)
         {
-            if (allocations.TryGetValue((nint)pointer, out int byteLength))
+            threadLock.EnterReadLock();
+            try
             {
-                if (byteIndex < 0 || byteIndex >= byteLength)
+                if (allocations.TryGetValue((nint)pointer, out int byteLength))
                 {
-                    throw new IndexOutOfRangeException($"The pointer at address {(nint)pointer} is out of bounds at index {byteIndex}");
+                    if (byteIndex < 0 || byteIndex >= byteLength)
+                    {
+                        throw new IndexOutOfRangeException($"The pointer at address {(nint)pointer} is out of bounds at index {byteIndex}");
+                    }
                 }
+            }
+            finally
+            {
+                threadLock.ExitReadLock();
             }
         }
 
-        public static void ThrowIfGreaterThanBounds(void* pointer, int byteIndex)
+        public static void ThrowIfGreaterThanLength(void* pointer, int byteIndex)
         {
-            if (allocations.TryGetValue((nint)pointer, out int byteLength))
+            threadLock.EnterReadLock();
+            try
             {
-                if (byteIndex > byteLength)
+                if (allocations.TryGetValue((nint)pointer, out int byteLength))
                 {
-                    throw new IndexOutOfRangeException($"The pointer at address {(nint)pointer} is out of bounds at index {byteIndex}");
+                    if (byteIndex > byteLength)
+                    {
+                        throw new IndexOutOfRangeException($"The pointer at address {(nint)pointer} is out of bounds at index {byteIndex}");
+                    }
                 }
+            }
+            finally
+            {
+                threadLock.ExitReadLock();
             }
         }
 
