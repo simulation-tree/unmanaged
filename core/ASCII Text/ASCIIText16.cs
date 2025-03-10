@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -8,16 +8,16 @@ using System.Runtime.InteropServices;
 namespace Unmanaged
 {
     /// <summary>
-    /// Container of up to 255 extended ASCII <see cref="char"/> values.
+    /// Container of up to 15 extended ASCII <see cref="char"/> values.
     /// </summary>
     [SkipLocalsInit]
-    [StructLayout(LayoutKind.Sequential, Size = 256)]
-    public unsafe struct ASCIIText256 : IEquatable<ASCIIText256>
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public unsafe struct ASCIIText16 : IEquatable<ASCIIText16>
     {
         /// <summary>
         /// Maximum number of characters that can be stored.
         /// </summary>
-        public const byte Capacity = 255;
+        public const int Capacity = 15;
 
         /// <summary>
         /// Maximum value of a single <see cref="char"/>.
@@ -72,7 +72,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new instance from the given <paramref name="text"/>.
         /// </summary>
-        public ASCIIText256(string text)
+        public ASCIIText16(string text)
         {
             ThrowIfLengthExceedsCapacity(text.Length);
 
@@ -92,7 +92,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new instance from the given <paramref name="text"/>.
         /// </summary>
-        public ASCIIText256(ReadOnlySpan<char> text)
+        public ASCIIText16(ReadOnlySpan<char> text)
         {
             ThrowIfLengthExceedsCapacity(text.Length);
 
@@ -112,7 +112,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new instance from the given <paramref name="text"/> collection.
         /// </summary>
-        public ASCIIText256(IEnumerable<char> text)
+        public ASCIIText16(IEnumerable<char> text)
         {
             int index = 0;
             foreach (char c in text)
@@ -134,7 +134,7 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new instance from the given <paramref name="utf8Bytes"/>.
         /// </summary>
-        public ASCIIText256(ReadOnlySpan<byte> utf8Bytes)
+        public ASCIIText16(ReadOnlySpan<byte> utf8Bytes)
         {
             int index = 0;
             while (index < utf8Bytes.Length)
@@ -202,10 +202,10 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new instance from the given <paramref name="utf8Bytes"/> pointer.
         /// <para>
-        /// Reads until reaching a null terminator, or 255 characters.
+        /// Reads until reaching a null terminator, or 15 characters.
         /// </para>
         /// </summary>
-        public ASCIIText256(void* utf8Bytes)
+        public ASCIIText16(void* utf8Bytes)
         {
             ReadOnlySpan<byte> span = new(utf8Bytes, Capacity);
             int index = 0;
@@ -411,25 +411,25 @@ namespace Unmanaged
         /// <summary>
         /// Slice this string from the given start index and length.
         /// </summary>
-        public readonly ASCIIText256 Slice(int start, int length)
+        public readonly ASCIIText16 Slice(int start, int length)
         {
             ThrowIfIndexOutOfRange(start);
             ThrowIfLengthExceedsCapacity(start + length);
 
-            ASCIIText256 result = default;
+            ASCIIText16 result = default;
             for (int i = 0; i < length; i++)
             {
                 result.characters[i] = characters[start + i];
             }
 
-            result.characters[Capacity] = (byte)length;
+            result.length = (byte)length;
             return result;
         }
 
         /// <summary>
         /// Slice this string from the given start index to the end.
         /// </summary>
-        public readonly ASCIIText256 Slice(int start)
+        public readonly ASCIIText16 Slice(int start)
         {
             return Slice(start, length - start);
         }
@@ -478,7 +478,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this string contains the given text.
         /// </summary>
-        public readonly bool Contains(ASCIIText256 text)
+        public readonly bool Contains(ASCIIText16 text)
         {
             for (int i = 0; i < length; i++)
             {
@@ -596,7 +596,7 @@ namespace Unmanaged
         /// Retrieves the first index of the given text.
         /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
         /// </summary>
-        public readonly int IndexOf(ASCIIText256 text)
+        public readonly int IndexOf(ASCIIText16 text)
         {
             for (int i = 0; i < length; i++)
             {
@@ -626,7 +626,7 @@ namespace Unmanaged
         /// Attempts to retrieve the first index of the given text.
         /// </summary>
         /// <returns><c>true</c> if found.</returns>
-        public readonly bool TryIndexOf(ASCIIText256 text, out int index)
+        public readonly bool TryIndexOf(ASCIIText16 text, out int index)
         {
             for (int i = 0; i < length; i++)
             {
@@ -748,7 +748,7 @@ namespace Unmanaged
         /// Retrieves the last index of the given text.
         /// <para>May throw <see cref="ArgumentException"/> if not contained.</para>
         /// </summary>
-        public readonly int LastIndexOf(ASCIIText256 text)
+        public readonly int LastIndexOf(ASCIIText16 text)
         {
             int thisLength = Length;
             for (int i = thisLength - 1; i >= 0; i--)
@@ -779,7 +779,7 @@ namespace Unmanaged
         /// Attempts to retrieve the last index of the given text.
         /// </summary>
         /// <returns><c>true</c> if found.</returns>
-        public readonly bool TryLastIndexOf(ASCIIText256 text, out int index)
+        public readonly bool TryLastIndexOf(ASCIIText16 text, out int index)
         {
             int thisLength = Length;
             for (int i = thisLength - 1; i >= 0; i--)
@@ -832,7 +832,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this string starts with the given text.
         /// </summary>
-        public readonly bool StartsWith(ASCIIText256 text)
+        public readonly bool StartsWith(ASCIIText16 text)
         {
             if (text.length > length)
             {
@@ -874,7 +874,7 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this string ends with the given text.
         /// </summary>
-        public readonly bool EndsWith(ASCIIText256 text)
+        public readonly bool EndsWith(ASCIIText16 text)
         {
             if (text.length > length)
             {
@@ -961,7 +961,7 @@ namespace Unmanaged
         /// <summary>
         /// Appends a text span to the end of this string.
         /// </summary>
-        public void Append(ASCIIText256 text)
+        public void Append(ASCIIText16 text)
         {
             int textLength = text.Length;
             ThrowIfLengthExceedsCapacity(length + textLength);
@@ -1091,7 +1091,7 @@ namespace Unmanaged
         /// <summary>
         /// Inserts a text span at the given index.
         /// </summary>
-        public void Insert(int index, ASCIIText256 text)
+        public void Insert(int index, ASCIIText16 text)
         {
             int textLength = text.Length;
             ThrowIfLengthExceedsCapacity(length + textLength);
@@ -1191,7 +1191,7 @@ namespace Unmanaged
         /// Attempts to replace all instances of the given text with another.
         /// </summary>
         /// <returns><c>true</c> if a replacement was done.</returns>
-        public bool TryReplace(ASCIIText256 oldValue, ASCIIText256 newValue)
+        public bool TryReplace(ASCIIText16 oldValue, ASCIIText16 newValue)
         {
             for (int i = 0; i < length; i++)
             {
@@ -1246,7 +1246,7 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public readonly bool Equals(ASCIIText256 other)
+        public readonly bool Equals(ASCIIText16 other)
         {
             if (length != other.length)
             {
@@ -1305,7 +1305,7 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override bool Equals([NotNullWhen(true)] object? obj)
         {
-            return obj is ASCIIText256 other && Equals(other);
+            return obj is ASCIIText16 other && Equals(other);
         }
 
         /// <summary>
@@ -1374,31 +1374,31 @@ namespace Unmanaged
         }
 
         /// <inheritdoc/>
-        public static implicit operator ASCIIText256(string text)
+        public static implicit operator ASCIIText16(string text)
         {
             return new(text);
         }
 
         /// <inheritdoc/>
-        public static implicit operator ASCIIText256(Span<char> text)
+        public static implicit operator ASCIIText16(Span<char> text)
         {
             return new(text);
         }
 
         /// <inheritdoc/>
-        public static implicit operator ASCIIText256(ReadOnlySpan<char> text)
+        public static implicit operator ASCIIText16(ReadOnlySpan<char> text)
         {
             return new(text);
         }
 
         /// <inheritdoc/>
-        public static bool operator ==(ASCIIText256 a, ASCIIText256 b)
+        public static bool operator ==(ASCIIText16 a, ASCIIText16 b)
         {
             return a.Equals(b);
         }
 
         /// <inheritdoc/>
-        public static bool operator !=(ASCIIText256 a, ASCIIText256 b)
+        public static bool operator !=(ASCIIText16 a, ASCIIText16 b)
         {
             return !a.Equals(b);
         }

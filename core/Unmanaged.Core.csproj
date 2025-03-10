@@ -20,7 +20,7 @@
         <IsAotCompatible>true</IsAotCompatible>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <WarningLevel>8</WarningLevel>
-        <PackageId/>
+        <PackageId />
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
