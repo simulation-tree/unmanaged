@@ -127,6 +127,15 @@ namespace Unmanaged.Tests
         }
 
         [Test]
+        public void Slicing()
+        {
+            ASCIIText256 a = "What would ice tea taste like?";
+            ASCIIText256 b = a.Slice(5, 5);
+            Assert.That(b.ToString(), Is.EqualTo("would"));
+            Assert.That(b.Length, Is.EqualTo(5));
+        }
+
+        [Test]
         public void Indexing()
         {
             ASCIIText256 a = "Hello";

@@ -30,7 +30,7 @@ namespace Unmanaged
         /// <summary>
         /// Number of characters in this string.
         /// </summary>
-        public ushort Length
+        public int Length
         {
             readonly get => length;
             set
@@ -39,13 +39,13 @@ namespace Unmanaged
 
                 if (value > length)
                 {
-                    for (uint i = length; i < value; i++)
+                    for (int i = length; i < value; i++)
                     {
                         characters[i] = 0;
                     }
                 }
 
-                length = value;
+                length = (ushort)value;
             }
         }
 
@@ -1390,6 +1390,64 @@ namespace Unmanaged
         {
             return new(text);
         }
+
+        /// <inheritdoc/>
+        public static implicit operator ASCIIText512(ASCIIText1024 value)
+        {
+            Span<char> span = stackalloc char[value.Length];
+            value.CopyTo(span);
+            return new ASCIIText512(span);
+        }
+
+        /// <inheritdoc/>
+        public static implicit operator ASCIIText256(ASCIIText1024 value)
+        {
+            Span<char> span = stackalloc char[value.Length];
+            value.CopyTo(span);
+            return new ASCIIText256(span);
+        }
+
+        /// <inheritdoc/>
+        public static implicit operator ASCIIText128(ASCIIText1024 value)
+        {
+            Span<char> span = stackalloc char[value.Length];
+            value.CopyTo(span);
+            return new ASCIIText128(span);
+        }
+
+        /// <inheritdoc/>
+        public static implicit operator ASCIIText64(ASCIIText1024 value)
+        {
+            Span<char> span = stackalloc char[value.Length];
+            value.CopyTo(span);
+            return new ASCIIText64(span);
+        }
+
+        /// <inheritdoc/>
+        public static implicit operator ASCIIText32(ASCIIText1024 value)
+        {
+            Span<char> span = stackalloc char[value.Length];
+            value.CopyTo(span);
+            return new ASCIIText32(span);
+        }
+
+        /// <inheritdoc/>
+        public static implicit operator ASCIIText16(ASCIIText1024 value)
+        {
+            Span<char> span = stackalloc char[value.Length];
+            value.CopyTo(span);
+            return new ASCIIText16(span);
+        }
+
+        /// <inheritdoc/>
+        public static implicit operator ASCIIText8(ASCIIText1024 value)
+        {
+            Span<char> span = stackalloc char[value.Length];
+            value.CopyTo(span);
+            return new ASCIIText8(span);
+        }
+
+
 
         /// <inheritdoc/>
         public static bool operator ==(ASCIIText1024 a, ASCIIText1024 b)
