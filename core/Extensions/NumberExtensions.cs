@@ -86,5 +86,24 @@ namespace Unmanaged
 
             return index;
         }
+
+        /// <summary>
+        /// Retrieves the index of the power of 2 for the input <paramref name="value"/>.
+        /// <para>
+        /// If <paramref name="value"/> isn't a power of 2 the returning value
+        /// isn't valid.
+        /// </para>
+        /// </summary>
+        public static int GetIndexOfPowerOf2(this int value)
+        {
+            int index = 0;
+            while ((value & 1) == 0)
+            {
+                value >>= 1;
+                index++;
+            }
+
+            return index;
+        }
     }
 }
