@@ -34,11 +34,10 @@ namespace Unmanaged
 
         public static void Track(void* pointer, int byteLength)
         {
-            RemoveDisposedPointer(pointer);
-
             threadLock.EnterWriteLock();
             try
             {
+                RemoveDisposedPointer(pointer);
                 allocations.TryAdd((nint)pointer, byteLength);
             }
             finally
@@ -49,11 +48,10 @@ namespace Unmanaged
 
         public static void Untrack(void* pointer)
         {
-            disposals.Add((nint)pointer);
-
             threadLock.EnterWriteLock();
             try
             {
+                disposals.Add((nint)pointer);
                 allocations.Remove((nint)pointer);
             }
             finally
@@ -80,10 +78,18 @@ namespace Unmanaged
 
         public static void ThrowIfDisposed(void* pointer)
         {
-            nint address = (nint)pointer;
-            if (disposals.Contains(address))
+            threadLock.EnterReadLock();
+            try
             {
-                throw new ObjectDisposedException($"The pointer at address {address} has been disposed");
+                nint address = (nint)pointer;
+                if (disposals.Contains(address))
+                {
+                    throw new ObjectDisposedException($"The pointer at address {address} has been disposed");
+                }
+            }
+            finally
+            {
+                threadLock.ExitReadLock();
             }
         }
 
