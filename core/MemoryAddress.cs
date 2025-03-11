@@ -121,18 +121,6 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Retrieves a span of <typeparamref name="T"/> elements with the given <paramref name="length"/>.
-        /// </summary>
-        public readonly Span<T> AsSpan<T>(int length) where T : unmanaged
-        {
-            ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfGreaterThanLength(pointer, length * sizeof(T));
-
-            return new Span<T>(pointer, length);
-        }
-
-        /// <summary>
         /// Gets a span of elements from the memory.
         /// <para>Both <paramref name="start"/> and <paramref name="length"/> are expected
         /// to be in <typeparamref name="T"/> elements.</para>
