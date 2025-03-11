@@ -209,7 +209,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes only the content of this text, without a terminator.
         /// </summary>
-        public void WriteUTF8(Span<char> text)
+        public void WriteUTF8(ReadOnlySpan<char> text)
         {
             for (int i = 0; i < text.Length; i++)
             {
