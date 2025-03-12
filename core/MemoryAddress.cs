@@ -29,7 +29,6 @@ namespace Unmanaged
             get
             {
                 ThrowIfDefault(pointer);
-                MemoryTracker.ThrowIfDisposed(pointer);
                 MemoryTracker.ThrowIfOutOfBounds(pointer, index);
 
                 return ref pointer[index];
@@ -67,7 +66,6 @@ namespace Unmanaged
         public readonly override string ToString()
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
 
             return ((nint)pointer).ToString();
         }
@@ -78,7 +76,6 @@ namespace Unmanaged
         public readonly int ToString(Span<char> buffer)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
 
             return ((nint)pointer).ToString(buffer);
         }
@@ -89,7 +86,6 @@ namespace Unmanaged
         public readonly Span<byte> GetSpan(int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             return new(pointer, byteLength);
@@ -102,7 +98,6 @@ namespace Unmanaged
         public readonly Span<T> GetSpan<T>(int length) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, length * sizeof(T));
 
             return new(pointer, length);
@@ -114,7 +109,6 @@ namespace Unmanaged
         public readonly Span<byte> AsSpan(int bytePosition, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             return new Span<byte>(pointer + bytePosition, byteLength);
@@ -128,7 +122,6 @@ namespace Unmanaged
         public readonly Span<T> AsSpan<T>(int start, int length) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, (start + length) * sizeof(T));
 
             return new Span<T>(pointer + start * sizeof(T), length);
@@ -140,7 +133,6 @@ namespace Unmanaged
         public readonly void Write<T>(int bytePosition, T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
             *(T*)(pointer + bytePosition) = value;
@@ -152,7 +144,6 @@ namespace Unmanaged
         public readonly void Write<T>(T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
 
             *(T*)pointer = value;
         }
@@ -163,7 +154,6 @@ namespace Unmanaged
         public readonly void WriteElement<T>(int index, T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
             ((T*)pointer)[index] = value;
@@ -175,7 +165,6 @@ namespace Unmanaged
         public readonly void Write<T>(int bytePosition, Span<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
 
             Span<T> thisSpan = new(pointer + bytePosition, span.Length);
@@ -188,7 +177,6 @@ namespace Unmanaged
         public readonly void Write<T>(int bytePosition, ReadOnlySpan<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
 
             Span<T> thisSpan = new(pointer + bytePosition, span.Length);
@@ -201,7 +189,6 @@ namespace Unmanaged
         public readonly void Write<T>(Span<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * span.Length);
 
             Span<T> thisSpan = new(pointer, span.Length);
@@ -214,7 +201,6 @@ namespace Unmanaged
         public readonly void Write<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * span.Length);
 
             Span<T> thisSpan = new(pointer, span.Length);
@@ -228,8 +214,6 @@ namespace Unmanaged
         public readonly void Write(int bytePosition, int byteLength, MemoryAddress otherData)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfDisposed(otherData.pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             Span<byte> bytes = new(otherData, byteLength);
@@ -242,7 +226,6 @@ namespace Unmanaged
         public readonly ref T Read<T>(int bytePosition) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
             return ref *(T*)(pointer + bytePosition);
@@ -254,7 +237,6 @@ namespace Unmanaged
         public readonly ref T ReadElement<T>(int index) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
             return ref ((T*)pointer)[index];
@@ -266,7 +248,6 @@ namespace Unmanaged
         public readonly ref T Read<T>() where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
 
             return ref *(T*)pointer;
         }
@@ -277,7 +258,6 @@ namespace Unmanaged
         public readonly MemoryAddress Read(int bytePosition)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfOutOfBounds(pointer, bytePosition);
 
             return new(pointer + bytePosition);
@@ -289,7 +269,6 @@ namespace Unmanaged
         public readonly void Clear(int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             NativeMemory.Clear(pointer, (uint)byteLength);
@@ -301,7 +280,6 @@ namespace Unmanaged
         public readonly void Clear(int bytePosition, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             NativeMemory.Clear(pointer + bytePosition, (uint)byteLength);
@@ -313,7 +291,6 @@ namespace Unmanaged
         public readonly void Fill(int byteLength, byte value)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             NativeMemory.Fill(pointer, (uint)byteLength, value);
@@ -325,7 +302,6 @@ namespace Unmanaged
         public readonly void Fill(int bytePosition, int byteLength, byte value)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             NativeMemory.Fill(pointer + bytePosition, (uint)byteLength, value);
@@ -337,8 +313,6 @@ namespace Unmanaged
         public readonly void CopyTo(MemoryAddress destination, int sourceBytePosition, int destinationBytePosition, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfDisposed(destination.pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sourceBytePosition + byteLength);
 
             Span<byte> source = new(pointer + sourceBytePosition, byteLength);
@@ -352,8 +326,6 @@ namespace Unmanaged
         public readonly void CopyTo(MemoryAddress destination, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfDisposed(destination.pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
             MemoryTracker.ThrowIfGreaterThanLength(destination.pointer, byteLength);
 
@@ -368,7 +340,6 @@ namespace Unmanaged
         public readonly void CopyTo(void* destination, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             Span<byte> source = new(pointer, byteLength);
@@ -382,7 +353,6 @@ namespace Unmanaged
         public readonly void CopyTo<T>(Span<T> destination) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * destination.Length);
 
             new Span<T>(pointer, destination.Length).CopyTo(destination);
@@ -394,8 +364,6 @@ namespace Unmanaged
         public readonly void CopyFrom(MemoryAddress source, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
-            MemoryTracker.ThrowIfDisposed(source.pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
             MemoryTracker.ThrowIfGreaterThanLength(source.pointer, byteLength);
 
@@ -410,7 +378,6 @@ namespace Unmanaged
         public readonly void CopyFrom<T>(Span<T> source) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer, source.Length));
@@ -422,7 +389,6 @@ namespace Unmanaged
         public readonly void CopyFrom<T>(ReadOnlySpan<T> source) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer, source.Length));
@@ -435,7 +401,6 @@ namespace Unmanaged
         public readonly void CopyFrom<T>(Span<T> source, int byteStart) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteStart + sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer + byteStart, source.Length));
@@ -448,7 +413,6 @@ namespace Unmanaged
         public readonly void CopyFrom<T>(ReadOnlySpan<T> source, int byteStart) where T : unmanaged
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteStart + sizeof(T) * source.Length);
 
             source.CopyTo(new(pointer + byteStart, source.Length));
@@ -460,7 +424,6 @@ namespace Unmanaged
         public readonly void CopyFrom(void* source, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfDisposed(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             Span<byte> sourceSpan = new(source, byteLength);
@@ -495,7 +458,6 @@ namespace Unmanaged
         public static void Resize(ref MemoryAddress allocation, int newByteLength)
         {
             ThrowIfDefault(allocation.pointer);
-            MemoryTracker.ThrowIfDisposed(allocation.pointer);
 
             void* previousPointer = allocation.pointer;
             allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)newByteLength);
@@ -509,7 +471,6 @@ namespace Unmanaged
         public static void Resize<T>(ref MemoryAddress allocation) where T : unmanaged
         {
             ThrowIfDefault(allocation.pointer);
-            MemoryTracker.ThrowIfDisposed(allocation.pointer);
 
             void* previousPointer = allocation.pointer;
             allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)sizeof(T));
@@ -615,7 +576,6 @@ namespace Unmanaged
         public static void Free<T>(ref T* allocation) where T : unmanaged
         {
             ThrowIfDefault(allocation);
-            MemoryTracker.ThrowIfDisposed(allocation);
 
             NativeMemory.Free(allocation);
             MemoryTracker.Untrack(allocation);
@@ -629,7 +589,6 @@ namespace Unmanaged
         public static void Free(ref void* allocation)
         {
             ThrowIfDefault(allocation);
-            MemoryTracker.ThrowIfDisposed(allocation);
 
             NativeMemory.Free(allocation);
             MemoryTracker.Untrack(allocation);

@@ -16,28 +16,13 @@ namespace Unmanaged
     {
 #if TRACK
         private static readonly ReaderWriterLockSlim threadLock = new();
-        private static readonly List<nint> disposals = new();
         private static readonly Dictionary<nint, int> allocations = new();
-
-        private static void RemoveDisposedPointer(void* pointer)
-        {
-            nint address = (nint)pointer;
-            for (int i = 0; i < disposals.Count; i++)
-            {
-                if (disposals[i] == address)
-                {
-                    disposals.RemoveAt(i);
-                    break;
-                }
-            }
-        }
 
         public static void Track(void* pointer, int byteLength)
         {
             threadLock.EnterWriteLock();
             try
             {
-                RemoveDisposedPointer(pointer);
                 allocations.TryAdd((nint)pointer, byteLength);
             }
             finally
@@ -51,7 +36,6 @@ namespace Unmanaged
             threadLock.EnterWriteLock();
             try
             {
-                disposals.Add((nint)pointer);
                 allocations.Remove((nint)pointer);
             }
             finally
@@ -65,31 +49,12 @@ namespace Unmanaged
             threadLock.EnterWriteLock();
             try
             {
-                disposals.Add((nint)previousPointer);
                 allocations.Remove((nint)previousPointer);
-                RemoveDisposedPointer(newPointer);
                 allocations.TryAdd((nint)newPointer, newByteLength);
             }
             finally
             {
                 threadLock.ExitWriteLock();
-            }
-        }
-
-        public static void ThrowIfDisposed(void* pointer)
-        {
-            threadLock.EnterReadLock();
-            try
-            {
-                nint address = (nint)pointer;
-                if (disposals.Contains(address))
-                {
-                    throw new ObjectDisposedException($"The pointer at address {address} has been disposed");
-                }
-            }
-            finally
-            {
-                threadLock.ExitReadLock();
             }
         }
 
@@ -144,11 +109,6 @@ namespace Unmanaged
 
         [Conditional("TRACK")]
         public static void Move(void* previousPointer, void* newPointer, int newByteLength)
-        {
-        }
-
-        [Conditional("TRACK")]
-        public static void ThrowIfDisposed(void* pointer)
         {
         }
 
