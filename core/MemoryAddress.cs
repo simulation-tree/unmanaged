@@ -315,9 +315,9 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sourceBytePosition + byteLength);
 
-            Span<byte> source = new(pointer + sourceBytePosition, byteLength);
-            Span<byte> dest = new(destination.pointer + destinationBytePosition, byteLength);
-            source.CopyTo(dest);
+            Span<byte> sourceSpan = new(pointer + sourceBytePosition, byteLength);
+            Span<byte> destinationSpan = new(destination.pointer + destinationBytePosition, byteLength);
+            sourceSpan.CopyTo(destinationSpan);
         }
 
         /// <summary>
@@ -329,9 +329,9 @@ namespace Unmanaged
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
             MemoryTracker.ThrowIfGreaterThanLength(destination.pointer, byteLength);
 
-            Span<byte> source = new(pointer, byteLength);
-            Span<byte> dest = new(destination.pointer, byteLength);
-            source.CopyTo(dest);
+            Span<byte> sourceSpan = new(pointer, byteLength);
+            Span<byte> destinationSpan = new(destination.pointer, byteLength);
+            sourceSpan.CopyTo(destinationSpan);
         }
 
         /// <summary>
@@ -340,7 +340,6 @@ namespace Unmanaged
         public readonly void CopyTo(void* destination, int byteLength)
         {
             ThrowIfDefault(pointer);
-            MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
             Span<byte> source = new(pointer, byteLength);
             Span<byte> dest = new(destination, byteLength);
