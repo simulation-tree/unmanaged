@@ -167,8 +167,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
 
-            Span<T> thisSpan = new(pointer + bytePosition, span.Length);
-            span.CopyTo(thisSpan);
+            span.CopyTo(new(pointer + bytePosition, span.Length));
         }
 
         /// <summary>
@@ -179,8 +178,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
 
-            Span<T> thisSpan = new(pointer + bytePosition, span.Length);
-            span.CopyTo(thisSpan);
+            span.CopyTo(new(pointer + bytePosition, span.Length));
         }
 
         /// <summary>
@@ -191,8 +189,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * span.Length);
 
-            Span<T> thisSpan = new(pointer, span.Length);
-            span.CopyTo(thisSpan);
+            span.CopyTo(new(pointer, span.Length));
         }
 
         /// <summary>
@@ -203,8 +200,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sizeof(T) * span.Length);
 
-            Span<T> thisSpan = new(pointer, span.Length);
-            span.CopyTo(thisSpan);
+            span.CopyTo(new(pointer, span.Length));
         }
 
         /// <summary>
@@ -216,8 +212,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
-            Span<byte> bytes = new(otherData, byteLength);
-            bytes.CopyTo(new Span<byte>(pointer + bytePosition, byteLength));
+            new Span<byte>(otherData, byteLength).CopyTo(new(pointer + bytePosition, byteLength));
         }
 
         /// <summary>
@@ -271,7 +266,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
-            NativeMemory.Clear(pointer, (uint)byteLength);
+            new Span<byte>(pointer, byteLength).Clear();
         }
 
         /// <summary>
@@ -282,7 +277,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
-            NativeMemory.Clear(pointer + bytePosition, (uint)byteLength);
+            new Span<byte>(pointer + bytePosition, byteLength).Clear();
         }
 
         /// <summary>
@@ -293,7 +288,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
-            NativeMemory.Fill(pointer, (uint)byteLength, value);
+            new Span<byte>(pointer, byteLength).Fill(value);
         }
 
         /// <summary>
@@ -304,7 +299,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
-            NativeMemory.Fill(pointer + bytePosition, (uint)byteLength, value);
+            new Span<byte>(pointer + bytePosition, byteLength).Fill(value);
         }
 
         /// <summary>
@@ -315,9 +310,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sourceBytePosition + byteLength);
 
-            Span<byte> sourceSpan = new(pointer + sourceBytePosition, byteLength);
-            Span<byte> destinationSpan = new(destination.pointer + destinationBytePosition, byteLength);
-            sourceSpan.CopyTo(destinationSpan);
+            new Span<byte>(pointer + sourceBytePosition, byteLength).CopyTo(new(destination.pointer + destinationBytePosition, byteLength));
         }
 
         /// <summary>
@@ -329,9 +322,7 @@ namespace Unmanaged
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
             MemoryTracker.ThrowIfGreaterThanLength(destination.pointer, byteLength);
 
-            Span<byte> sourceSpan = new(pointer, byteLength);
-            Span<byte> destinationSpan = new(destination.pointer, byteLength);
-            sourceSpan.CopyTo(destinationSpan);
+            new Span<byte>(pointer, byteLength).CopyTo(new(destination.pointer, byteLength));
         }
 
         /// <summary>
@@ -341,9 +332,7 @@ namespace Unmanaged
         {
             ThrowIfDefault(pointer);
 
-            Span<byte> source = new(pointer, byteLength);
-            Span<byte> dest = new(destination, byteLength);
-            source.CopyTo(dest);
+            new Span<byte>(pointer, byteLength).CopyTo(new(destination, byteLength));
         }
 
         /// <summary>
@@ -366,9 +355,7 @@ namespace Unmanaged
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
             MemoryTracker.ThrowIfGreaterThanLength(source.pointer, byteLength);
 
-            Span<byte> sourceSpan = new(source.pointer, byteLength);
-            Span<byte> destSpan = new(pointer, byteLength);
-            sourceSpan.CopyTo(destSpan);
+            new Span<byte>(source.pointer, byteLength).CopyTo(new(pointer, byteLength));
         }
 
         /// <summary>
@@ -425,9 +412,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteLength);
 
-            Span<byte> sourceSpan = new(source, byteLength);
-            Span<byte> destSpan = new(pointer, byteLength);
-            sourceSpan.CopyTo(destSpan);
+            new Span<byte>(source, byteLength).CopyTo(new(pointer, byteLength));
         }
 
         /// <inheritdoc/>
