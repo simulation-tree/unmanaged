@@ -575,6 +575,7 @@ namespace Unmanaged
         public static void Free<T>(ref T* allocation) where T : unmanaged
         {
             ThrowIfDefault(allocation);
+            MemoryTracker.ThrowIfDisposed(allocation);
 
             NativeMemory.Free(allocation);
             MemoryTracker.Untrack(allocation);
@@ -588,6 +589,7 @@ namespace Unmanaged
         public static void Free(ref void* allocation)
         {
             ThrowIfDefault(allocation);
+            MemoryTracker.ThrowIfDisposed(allocation);
 
             NativeMemory.Free(allocation);
             MemoryTracker.Untrack(allocation);

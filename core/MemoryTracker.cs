@@ -34,6 +34,22 @@ namespace Unmanaged
             }
         }
 
+        public static void ThrowIfDisposed(void* pointer)
+        {
+            threadLock.EnterReadLock();
+            try
+            {
+                if (!allocations.ContainsKey((nint)pointer))
+                {
+                    throw new ObjectDisposedException($"The pointer at address {(nint)pointer} has been disposed");
+                }
+            }
+            finally
+            {
+                threadLock.ExitReadLock();
+            }
+        }
+
         public static void Track(void* pointer, int byteLength)
         {
             threadLock.EnterWriteLock();
@@ -120,7 +136,11 @@ namespace Unmanaged
         [Conditional("TRACK")]
         public static void ThrowIfAny()
         {
+        }
 
+        [Conditional("TRACK")]
+        public static void ThrowIfDisposed(void* pointer)
+        {
         }
 
         [Conditional("TRACK")]
