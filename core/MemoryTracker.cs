@@ -4,12 +4,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
-#if !TRACK
-using System.Diagnostics;
-#endif
-
+[assembly: InternalsVisibleTo("Unmanaged.Tests")]
 namespace Unmanaged
 {
     internal unsafe static class MemoryTracker
@@ -17,6 +16,23 @@ namespace Unmanaged
 #if TRACK
         private static readonly ReaderWriterLockSlim threadLock = new();
         private static readonly Dictionary<nint, int> allocations = new();
+        private static readonly Dictionary<nint, StackTrace> allocationStackTraces = new();
+
+        public static void ThrowIfAny()
+        {
+            threadLock.EnterReadLock();
+            try
+            {
+                if (allocations.Count > 0)
+                {
+                    throw new Exception($"Memory leak detected: {allocations.Count} allocations not freed");
+                }
+            }
+            finally
+            {
+                threadLock.ExitReadLock();
+            }
+        }
 
         public static void Track(void* pointer, int byteLength)
         {
@@ -24,6 +40,7 @@ namespace Unmanaged
             try
             {
                 allocations.TryAdd((nint)pointer, byteLength);
+                allocationStackTraces[(nint)pointer] = new StackTrace(2, true);
             }
             finally
             {
@@ -36,6 +53,7 @@ namespace Unmanaged
             threadLock.EnterWriteLock();
             try
             {
+                allocationStackTraces.Remove((nint)pointer);
                 allocations.Remove((nint)pointer);
             }
             finally
@@ -49,8 +67,10 @@ namespace Unmanaged
             threadLock.EnterWriteLock();
             try
             {
+                allocationStackTraces.Remove((nint)previousPointer);
                 allocations.Remove((nint)previousPointer);
                 allocations.TryAdd((nint)newPointer, newByteLength);
+                allocationStackTraces[(nint)newPointer] = new StackTrace(2, true);
             }
             finally
             {
@@ -97,6 +117,12 @@ namespace Unmanaged
         }
 
 #else
+        [Conditional("TRACK")]
+        public static void ThrowIfAny()
+        {
+
+        }
+
         [Conditional("TRACK")]
         public static void Track(void* pointer, int byteLength)
         {

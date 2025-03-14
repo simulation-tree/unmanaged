@@ -12,6 +12,7 @@ namespace Unmanaged.Tests
         [TearDown]
         protected virtual void TearDown()
         {
+            MemoryTracker.ThrowIfAny();
         }
 
         protected static bool IsRunningRemotely()
