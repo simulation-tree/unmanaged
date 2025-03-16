@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Unmanaged
 {
-    public class SourceBuilder
+    internal class SourceBuilder
     {
         private readonly StringBuilder builder = new();
         private int indentation;

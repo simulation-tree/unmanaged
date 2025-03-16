@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Unmanaged
 {
-    public class TypeDeclarationsWalker : CSharpSyntaxWalker
+    internal class TypeDeclarationsWalker : CSharpSyntaxWalker
     {
         public readonly HashSet<ITypeSymbol> types = [];
         public readonly SemanticModel semanticModel;
