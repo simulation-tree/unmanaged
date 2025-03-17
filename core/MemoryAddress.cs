@@ -135,7 +135,10 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
-            *(T*)(pointer + bytePosition) = value;
+            unchecked
+            {
+                *(T*)(pointer + (uint)bytePosition) = value;
+            }
         }
 
         /// <summary>
@@ -156,7 +159,10 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
-            ((T*)pointer)[index] = value;
+            unchecked
+            {
+                ((T*)pointer)[(uint)index] = value;
+            }
         }
 
         /// <summary>
@@ -223,7 +229,10 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
-            return ref *(T*)(pointer + bytePosition);
+            unchecked
+            {
+                return ref *(T*)(pointer + (uint)bytePosition);
+            }
         }
 
         /// <summary>
@@ -234,7 +243,10 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
-            return ref ((T*)pointer)[index];
+            unchecked
+            {
+                return ref ((T*)pointer)[(uint)index];
+            }
         }
 
         /// <summary>
@@ -255,7 +267,10 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfOutOfBounds(pointer, bytePosition);
 
-            return new(pointer + bytePosition);
+            unchecked
+            {
+                return new(pointer + (uint)bytePosition);
+            }
         }
 
         /// <summary>
