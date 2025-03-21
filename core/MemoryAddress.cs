@@ -104,7 +104,8 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Retrieves a span slice of the bytes in this allocation.
+        /// Retrieves a slice of bytes starting at <paramref name="bytePosition"/> with
+        /// <paramref name="byteLength"/>.
         /// </summary>
         public readonly Span<byte> AsSpan(int bytePosition, int byteLength)
         {
