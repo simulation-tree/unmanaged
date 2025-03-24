@@ -1,9 +1,13 @@
-﻿using System;
+﻿#if DEBUG
+#define TRACK
+#endif
+
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
-{    
+{
     /// <summary>
     /// An address referring to either stack or heap memory.
     /// </summary>
@@ -48,7 +52,6 @@ namespace Unmanaged
         [Obsolete("Default constructor not supported", true)]
         public MemoryAddress()
         {
-            throw new NotSupportedException();
         }
 #endif
 
@@ -143,6 +146,17 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Writes a single given value into the memory into this byte position.
+        /// </summary>
+        public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (int)bytePosition + sizeof(T));
+
+            *(T*)(pointer + bytePosition) = value;
+        }
+
+        /// <summary>
         /// Writes a single given value into the memory to the beginning.
         /// </summary>
         public readonly void Write<T>(T value) where T : unmanaged
@@ -164,6 +178,17 @@ namespace Unmanaged
             {
                 ((T*)pointer)[(uint)index] = value;
             }
+        }
+
+        /// <summary>
+        /// Writes the given <paramref name="value"/> to the element <paramref name="index"/>.
+        /// </summary>
+        public readonly void WriteElement<T>(uint index, T value) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (int)(index + 1) * sizeof(T));
+
+            ((T*)pointer)[index] = value;
         }
 
         /// <summary>
@@ -237,6 +262,17 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
+        /// </summary>
+        public readonly ref T Read<T>(uint bytePosition) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (int)bytePosition + sizeof(T));
+
+            return ref *(T*)(pointer + bytePosition);
+        }
+
+        /// <summary>
         /// Reads a value of type <typeparamref name="T"/> at the given element <paramref name="index"/>.
         /// </summary>
         public readonly ref T ReadElement<T>(int index) where T : unmanaged
@@ -248,6 +284,18 @@ namespace Unmanaged
             {
                 return ref ((T*)pointer)[(uint)index];
             }
+        }
+
+
+        /// <summary>
+        /// Reads a value of type <typeparamref name="T"/> at the given element <paramref name="index"/>.
+        /// </summary>
+        public readonly ref T ReadElement<T>(uint index) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (int)(index + 1) * sizeof(T));
+
+            return ref ((T*)pointer)[index];
         }
 
         /// <summary>
@@ -272,6 +320,17 @@ namespace Unmanaged
             {
                 return new(pointer + (uint)bytePosition);
             }
+        }
+
+        /// <summary>
+        /// Reads data from the memory starting from the given <paramref name="bytePosition"/>.
+        /// </summary>
+        public readonly MemoryAddress Read(uint bytePosition)
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfOutOfBounds(pointer, (int)bytePosition);
+
+            return new(pointer + bytePosition);
         }
 
         /// <summary>
@@ -493,9 +552,28 @@ namespace Unmanaged
         /// </summary>
         public static MemoryAddress AllocateZeroed(int byteLength)
         {
+#if TRACK
             void* pointer = NativeMemory.AllocZeroed((uint)byteLength);
             MemoryTracker.Track(pointer, byteLength);
             return new(pointer);
+#else
+            return new(NativeMemory.AllocZeroed((uint)byteLength));
+#endif
+        }
+
+        /// <summary>
+        /// Creates an allocation of size <paramref name="byteLength"/>, initialized
+        /// to <see langword="default"/> memory.
+        /// </summary>
+        public static MemoryAddress AllocateZeroed(uint byteLength)
+        {
+#if TRACK
+            void* pointer = NativeMemory.AllocZeroed(byteLength);
+            MemoryTracker.Track(pointer, (int)byteLength);
+            return new(pointer);
+#else
+            return new(NativeMemory.AllocZeroed(byteLength));
+#endif
         }
 
         /// <summary>
@@ -503,9 +581,27 @@ namespace Unmanaged
         /// </summary>
         public static MemoryAddress Allocate(int byteLength)
         {
+#if TRACK
             void* pointer = NativeMemory.Alloc((uint)byteLength);
             MemoryTracker.Track(pointer, byteLength);
             return new(pointer);
+#else
+            return new(NativeMemory.Alloc((uint)byteLength));
+#endif
+        }
+
+        /// <summary>
+        /// Creates a new non-zeroed allocation of size <paramref name="byteLength"/>.
+        /// </summary>
+        public static MemoryAddress Allocate(uint byteLength)
+        {
+#if TRACK
+            void* pointer = NativeMemory.Alloc(byteLength);
+            MemoryTracker.Track(pointer, (int)byteLength);
+            return new(pointer);
+#else
+            return new(NativeMemory.Alloc(byteLength));
+#endif
         }
 
         /// <summary>
@@ -524,9 +620,27 @@ namespace Unmanaged
         /// </summary>
         public static ref T Allocate<T>() where T : unmanaged
         {
+#if TRACK
             void* pointer = NativeMemory.Alloc((uint)sizeof(T));
             MemoryTracker.Track(pointer, sizeof(T));
             return ref *(T*)pointer;
+#else
+            return ref *(T*)NativeMemory.Alloc((uint)sizeof(T));
+#endif
+        }
+
+        /// <summary>
+        /// Creates a new uninitialized allocation that can contain a(n) <typeparamref name="T"/>
+        /// </summary>
+        public static T* AllocatePointer<T>() where T : unmanaged
+        {
+#if TRACK
+            void* pointer = NativeMemory.Alloc((uint)sizeof(T));
+            MemoryTracker.Track(pointer, sizeof(T));
+            return (T*)pointer;
+#else
+            return (T*)NativeMemory.Alloc((uint)sizeof(T));
+#endif
         }
 
         /// <summary>
