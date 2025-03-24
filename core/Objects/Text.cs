@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Pointer = Unmanaged.Pointers.Text;
+using Unmanaged.Pointers;
 
 namespace Unmanaged
 {
@@ -12,7 +12,7 @@ namespace Unmanaged
     public unsafe struct Text : IDisposable, IEquatable<Text>, IList<char>, IReadOnlyList<char>
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private Pointer* text;
+        private TextPointer* text;
 
         /// <summary>
         /// Length of the text.
@@ -92,13 +92,9 @@ namespace Unmanaged
         /// </summary>
         public Text()
         {
-            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
-            text.length = 0;
-            text.buffer = MemoryAddress.AllocateEmpty();
-            fixed (Pointer* pointer = &text)
-            {
-                this.text = pointer;
-            }
+            text = MemoryAddress.AllocatePointer<TextPointer>();
+            text->length = 0;
+            text->buffer = MemoryAddress.AllocateEmpty();
         }
 #endif
 
@@ -107,15 +103,10 @@ namespace Unmanaged
         /// </summary>
         public Text(int length, char defaultCharacter = ' ')
         {
-            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
-            text.length = length;
-            text.buffer = MemoryAddress.Allocate(length * sizeof(char));
-            fixed (Pointer* pointer = &text)
-            {
-                this.text = pointer;
-            }
-
-            new Span<char>(text.buffer.Pointer, length).Fill(defaultCharacter);
+            text = MemoryAddress.AllocatePointer<TextPointer>();
+            text->length = length;
+            text->buffer = MemoryAddress.Allocate(length * sizeof(char));
+            new Span<char>(text->buffer.Pointer, length).Fill(defaultCharacter);
         }
 
         /// <summary>
@@ -123,13 +114,9 @@ namespace Unmanaged
         /// </summary>
         public Text(ReadOnlySpan<char> content)
         {
-            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
-            text.length = content.Length;
-            text.buffer = MemoryAddress.Allocate(content);
-            fixed (Pointer* pointer = &text)
-            {
-                this.text = pointer;
-            }
+            text = MemoryAddress.AllocatePointer<TextPointer>();
+            text->length = content.Length;
+            text->buffer = MemoryAddress.Allocate(content);
         }
 
         /// <summary>
@@ -137,14 +124,9 @@ namespace Unmanaged
         /// </summary>
         public Text(IReadOnlyCollection<char> content)
         {
-            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
-            text.length = content.Count;
-            text.buffer = MemoryAddress.Allocate(content.Count * sizeof(char));
-            fixed (Pointer* pointer = &text)
-            {
-                this.text = pointer;
-            }
-
+            text = MemoryAddress.AllocatePointer<TextPointer>();
+            text->length = content.Count;
+            text->buffer = MemoryAddress.Allocate(content.Count * sizeof(char));
             Append(content);
         }
 
@@ -153,14 +135,9 @@ namespace Unmanaged
         /// </summary>
         public Text(string content)
         {
-            ref Pointer text = ref MemoryAddress.Allocate<Pointer>();
-            text.length = content.Length;
-            ReadOnlySpan<char> contentSpan = content.AsSpan();
-            text.buffer = MemoryAddress.Allocate(contentSpan);
-            fixed (Pointer* pointer = &text)
-            {
-                this.text = pointer;
-            }
+            text = MemoryAddress.AllocatePointer<TextPointer>();
+            text->length = content.Length;
+            text->buffer = MemoryAddress.Allocate(content.AsSpan());
         }
 
         /// <summary>
@@ -168,7 +145,7 @@ namespace Unmanaged
         /// </summary>
         public Text(void* pointer)
         {
-            text = (Pointer*)pointer;
+            text = (TextPointer*)pointer;
         }
 
         /// <inheritdoc/>

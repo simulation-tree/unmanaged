@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using Pointer = Unmanaged.Pointers.ByteReader;
+using Unmanaged.Pointers;
 
 namespace Unmanaged
 {
@@ -12,7 +12,7 @@ namespace Unmanaged
     [SkipLocalsInit]
     public unsafe struct ByteReader : IDisposable, IEquatable<ByteReader>
     {
-        private Pointer* reader;
+        private ByteReaderPointer* reader;
 
         /// <summary>
         /// Position of the reader in the byte stream.
@@ -48,49 +48,46 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new binary reader from the given <paramref name="bytes"/>.
         /// </summary>
-        public ByteReader(ReadOnlySpan<byte> bytes, int position = 0)
+        public ByteReader(ReadOnlySpan<byte> bytes, int bytePosition = 0)
         {
-            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
-            reader = new(position, MemoryAddress.Allocate(bytes), bytes.Length, true);
-            fixed (Pointer* pointer = &reader)
-            {
-                this.reader = pointer;
-            }
+            reader = MemoryAddress.AllocatePointer<ByteReaderPointer>();
+            reader->isOriginal = true;
+            reader->bytePosition = bytePosition;
+            reader->byteLength = bytes.Length;
+            reader->data = MemoryAddress.Allocate(bytes);
         }
 
         /// <summary>
         /// Creates a new binary reader from the data in the <paramref name="writer"/>.
         /// </summary>
-        public ByteReader(ByteWriter writer, int position = 0)
+        public ByteReader(ByteWriter writer, int bytePosition = 0)
         {
-            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
-            reader = new(position, writer.Items, writer.Position, false);
-            fixed (Pointer* pointer = &reader)
-            {
-                this.reader = pointer;
-            }
+            reader = MemoryAddress.AllocatePointer<ByteReaderPointer>();
+            reader->isOriginal = false;
+            reader->bytePosition = bytePosition;
+            reader->byteLength = writer.Position;
+            reader->data = writer.Items;
         }
 
         /// <summary>
         /// Creates a new binary reader using the data inside the stream.
         /// </summary>
-        public ByteReader(Stream stream, int position = 0)
+        public ByteReader(Stream stream, int bytePosition = 0)
         {
             int byteLength = (int)stream.Length;
             MemoryAddress streamData = MemoryAddress.Allocate(byteLength);
             Span<byte> span = new(streamData.Pointer, byteLength);
             byteLength = stream.Read(span);
-            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
-            reader = new(position, streamData, span.Length, true);
-            fixed (Pointer* pointer = &reader)
-            {
-                this.reader = pointer;
-            }
+            reader = MemoryAddress.AllocatePointer<ByteReaderPointer>();
+            reader->isOriginal = true;
+            reader->bytePosition = bytePosition;
+            reader->byteLength = byteLength;
+            reader->data = streamData;
         }
 
         private ByteReader(void* value)
         {
-            reader = (Pointer*)value;
+            reader = (ByteReaderPointer*)value;
         }
 
 #if NET
@@ -99,12 +96,11 @@ namespace Unmanaged
         /// </summary>
         public ByteReader()
         {
-            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
-            reader = new(0, MemoryAddress.AllocateEmpty(), 0, true);
-            fixed (Pointer* pointer = &reader)
-            {
-                this.reader = pointer;
-            }
+            reader = MemoryAddress.AllocatePointer<ByteReaderPointer>();
+            reader->isOriginal = true;
+            reader->bytePosition = 0;
+            reader->byteLength = 0;
+            reader->data = MemoryAddress.AllocateEmpty();
         }
 #endif
 
@@ -138,12 +134,12 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            ref Pointer clone = ref MemoryAddress.Allocate<Pointer>();
-            clone = new(reader->bytePosition, MemoryAddress.Allocate(GetBytes()), reader->byteLength, true);
-            fixed (Pointer* pointer = &clone)
-            {
-                return new(pointer);
-            }
+            ByteReaderPointer* clone = MemoryAddress.AllocatePointer<ByteReaderPointer>();
+            clone->isOriginal = true;
+            clone->bytePosition = reader->bytePosition;
+            clone->byteLength = reader->byteLength;
+            clone->data = MemoryAddress.Allocate(GetBytes());
+            return new(clone);
         }
 
         /// <summary>
@@ -387,12 +383,12 @@ namespace Unmanaged
         /// </summary>
         public static ByteReader Create()
         {
-            ref Pointer reader = ref MemoryAddress.Allocate<Pointer>();
-            reader = new(0, MemoryAddress.AllocateEmpty(), 0, true);
-            fixed (Pointer* pointer = &reader)
-            {
-                return new(pointer);
-            }
+            ByteReaderPointer* reader = MemoryAddress.AllocatePointer<ByteReaderPointer>();
+            reader->isOriginal = true;
+            reader->bytePosition = 0;
+            reader->byteLength = 0;
+            reader->data = MemoryAddress.AllocateEmpty();
+            return new(reader);
         }
 
         /// <inheritdoc/>

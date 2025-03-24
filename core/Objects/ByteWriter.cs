@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Pointer = Unmanaged.Pointers.ByteWriter;
+using Unmanaged.Pointers;
 
 namespace Unmanaged
 {
@@ -11,7 +11,7 @@ namespace Unmanaged
     [SkipLocalsInit]
     public unsafe struct ByteWriter : IDisposable, IEquatable<ByteWriter>
     {
-        private Pointer* writer;
+        private ByteWriterPointer* writer;
 
         /// <summary>
         /// Indicates whether the writer has been disposed.
@@ -57,12 +57,10 @@ namespace Unmanaged
         public ByteWriter(int initialCapacity = 4)
         {
             initialCapacity = initialCapacity.GetNextPowerOf2();
-            ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
-            writer = new(MemoryAddress.Allocate(initialCapacity), 0, initialCapacity);
-            fixed (Pointer* pointer = &writer)
-            {
-                this.writer = pointer;
-            }
+            writer = MemoryAddress.AllocatePointer<ByteWriterPointer>();
+            writer->bytePosition = 0;
+            writer->byteCapacity = initialCapacity;
+            writer->data = MemoryAddress.Allocate(initialCapacity);
         }
 
         /// <summary>
@@ -72,15 +70,14 @@ namespace Unmanaged
         /// Position of the writer will be at the end of the span.
         /// </para>
         /// </summary>
-        public ByteWriter(Span<byte> span)
+        public ByteWriter(ReadOnlySpan<byte> span)
         {
-            ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
-            writer = new(MemoryAddress.Allocate(span), span.Length, span.Length);
-            writer.bytePosition = span.Length;
-            fixed (Pointer* pointer = &writer)
-            {
-                this.writer = pointer;
-            }
+            int initialCapacity = span.Length.GetNextPowerOf2();
+            writer = MemoryAddress.AllocatePointer<ByteWriterPointer>();
+            writer->bytePosition = span.Length;
+            writer->byteCapacity = initialCapacity;
+            writer->data = MemoryAddress.Allocate(initialCapacity);
+            writer->data.Write(0, span);
         }
 #if NET
         /// <summary>
@@ -88,17 +85,15 @@ namespace Unmanaged
         /// </summary>
         public ByteWriter()
         {
-            ref Pointer writer = ref MemoryAddress.Allocate<Pointer>();
-            writer = new(MemoryAddress.AllocateEmpty(), 0, 0);
-            fixed (Pointer* pointer = &writer)
-            {
-                this.writer = pointer;
-            }
+            writer = MemoryAddress.AllocatePointer<ByteWriterPointer>();
+            writer->bytePosition = 0;
+            writer->byteCapacity = 0;
+            writer->data = MemoryAddress.AllocateEmpty();
         }
 #endif
         private ByteWriter(void* value)
         {
-            writer = (Pointer*)value;
+            writer = (ByteWriterPointer*)value;
         }
 
         /// <summary>
@@ -109,11 +104,11 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + sizeof(T);
-            int capacity = writer->capacity;
+            int capacity = writer->byteCapacity;
             if (capacity < endPosition)
             {
-                writer->capacity = endPosition.GetNextPowerOf2();
-                MemoryAddress.Resize(ref writer->data, writer->capacity);
+                writer->byteCapacity = endPosition.GetNextPowerOf2();
+                MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
             }
 
             writer->data.Write(writer->bytePosition, value);
@@ -128,11 +123,11 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + sizeof(T) * span.Length;
-            int capacity = writer->capacity;
+            int capacity = writer->byteCapacity;
             if (capacity < endPosition)
             {
-                writer->capacity = endPosition.GetNextPowerOf2();
-                MemoryAddress.Resize(ref writer->data, writer->capacity);
+                writer->byteCapacity = endPosition.GetNextPowerOf2();
+                MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
             }
 
             writer->data.Write(writer->bytePosition, span);
@@ -147,11 +142,11 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + sizeof(T) * span.Length;
-            int capacity = writer->capacity;
+            int capacity = writer->byteCapacity;
             if (capacity < endPosition)
             {
-                writer->capacity = endPosition.GetNextPowerOf2();
-                MemoryAddress.Resize(ref writer->data, writer->capacity);
+                writer->byteCapacity = endPosition.GetNextPowerOf2();
+                MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
             }
 
             writer->data.Write(writer->bytePosition, span);
@@ -166,11 +161,11 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + byteLength;
-            int capacity = writer->capacity;
+            int capacity = writer->byteCapacity;
             if (capacity < endPosition)
             {
-                writer->capacity = endPosition.GetNextPowerOf2();
-                MemoryAddress.Resize(ref writer->data, writer->capacity);
+                writer->byteCapacity = endPosition.GetNextPowerOf2();
+                MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
             }
 
             writer->data.Write(writer->bytePosition, byteLength, data);
@@ -281,7 +276,7 @@ namespace Unmanaged
         [Conditional("DEBUG")]
         private readonly void ThrowIfPositionPastCapacity(int newPosition)
         {
-            if (newPosition > writer->capacity)
+            if (newPosition > writer->byteCapacity)
             {
                 throw new ArgumentOutOfRangeException(nameof(newPosition));
             }
