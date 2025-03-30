@@ -16,10 +16,19 @@ public readonly struct Application : IDisposable
         {
             if (args[i] == "--generate-ascii-text")
             {
-                for (int t = 0; t < Generator.typeSizes.Length; t++)
+                for (int t = 0; t < ASCIITextGenerator.typeSizes.Length; t++)
                 {
-                    int typeSize = Generator.typeSizes[t];
-                    File.WriteAllText($"ASCIIText{typeSize}.cs", Generator.GenerateASCIIText(typeSize));
+                    int typeSize = ASCIITextGenerator.typeSizes[t];
+                    string fileName = $"ASCIIText{typeSize}.cs";
+                    File.WriteAllText(fileName, ASCIITextGenerator.Generate(typeSize));
+                }
+            }
+            else if (args[i] == "--generate-value-arrays")
+            {
+                for (int t = ValueArrayGenerator.minSize; t <= ValueArrayGenerator.maxSize; t++)
+                {
+                    string fileName = $"ValueArray{t}.cs";
+                    File.WriteAllText(fileName, ValueArrayGenerator.Generate(t));
                 }
             }
         }

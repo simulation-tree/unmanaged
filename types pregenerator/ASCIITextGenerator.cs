@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Text;
 
-public static class Generator
+public static class ASCIITextGenerator
 {
     public const string TypeName = "ASCIIText";
     public static readonly int[] typeSizes = [8, 16, 32, 64, 128, 256, 512, 1024];
 
-    public static string GenerateASCIIText(int typeSize)
+    public static string Generate(int typeSize)
     {
         if (EmbeddedResources.TryGet($"{TypeName}.txt", out string? source))
         {
