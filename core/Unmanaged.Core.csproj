@@ -35,6 +35,7 @@
 
 	<ItemGroup>
 		<Content Include="**\*.cs" PackagePath="contentFiles\cs\any\Unmanaged.Core" />
+		<None Include="build\Unmanaged.Core.targets" Pack="true" PackagePath="build\Unmanaged.Core.targets" />
 	</ItemGroup>
 
 	<ItemGroup>
