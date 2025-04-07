@@ -21,6 +21,7 @@
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<WarningLevel>8</WarningLevel>
 		<IncludeBuildOutput>False</IncludeBuildOutput>
+		<NoWarn>NU5128</NoWarn>
 		<PackageId />
 	</PropertyGroup>
 
