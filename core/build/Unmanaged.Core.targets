@@ -1,5 +1,0 @@
-<Project>
-  <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\contentFiles\cs\any\Unmanaged.Core\**\*.cs" />
-  </ItemGroup>
-</Project>
