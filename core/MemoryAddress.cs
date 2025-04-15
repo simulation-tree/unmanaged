@@ -47,6 +47,14 @@ namespace Unmanaged
             this.pointer = (byte*)pointer;
         }
 
+        /// <summary>
+        /// Initializes an existing allocation from the given native <paramref name="address"/>.
+        /// </summary>
+        public MemoryAddress(nint address)
+        {
+            this.pointer = (byte*)address;
+        }
+
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
