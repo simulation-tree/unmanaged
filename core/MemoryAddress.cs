@@ -342,7 +342,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Resets the memory to <c>default</c> state.
+        /// Resets the memory to <see langword="default"/> state.
         /// </summary>
         public readonly void Clear(int byteLength)
         {
@@ -353,7 +353,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Resets a range of memory to <c>default</c> state.
+        /// Resets a range of memory to <see langword="default"/> state.
         /// </summary>
         public readonly void Clear(int bytePosition, int byteLength)
         {
@@ -361,6 +361,17 @@ namespace Unmanaged
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
             new Span<byte>(pointer + bytePosition, byteLength).Clear();
+        }
+
+        /// <summary>
+        /// Resets a range of memory to <see langword="default"/> state.
+        /// </summary>
+        public readonly void Clear<T>(int elementStart, int elementLength) where T : unmanaged
+        {
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, (elementStart + elementLength) * sizeof(T));
+
+            new Span<T>(pointer + elementStart, elementLength).Clear();
         }
 
         /// <summary>
@@ -521,27 +532,79 @@ namespace Unmanaged
 
         /// <summary>
         /// Moves existing memory into a new allocation of the given <paramref name="newByteLength"/>.
+        /// <para>
+        /// New bytes are uninitialized and not guaranteed to be <see langword="default"/>/
+        /// </para>
         /// </summary>
         public static void Resize(ref MemoryAddress allocation, int newByteLength)
         {
             ThrowIfDefault(allocation.pointer);
 
+#if TRACE
             void* previousPointer = allocation.pointer;
             allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)newByteLength);
             MemoryTracker.Move(previousPointer, allocation.pointer, newByteLength);
+#else
+            allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)newByteLength);
+#endif
+        }
+
+        /// <summary>
+        /// Moves existing memory into a new allocation of the given <paramref name="newByteLength"/>,
+        /// and clears new bytes to <see langword="default"/>.
+        /// </summary>
+        public static void ResizeAndClear(ref MemoryAddress allocation, int currentByteLength, int newByteLength)
+        {
+            ThrowIfDefault(allocation.pointer);
+
+#if TRACE
+            void* previousPointer = allocation.pointer;
+            allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)newByteLength);
+            NativeMemory.Clear(allocation.pointer + currentByteLength, (uint)(newByteLength - currentByteLength));
+            MemoryTracker.Move(previousPointer, allocation.pointer, newByteLength);
+#else
+            allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)newByteLength);
+            NativeMemory.Clear(allocation.pointer + currentByteLength, (uint)(newByteLength - currentByteLength));
+#endif
+        }
+
+        /// <summary>
+        /// Moves existing memory into a new allocation that is twice as large as <paramref name="currentByteLength"/>,
+        /// and clears new bytes to <see langword="default"/>.
+        /// </summary>
+        public static void ResizePowerOf2AndClear(ref MemoryAddress allocation, int currentByteLength)
+        {
+            ThrowIfDefault(allocation.pointer);
+
+#if TRACE
+            void* previousPointer = allocation.pointer;
+            allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)currentByteLength * 2);
+            NativeMemory.Clear(allocation.pointer + currentByteLength, (uint)currentByteLength);
+            MemoryTracker.Move(previousPointer, allocation.pointer, currentByteLength * 2);
+#else
+            allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)currentByteLength * 2);
+            NativeMemory.Clear(allocation.pointer + currentByteLength, (uint)currentByteLength);
+#endif
         }
 
         /// <summary>
         /// Moves existing memory into a new allocation that is able to
         /// fit <typeparamref name="T"/>.
+        /// <para>
+        /// New bytes are uninitialized and not guaranteed to be <see langword="default"/>/
+        /// </para>
         /// </summary>
         public static void Resize<T>(ref MemoryAddress allocation) where T : unmanaged
         {
             ThrowIfDefault(allocation.pointer);
 
+#if TRACE
             void* previousPointer = allocation.pointer;
             allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)sizeof(T));
             MemoryTracker.Move(previousPointer, allocation.pointer, sizeof(T));
+#else
+            allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)sizeof(T));
+#endif
         }
 
         /// <summary>
@@ -549,9 +612,13 @@ namespace Unmanaged
         /// </summary>
         public static MemoryAddress AllocateEmpty()
         {
+#if TRACE
             void* pointer = NativeMemory.Alloc(0);
             MemoryTracker.Track(pointer, 0);
             return new(pointer);
+#else
+            return new(NativeMemory.Alloc(0));
+#endif
         }
 
         /// <summary>
@@ -617,10 +684,16 @@ namespace Unmanaged
         /// </summary>
         public static MemoryAddress AllocateValue<T>(T value) where T : unmanaged
         {
+#if TRACK
             void* pointer = NativeMemory.Alloc((uint)sizeof(T));
             MemoryTracker.Track(pointer, sizeof(T));
             *(T*)pointer = value;
             return new(pointer);
+#else
+            void* pointer = NativeMemory.Alloc((uint)sizeof(T));
+            *(T*)pointer = value;
+            return new(pointer);
+#endif
         }
 
         /// <summary>
@@ -656,12 +729,17 @@ namespace Unmanaged
         /// </summary>
         public static MemoryAddress Allocate<T>(Span<T> source) where T : unmanaged
         {
+#if TRACK
             int byteLength = sizeof(T) * source.Length;
             void* pointer = NativeMemory.Alloc((uint)byteLength);
             MemoryTracker.Track(pointer, byteLength);
-            Span<T> destination = new(pointer, source.Length);
-            source.CopyTo(destination);
+            source.CopyTo(new(pointer, source.Length));
             return new(pointer);
+#else
+            void* pointer = NativeMemory.Alloc((uint)(sizeof(T) * source.Length));
+            source.CopyTo(new(pointer, source.Length));
+            return new(pointer);
+#endif
         }
 
         /// <summary>
@@ -669,12 +747,17 @@ namespace Unmanaged
         /// </summary>
         public static MemoryAddress Allocate<T>(ReadOnlySpan<T> source) where T : unmanaged
         {
+#if TRACK
             int byteLength = sizeof(T) * source.Length;
             void* pointer = NativeMemory.Alloc((uint)byteLength);
             MemoryTracker.Track(pointer, byteLength);
-            Span<T> destination = new(pointer, source.Length);
-            source.CopyTo(destination);
+            source.CopyTo(new(pointer, source.Length));
             return new(pointer);
+#else
+            void* pointer = NativeMemory.Alloc((uint)(sizeof(T) * source.Length));
+            source.CopyTo(new(pointer, source.Length));
+            return new(pointer);
+#endif
         }
 
         /// <summary>
