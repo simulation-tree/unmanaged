@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 
 [assembly: InternalsVisibleTo("Unmanaged.Tests")]
@@ -18,14 +20,37 @@ namespace Unmanaged
         private static readonly Dictionary<nint, int> allocations = new();
         private static readonly Dictionary<nint, StackTrace> allocationStackTraces = new();
 
-        public static void ThrowIfAny()
+        public static void ThrowIfAny(bool freeAll = false)
         {
             threadLock.EnterReadLock();
             try
             {
                 if (allocations.Count > 0)
                 {
-                    throw new Exception($"Memory leak detected: {allocations.Count} allocations not freed");
+                    StringBuilder builder = new();
+                    builder.AppendLine($"Memory leak detected, the following {allocations.Count} allocation(s) were not freed:");
+                    foreach (nint address in allocations.Keys)
+                    {
+                        StackTrace stackTrace = allocationStackTraces[address];
+                        builder.AppendLine($"    Size {allocations[address]} bytes:");
+                        foreach (StackFrame frame in stackTrace.GetFrames())
+                        {
+                            builder.AppendLine($"        {frame}");
+                        }
+                    }
+
+                    if (freeAll)
+                    {
+                        foreach (nint address in allocations.Keys)
+                        {
+                            NativeMemory.Free((void*)address);
+                        }
+
+                        allocations.Clear();
+                        allocationStackTraces.Clear();
+                    }
+
+                    throw new Exception(builder.ToString());
                 }
             }
             finally
@@ -134,7 +159,7 @@ namespace Unmanaged
 
 #else
         [Conditional("TRACK")]
-        public static void ThrowIfAny()
+        public static void ThrowIfAny(bool freeAll = false)
         {
         }
 

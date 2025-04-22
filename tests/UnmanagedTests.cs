@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Unmanaged.Tests
+﻿namespace Unmanaged.Tests
 {
     public abstract class UnmanagedTests
     {
@@ -12,17 +10,7 @@ namespace Unmanaged.Tests
         [TearDown]
         protected virtual void TearDown()
         {
-            MemoryTracker.ThrowIfAny();
-        }
-
-        protected static bool IsRunningRemotely()
-        {
-            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") is not null)
-            {
-                return true;
-            }
-
-            return false;
+            MemoryTracker.ThrowIfAny(true);
         }
     }
 }
