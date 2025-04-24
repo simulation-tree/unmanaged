@@ -35,7 +35,36 @@ namespace Unmanaged
                         builder.AppendLine($"    Size {allocations[address]} bytes:");
                         foreach (StackFrame frame in stackTrace.GetFrames())
                         {
-                            builder.AppendLine($"        {frame}");
+                            builder.Append("        ");
+                            if (DiagnosticMethodInfo.Create(frame) is DiagnosticMethodInfo method)
+                            {
+                                //todo: what if the method is generic?
+                                builder.Append(method.Name);
+                            }
+                            else
+                            {
+                                builder.Append('?');
+                            }
+
+                            if (frame.HasILOffset())
+                            {
+                                builder.Append(" at offset ");
+                                builder.Append(frame.GetILOffset());
+                            }
+
+                            builder.Append(" in ");
+                            if (frame.GetFileName() is string fileName)
+                            {
+                                builder.Append(fileName);
+                            }
+                            else
+                            {
+                                builder.Append("<unknown file>");
+                            }
+
+                            builder.Append(':');
+                            builder.Append(frame.GetFileLineNumber());
+                            builder.AppendLine();
                         }
                     }
 
