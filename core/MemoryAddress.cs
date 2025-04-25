@@ -697,6 +697,24 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Creates a new allocation that contains the data of the given <paramref name="value"/>.
+        /// </summary>
+        public static MemoryAddress AllocateValue<T>(T value, out int size) where T : unmanaged
+        {
+            size = sizeof(T);
+#if TRACK
+            void* pointer = NativeMemory.Alloc((uint)size);
+            MemoryTracker.Track(pointer, size);
+            *(T*)pointer = value;
+            return new(pointer);
+#else
+            void* pointer = NativeMemory.Alloc((uint)size);
+            *(T*)pointer = value;
+            return new(pointer);
+#endif
+        }
+
+        /// <summary>
         /// Creates a new uninitialized allocation that can contain a(n) <typeparamref name="T"/>
         /// </summary>
         public static ref T Allocate<T>() where T : unmanaged
