@@ -370,6 +370,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
+            if (repeat == 0) return;
             int newLength = text->length + repeat;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
             Slice(text->length, repeat).Fill(character);
