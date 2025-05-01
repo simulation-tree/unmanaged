@@ -1009,6 +1009,18 @@ namespace Unmanaged
                 return text.ToString();
             }
 
+            /// <inheritdoc/>
+            public readonly override bool Equals(object? obj)
+            {
+                return obj is Borrowed && Equals((Borrowed)obj);
+            }
+
+            /// <inheritdoc/>
+            public override int GetHashCode()
+            {
+                return text.GetHashCode();
+            }
+
             /// <summary>
             /// Checks if this text equals to the <paramref name="other"/> text.
             /// </summary>
