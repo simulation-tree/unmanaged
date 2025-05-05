@@ -717,14 +717,15 @@ namespace Unmanaged
         /// <summary>
         /// Creates a new uninitialized allocation that can contain a(n) <typeparamref name="T"/>
         /// </summary>
-        public static ref T Allocate<T>() where T : unmanaged
+        public static ref T Allocate<T>(out MemoryAddress allocation) where T : unmanaged
         {
 #if TRACK
-            void* pointer = NativeMemory.Alloc((uint)sizeof(T));
-            MemoryTracker.Track(pointer, sizeof(T));
-            return ref *(T*)pointer;
+            allocation = new(NativeMemory.Alloc((uint)sizeof(T)));
+            MemoryTracker.Track(allocation.pointer, sizeof(T));
+            return ref *(T*)allocation.pointer;
 #else
-            return ref *(T*)NativeMemory.Alloc((uint)sizeof(T));
+            allocation = new(NativeMemory.Alloc((uint)sizeof(T)));
+            return ref *(T*)allocation.pointer;
 #endif
         }
 
