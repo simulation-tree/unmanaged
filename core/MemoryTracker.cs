@@ -36,6 +36,7 @@ namespace Unmanaged
                         foreach (StackFrame frame in stackTrace.GetFrames())
                         {
                             builder.Append("        ");
+#if NET
                             if (DiagnosticMethodInfo.Create(frame) is DiagnosticMethodInfo method)
                             {
                                 //todo: what if the method is generic?
@@ -45,7 +46,16 @@ namespace Unmanaged
                             {
                                 builder.Append('?');
                             }
-
+#else
+                            if (frame.HasMethod())
+                            {
+                                builder.Append(frame.GetMethod().Name);
+                            }
+                            else
+                            {
+                                builder.Append('?');
+                            }
+#endif
                             if (frame.HasILOffset())
                             {
                                 builder.Append(" at offset ");
