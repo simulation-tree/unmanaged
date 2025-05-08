@@ -235,7 +235,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the first occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryIndexOf<T>(this Span<T> span, T value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.IndexOf(value);
@@ -245,7 +245,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the first occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryIndexOf<T>(this ReadOnlySpan<T> span, T value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.IndexOf(value);
@@ -255,7 +255,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the last occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryLastIndexOf<T>(this Span<T> span, T value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.LastIndexOf(value);
@@ -265,7 +265,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the last occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryLastIndexOf<T>(this ReadOnlySpan<T> span, T value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.LastIndexOf(value);
@@ -275,7 +275,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the first occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryIndexOf<T>(this Span<T> span, ReadOnlySpan<T> value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.IndexOf(value);
@@ -285,7 +285,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the first occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryIndexOf<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.IndexOf(value);
@@ -295,7 +295,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the last occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryLastIndexOf<T>(this Span<T> span, ReadOnlySpan<T> value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.LastIndexOf(value);
@@ -305,7 +305,7 @@ namespace System
         /// <summary>
         /// Attempts to retrieve the index of the last occurrence of the given <paramref name="value"/>.
         /// </summary>
-        /// <returns><c>true</c> if contained.</returns>
+        /// <returns><see langword="true"/> if contained.</returns>
         public static bool TryLastIndexOf<T>(this ReadOnlySpan<T> span, ReadOnlySpan<T> value, out int index) where T : unmanaged, IEquatable<T>
         {
             index = span.LastIndexOf(value);

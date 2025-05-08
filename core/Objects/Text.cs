@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Unmanaged.Pointers;
 
 namespace Unmanaged
@@ -9,6 +10,7 @@ namespace Unmanaged
     /// <summary>
     /// Container of variable length text.
     /// </summary>
+    [SkipLocalsInit]
     public unsafe struct Text : IDisposable, IEquatable<Text>, IList<char>, IReadOnlyList<char>
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -368,6 +370,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
+            if (repeat == 0) return;
             int newLength = text->length + repeat;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
             Slice(text->length, repeat).Fill(character);
@@ -418,6 +421,37 @@ namespace Unmanaged
 
             text->length = newLength;
         }
+
+#if NET
+        /// <summary>
+        /// Appends a single <paramref name="value"/>.
+        /// </summary>
+        public readonly void Append<T>(T value) where T : ISpanFormattable
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            Span<char> buffer = stackalloc char[1024];
+            value.TryFormat(buffer, out int charsWritten, default, default);
+            int newLength = text->length + charsWritten;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            text->buffer.CopyFrom(buffer.Slice(0, charsWritten), text->length);
+            text->length = newLength;
+        }
+#else
+        /// <summary>
+        /// Appends a single <paramref name="value"/>.
+        /// </summary>
+        public readonly void Append<T>(T value) where T : IFormattable
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            string buffer = value.ToString(default, default);
+            int newLength = text->length + buffer.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            text->buffer.CopyFrom(buffer.AsSpan(), text->length);
+            text->length = newLength;
+        }
+#endif
 
         /// <summary>
         /// Appends a new line feed character.
@@ -471,6 +505,20 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Removes a range of text starting at <paramref name="start"/>.
+        /// </summary>
+        public readonly void Remove(int start, int length)
+        {
+            ThrowIfOutOfRange(start);
+            ThrowIfGreaterThanRange(start + length);
+
+            Span<char> buffer = stackalloc char[text->length];
+            CopyTo(buffer);
+            buffer.Slice(start + length).CopyTo(buffer.Slice(start));
+            CopyFrom(buffer.Slice(0, text->length - length));
+        }
+
+        /// <summary>
         /// Retrieves the index for the first occurance of the given <paramref name="character"/>.
         /// </summary>
         public readonly int IndexOf(char character)
@@ -510,58 +558,94 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(text);
             ThrowIfGreaterThanRange(index);
 
-            int newLength = text->length + 1;
-            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            if (text->length > index)
-            {
-                Span<char> left = Slice(index);
-                left.CopyTo(Slice(index + 1, left.Length));
-            }
-
-            text->buffer.WriteElement(index, character);
-            text->length = newLength;
+            Span<char> buffer = stackalloc char[text->length + 1];
+            CopyTo(buffer);
+            int shiftAmount = text->length - index;
+            buffer.Slice(index, shiftAmount).CopyTo(buffer.Slice(index + 1, shiftAmount));
+            buffer[index] = character;
+            MemoryAddress.Resize(ref text->buffer, buffer.Length * sizeof(char));
+            text->length = buffer.Length;
+            text->buffer.CopyFrom(buffer);
         }
 
         /// <summary>
         /// Inserts the <paramref name="otherText"/> at the given <paramref name="index"/>.
         /// </summary>
-        public readonly void Insert(int index, Span<char> otherText)
+        public readonly void Insert(int index, ReadOnlySpan<char> otherText)
         {
             MemoryAddress.ThrowIfDefault(text);
             ThrowIfGreaterThanRange(index);
 
-            int newLength = text->length + otherText.Length;
-            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            Span<char> left = Slice(index, otherText.Length);
-            if (text->length > index)
-            {
-                left.CopyTo(Slice(index + otherText.Length, otherText.Length));
-            }
-
-            otherText.CopyTo(left);
-            text->length = newLength;
+            Span<char> buffer = stackalloc char[text->length + otherText.Length];
+            CopyTo(buffer);
+            int shiftAmount = text->length - index;
+            buffer.Slice(index, shiftAmount).CopyTo(buffer.Slice(index + otherText.Length, shiftAmount));
+            otherText.CopyTo(buffer.Slice(index));
+            MemoryAddress.Resize(ref text->buffer, buffer.Length * sizeof(char));
+            text->length = buffer.Length;
+            text->buffer.CopyFrom(buffer);
         }
 
         /// <summary>
-        /// Inserts the <paramref name="otherText"/> at the given <paramref name="index"/>.
+        /// Inserts the given <paramref name="otherText"/> at the <paramref name="index"/>.
         /// </summary>
         public readonly void Insert(int index, string otherText)
         {
             MemoryAddress.ThrowIfDefault(text);
             ThrowIfGreaterThanRange(index);
 
-            int otherTextLength = otherText.Length;
-            int newLength = text->length + otherTextLength;
-            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            Span<char> left = Slice(index, otherTextLength);
-            if (text->length > index)
-            {
-                left.CopyTo(Slice(index + otherTextLength, otherTextLength));
-            }
-
-            otherText.AsSpan().CopyTo(left);
-            text->length = newLength;
+            Span<char> buffer = stackalloc char[text->length + otherText.Length];
+            CopyTo(buffer);
+            int shiftAmount = text->length - index;
+            buffer.Slice(index, shiftAmount).CopyTo(buffer.Slice(index + otherText.Length, shiftAmount));
+            otherText.AsSpan().CopyTo(buffer.Slice(index));
+            MemoryAddress.Resize(ref text->buffer, buffer.Length * sizeof(char));
+            text->length = buffer.Length;
+            text->buffer.CopyFrom(buffer);
         }
+
+#if NET
+        /// <summary>
+        /// Inserts the given <paramref name="otherValue"/> at the <paramref name="index"/>.
+        /// </summary>
+        public readonly void Insert<T>(int index, T otherValue) where T : ISpanFormattable
+        {
+            MemoryAddress.ThrowIfDefault(text);
+            ThrowIfGreaterThanRange(index);
+
+            Span<char> valueBuffer = stackalloc char[1024];
+            otherValue.TryFormat(valueBuffer, out int otherTextLength, default, default);
+
+            Span<char> buffer = stackalloc char[text->length + otherTextLength];
+            CopyTo(buffer);
+            int shiftAmount = text->length - index;
+            buffer.Slice(index, shiftAmount).CopyTo(buffer.Slice(index + otherTextLength, shiftAmount));
+            valueBuffer.Slice(0, otherTextLength).CopyTo(buffer.Slice(index));
+            MemoryAddress.Resize(ref text->buffer, buffer.Length * sizeof(char));
+            text->length = buffer.Length;
+            text->buffer.CopyFrom(buffer);
+        }
+#else
+        /// <summary>
+        /// Inserts the given <paramref name="otherValue"/> at the <paramref name="index"/>.
+        /// </summary>
+        public readonly void Insert<T>(int index, T otherValue) where T : IFormattable
+        {
+            MemoryAddress.ThrowIfDefault(text);
+            ThrowIfGreaterThanRange(index);
+
+            string valueBuffer = otherValue.ToString(default, default);
+            int otherTextLength = valueBuffer.Length;
+            Span<char> buffer = stackalloc char[text->length + otherTextLength];
+            CopyTo(buffer);
+            int shiftAmount = text->length - index;
+            buffer.Slice(index, shiftAmount).CopyTo(buffer.Slice(index + otherTextLength, shiftAmount));
+            valueBuffer.AsSpan().CopyTo(buffer.Slice(index));
+            MemoryAddress.Resize(ref text->buffer, buffer.Length * sizeof(char));
+            text->length = buffer.Length;
+            text->buffer.CopyFrom(buffer);
+        }
+#endif
 
         /// <summary>
         /// Checks if this text ends with <paramref name="otherText"/>.
@@ -676,6 +760,25 @@ namespace Unmanaged
                 {
                     char c = text->buffer.ReadElement<char>(i);
                     hash = hash * 23 + c.GetHashCode();
+                }
+
+                return hash;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves a double precision hash code.
+        /// </summary>
+        public readonly long GetLongHashCode()
+        {
+            unchecked
+            {
+                long hash = 3074457345618258791;
+                Span<char> text = new(this.text->buffer.Pointer, this.text->length);
+                for (int i = 0; i < text.Length; i++)
+                {
+                    hash += text[i];
+                    hash *= 3074457345618258799;
                 }
 
                 return hash;
@@ -904,6 +1007,18 @@ namespace Unmanaged
             public readonly override string ToString()
             {
                 return text.ToString();
+            }
+
+            /// <inheritdoc/>
+            public readonly override bool Equals(object? obj)
+            {
+                return obj is Borrowed && Equals((Borrowed)obj);
+            }
+
+            /// <inheritdoc/>
+            public override int GetHashCode()
+            {
+                return text.GetHashCode();
             }
 
             /// <summary>

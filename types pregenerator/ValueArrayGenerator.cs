@@ -2,7 +2,7 @@
 {
     public static readonly int minSize = 2;
     public static readonly int maxSize = 2048;
-    private const string Template = 
+    private const string Template =
 @"using System.Runtime.CompilerServices;
 
 namespace Unmanaged

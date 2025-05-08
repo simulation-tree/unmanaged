@@ -71,6 +71,23 @@ namespace Unmanaged.Tests
         }
 
         [Test]
+        public void RemoveRange()
+        {
+            using Text text = new("Hello there");
+            text.Remove(0, 6);
+
+            Assert.That(text.ToString(), Is.EqualTo("there"));
+
+            text.Remove(3, 2);
+
+            Assert.That(text.ToString(), Is.EqualTo("the"));
+
+            text.Remove(2, 1);
+
+            Assert.That(text.ToString(), Is.EqualTo("th"));
+        }
+
+        [Test]
         public void ClearByRemoving()
         {
             using Text text = new("Hello there");
@@ -184,6 +201,34 @@ namespace Unmanaged.Tests
             text.Insert(text.Length, " is");
 
             Assert.That(text.ToString(), Is.EqualTo("Hello world, there is"));
+        }
+
+        [Test]
+        public void InsertDigits()
+        {
+            using Text text = new();
+            text.Append(2025);
+            text.Insert(2, 1337);
+
+            Assert.That(text.ToString(), Is.EqualTo("20133725"));
+        }
+
+        [Test]
+        public void RemoveThenInsertToReplace()
+        {
+            using Text text = new("This is the way");
+
+            Assert.That(text.Length, Is.EqualTo(15));
+
+            text.Remove(5, 2);
+
+            Assert.That(text.Length, Is.EqualTo(13));
+            Assert.That(text.ToString(), Is.EqualTo("This  the way"));
+
+            text.Insert(5, "isnt");
+
+            Assert.That(text.Length, Is.EqualTo(17));
+            Assert.That(text.ToString(), Is.EqualTo("This isnt the way"));
         }
     }
 }

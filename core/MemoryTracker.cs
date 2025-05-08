@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 
 [assembly: InternalsVisibleTo("Unmanaged.Tests")]
@@ -18,14 +20,66 @@ namespace Unmanaged
         private static readonly Dictionary<nint, int> allocations = new();
         private static readonly Dictionary<nint, StackTrace> allocationStackTraces = new();
 
-        public static void ThrowIfAny()
+        public static void ThrowIfAny(bool freeAll = false)
         {
             threadLock.EnterReadLock();
             try
             {
                 if (allocations.Count > 0)
                 {
-                    throw new Exception($"Memory leak detected: {allocations.Count} allocations not freed");
+                    StringBuilder builder = new();
+                    builder.AppendLine($"Memory leak detected, the following {allocations.Count} allocation(s) were not freed:");
+                    foreach (nint address in allocations.Keys)
+                    {
+                        StackTrace stackTrace = allocationStackTraces[address];
+                        builder.AppendLine($"    Size {allocations[address]} bytes:");
+                        foreach (StackFrame frame in stackTrace.GetFrames())
+                        {
+                            builder.Append("        ");
+                            if (DiagnosticMethodInfo.Create(frame) is DiagnosticMethodInfo method)
+                            {
+                                //todo: what if the method is generic?
+                                builder.Append(method.Name);
+                            }
+                            else
+                            {
+                                builder.Append('?');
+                            }
+
+                            if (frame.HasILOffset())
+                            {
+                                builder.Append(" at offset ");
+                                builder.Append(frame.GetILOffset());
+                            }
+
+                            builder.Append(" in ");
+                            if (frame.GetFileName() is string fileName)
+                            {
+                                builder.Append(fileName);
+                            }
+                            else
+                            {
+                                builder.Append("<unknown file>");
+                            }
+
+                            builder.Append(':');
+                            builder.Append(frame.GetFileLineNumber());
+                            builder.AppendLine();
+                        }
+                    }
+
+                    if (freeAll)
+                    {
+                        foreach (nint address in allocations.Keys)
+                        {
+                            NativeMemory.Free((void*)address);
+                        }
+
+                        allocations.Clear();
+                        allocationStackTraces.Clear();
+                    }
+
+                    throw new Exception(builder.ToString());
                 }
             }
             finally
@@ -134,7 +188,7 @@ namespace Unmanaged
 
 #else
         [Conditional("TRACK")]
-        public static void ThrowIfAny()
+        public static void ThrowIfAny(bool freeAll = false)
         {
         }
 
