@@ -4,6 +4,15 @@
 
 Library containing primitives for working with native C#.
 
+### Installation
+
+Install it by cloning it, or referencing through the NuGet package through GitHub's registry ([authentication info](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry#authenticating-to-github-packages)).
+
+For installing as a Unity package, use this git url to add it:
+```
+https://github.com/simulation-tree/unmanaged.git?path=core#unity
+```
+
 ### Memory Addresses
 
 `MemoryAddress` instances can point to either heap or stack memory. They can be
