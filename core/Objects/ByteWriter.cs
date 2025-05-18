@@ -173,38 +173,38 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Writes the given character as a UTF-8 character.
+        /// Writes the given <paramref name="character"/> as a UTF-8 character.
         /// </summary>
-        public void WriteUTF8(char value)
+        public readonly void WriteUTF8(char character)
         {
-            if (value < 0x7F)
+            if (character < 0x7F)
             {
-                WriteValue((byte)value);
+                WriteValue((byte)character);
             }
-            else if (value < 0x7FF)
+            else if (character < 0x7FF)
             {
-                WriteValue((byte)(0xC0 | (value >> 6)));
-                WriteValue((byte)(0x80 | (value & 0x3F)));
+                WriteValue((byte)(0xC0 | (character >> 6)));
+                WriteValue((byte)(0x80 | (character & 0x3F)));
             }
-            else if (value < 0xFFFF)
+            else if (character < 0xFFFF)
             {
-                WriteValue((byte)(0xE0 | (value >> 12)));
-                WriteValue((byte)(0x80 | ((value >> 6) & 0x3F)));
-                WriteValue((byte)(0x80 | (value & 0x3F)));
+                WriteValue((byte)(0xE0 | (character >> 12)));
+                WriteValue((byte)(0x80 | ((character >> 6) & 0x3F)));
+                WriteValue((byte)(0x80 | (character & 0x3F)));
             }
             else
             {
-                WriteValue((byte)(0xF0 | (value >> 18)));
-                WriteValue((byte)(0x80 | ((value >> 12) & 0x3F)));
-                WriteValue((byte)(0x80 | ((value >> 6) & 0x3F)));
-                WriteValue((byte)(0x80 | (value & 0x3F)));
+                WriteValue((byte)(0xF0 | (character >> 18)));
+                WriteValue((byte)(0x80 | ((character >> 12) & 0x3F)));
+                WriteValue((byte)(0x80 | ((character >> 6) & 0x3F)));
+                WriteValue((byte)(0x80 | (character & 0x3F)));
             }
         }
 
         /// <summary>
-        /// Writes only the content of this text, without a terminator.
+        /// Writes only the content of this <paramref name="text"/>, without a terminator.
         /// </summary>
-        public void WriteUTF8(ReadOnlySpan<char> text)
+        public readonly void WriteUTF8(ReadOnlySpan<char> text)
         {
             for (int i = 0; i < text.Length; i++)
             {
@@ -235,7 +235,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Writes only the content of this text, without a terminator.
+        /// Writes only the content of this <paramref name="text"/>, without a terminator.
         /// </summary>
         public void WriteUTF8(ASCIIText256 text)
         {
@@ -245,7 +245,7 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Writes only the content of this text, without a terminator.
+        /// Writes only the content of this <paramref name="text"/>, without a terminator.
         /// </summary>
         public void WriteUTF8(string text)
         {
@@ -255,9 +255,17 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Writes the given <see cref="ISerializable"/> object to the writer.
+        /// Writes the given <see cref="ISerializable"/> <paramref name="value"/> to the writer.
         /// </summary>
         public readonly void WriteObject<T>(T value) where T : ISerializable
+        {
+            value.Write(this);
+        }
+
+        /// <summary>
+        /// Writes the given <see cref="ISerializable"/> <paramref name="value"/> to the writer.
+        /// </summary>
+        public readonly void WriteObject(ISerializable value)
         {
             value.Write(this);
         }
