@@ -257,7 +257,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <see cref="ISerializable"/> object to the writer.
         /// </summary>
-        public readonly void WriteObject<T>(T value) where T : unmanaged, ISerializable
+        public readonly void WriteObject<T>(T value) where T : ISerializable
         {
             value.Write(this);
         }

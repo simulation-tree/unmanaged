@@ -6,17 +6,14 @@
     public interface ISerializable
     {
         /// <summary>
-        /// Writes the state of the object into the given writer.
+        /// Writes the state of the object into the given <paramref name="byteWriter"/>.
         /// </summary>
-        void Write(ByteWriter writer);
+        void Write(ByteWriter byteWriter);
 
         /// <summary>
-        /// Reads the data from the reader into the object, updating
-        /// it's internal state to match.
-        /// <para>
-        /// Target is uninitialized and <see langword="default"/> from the beginning.
-        /// </para>
+        /// Reads the data from the <paramref name="byteReader"/> into the object, 
+        /// updating it's internal state to match.
         /// </summary>
-        void Read(ByteReader reader);
+        void Read(ByteReader byteReader);
     }
 }

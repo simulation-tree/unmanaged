@@ -191,7 +191,7 @@ namespace Unmanaged
         /// <summary>
         /// Peeks the next UTF-8 character in the stream.
         /// </summary>
-        /// <returns>Amount of bytes read.</returns>
+        /// <returns>Amount of <see cref="byte"/> values read.</returns>
         public readonly byte PeekUTF8(int bytePosition, out char low, out char high)
         {
             Span<byte> bytes = GetBytes();
@@ -201,7 +201,7 @@ namespace Unmanaged
         /// <summary>
         /// Peeks the next UTF-8 character in the stream.
         /// </summary>
-        /// <returns>Amount of bytes read.</returns>
+        /// <returns>Amount of <see cref="byte"/> values read.</returns>
         public readonly byte PeekUTF8(out char low, out char high)
         {
             MemoryAddress.ThrowIfDefault(reader);
@@ -340,13 +340,22 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Reads a <see cref="ISerializable"/> object and advances the reader forward.
+        /// Creates a new <see langword="default"/> instance of type <typeparamref name="T"/>, 
+        /// and reads data into it.
         /// </summary>
         public readonly T ReadObject<T>() where T : unmanaged, ISerializable
         {
             T value = default;
             value.Read(this);
             return value;
+        }
+
+        /// <summary>
+        /// Reads data into the given <see cref="ISerializable"/> <paramref name="value"/>.
+        /// </summary>
+        public readonly void ReadObject<T>(T value) where T : ISerializable
+        {
+            value.Read(this);
         }
 
         /// <summary>
