@@ -104,8 +104,7 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + sizeof(T);
-            int capacity = writer->byteCapacity;
-            if (capacity < endPosition)
+            if (writer->byteCapacity < endPosition)
             {
                 writer->byteCapacity = endPosition.GetNextPowerOf2();
                 MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
@@ -123,8 +122,7 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + sizeof(T) * span.Length;
-            int capacity = writer->byteCapacity;
-            if (capacity < endPosition)
+            if (writer->byteCapacity < endPosition)
             {
                 writer->byteCapacity = endPosition.GetNextPowerOf2();
                 MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
@@ -142,8 +140,7 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + sizeof(T) * span.Length;
-            int capacity = writer->byteCapacity;
-            if (capacity < endPosition)
+            if (writer->byteCapacity < endPosition)
             {
                 writer->byteCapacity = endPosition.GetNextPowerOf2();
                 MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
@@ -161,8 +158,7 @@ namespace Unmanaged
             MemoryAddress.ThrowIfDefault(writer);
 
             int endPosition = writer->bytePosition + byteLength;
-            int capacity = writer->byteCapacity;
-            if (capacity < endPosition)
+            if (writer->byteCapacity < endPosition)
             {
                 writer->byteCapacity = endPosition.GetNextPowerOf2();
                 MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
@@ -177,28 +173,147 @@ namespace Unmanaged
         /// </summary>
         public readonly void WriteUTF8(char character)
         {
+            MemoryAddress.ThrowIfDefault(writer);
+
+            int bytePosition = writer->bytePosition;
+            int endPosition;
             if (character < 0x7F)
             {
-                WriteValue((byte)character);
+                endPosition = bytePosition + 1;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity *= 2;
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                writer->data.Write(bytePosition, (byte)character);
             }
             else if (character < 0x7FF)
             {
-                WriteValue((byte)(0xC0 | (character >> 6)));
-                WriteValue((byte)(0x80 | (character & 0x3F)));
+                endPosition = bytePosition + 2;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity = endPosition.GetNextPowerOf2();
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                Span<byte> buffer = writer->data.GetSpan(endPosition);
+                buffer[bytePosition + 0] = (byte)(0xC0 | (character >> 6));
+                buffer[bytePosition + 1] = (byte)(0x80 | (character & 0x3F));
             }
             else if (character < 0xFFFF)
             {
-                WriteValue((byte)(0xE0 | (character >> 12)));
-                WriteValue((byte)(0x80 | ((character >> 6) & 0x3F)));
-                WriteValue((byte)(0x80 | (character & 0x3F)));
+                endPosition = bytePosition + 3;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity = endPosition.GetNextPowerOf2();
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                Span<byte> buffer = writer->data.GetSpan(endPosition);
+                buffer[bytePosition + 0] = (byte)(0xE0 | (character >> 12));
+                buffer[bytePosition + 1] = (byte)(0x80 | ((character >> 6) & 0x3F));
+                buffer[bytePosition + 2] = (byte)(0x80 | (character & 0x3F));
             }
             else
             {
-                WriteValue((byte)(0xF0 | (character >> 18)));
-                WriteValue((byte)(0x80 | ((character >> 12) & 0x3F)));
-                WriteValue((byte)(0x80 | ((character >> 6) & 0x3F)));
-                WriteValue((byte)(0x80 | (character & 0x3F)));
+                endPosition = bytePosition + 4;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity = endPosition.GetNextPowerOf2();
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                Span<byte> buffer = writer->data.GetSpan(endPosition);
+                buffer[bytePosition + 0] = (byte)(0xF0 | (character >> 18));
+                buffer[bytePosition + 1] = (byte)(0x80 | ((character >> 12) & 0x3F));
+                buffer[bytePosition + 2] = (byte)(0x80 | ((character >> 6) & 0x3F));
+                buffer[bytePosition + 3] = (byte)(0x80 | (character & 0x3F));
             }
+
+            writer->bytePosition = endPosition;
+        }
+
+        /// <summary>
+        /// Writes the given <paramref name="character"/> as a UTF-8 character,
+        /// <paramref name="repeat"/> amount of times.
+        /// </summary>
+        public readonly void WriteUTF8(char character, int repeat)
+        {
+            MemoryAddress.ThrowIfDefault(writer);
+
+            int bytePosition = writer->bytePosition;
+            if (character < 0x7F)
+            {
+                int endPosition = bytePosition + repeat;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity = endPosition.GetNextPowerOf2();
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                Span<byte> buffer = writer->data.GetSpan(endPosition);
+                for (int i = 0; i < repeat; i++)
+                {
+                    buffer[bytePosition++] = (byte)character;
+                }
+            }
+            else if (character < 0x7FF)
+            {
+                int endPosition = bytePosition + 2 * repeat;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity = endPosition.GetNextPowerOf2();
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                Span<byte> buffer = writer->data.GetSpan(endPosition);
+                for (int i = 0; i < repeat; i++)
+                {
+                    buffer[bytePosition + 0] = (byte)(0xC0 | (character >> 6));
+                    buffer[bytePosition + 1] = (byte)(0x80 | (character & 0x3F));
+                    bytePosition += 2;
+                }
+            }
+            else if (character < 0xFFFF)
+            {
+                int endPosition = bytePosition + 3 * repeat;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity = endPosition.GetNextPowerOf2();
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                Span<byte> buffer = writer->data.GetSpan(endPosition);
+                for (int i = 0; i < repeat; i++)
+                {
+                    buffer[bytePosition + 0] = (byte)(0xE0 | (character >> 12));
+                    buffer[bytePosition + 1] = (byte)(0x80 | ((character >> 6) & 0x3F));
+                    buffer[bytePosition + 2] = (byte)(0x80 | (character & 0x3F));
+                    bytePosition += 3;
+                }
+            }
+            else
+            {
+                int endPosition = bytePosition + 4 * repeat;
+                if (writer->byteCapacity < endPosition)
+                {
+                    writer->byteCapacity = endPosition.GetNextPowerOf2();
+                    MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+                }
+
+                Span<byte> buffer = writer->data.GetSpan(endPosition);
+                for (int i = 0; i < repeat; i++)
+                {
+                    buffer[bytePosition + 0] = (byte)(0xF0 | (character >> 18));
+                    buffer[bytePosition + 1] = (byte)(0x80 | ((character >> 12) & 0x3F));
+                    buffer[bytePosition + 2] = (byte)(0x80 | ((character >> 6) & 0x3F));
+                    buffer[bytePosition + 3] = (byte)(0x80 | (character & 0x3F));
+                    bytePosition += 4;
+                }
+            }
+
+            writer->bytePosition = bytePosition;
         }
 
         /// <summary>
@@ -206,51 +321,57 @@ namespace Unmanaged
         /// </summary>
         public readonly void WriteUTF8(ReadOnlySpan<char> text)
         {
+            MemoryAddress.ThrowIfDefault(writer);
+
+            int bytePosition = writer->bytePosition;
+            int endPosition = bytePosition + (4 * text.Length);
+            if (writer->byteCapacity < endPosition)
+            {
+                writer->byteCapacity = endPosition.GetNextPowerOf2();
+                MemoryAddress.Resize(ref writer->data, writer->byteCapacity);
+            }
+
+            Span<byte> buffer = writer->data.GetSpan(endPosition);
             for (int i = 0; i < text.Length; i++)
             {
                 char c = text[i];
                 if (c < 0x7F)
                 {
-                    WriteValue((byte)c);
+                    buffer[bytePosition++] = (byte)c;
                 }
                 else if (c < 0x7FF)
                 {
-                    WriteValue((byte)(0xC0 | (c >> 6)));
-                    WriteValue((byte)(0x80 | (c & 0x3F)));
+                    buffer[bytePosition + 0] = (byte)(0xC0 | (c >> 6));
+                    buffer[bytePosition + 1] = (byte)(0x80 | (c & 0x3F));
+                    bytePosition += 2;
                 }
                 else if (c < 0xFFFF)
                 {
-                    WriteValue((byte)(0xE0 | (c >> 12)));
-                    WriteValue((byte)(0x80 | ((c >> 6) & 0x3F)));
-                    WriteValue((byte)(0x80 | (c & 0x3F)));
+                    buffer[bytePosition + 0] = (byte)(0xE0 | (c >> 12));
+                    buffer[bytePosition + 1] = (byte)(0x80 | ((c >> 6) & 0x3F));
+                    buffer[bytePosition + 2] = (byte)(0x80 | (c & 0x3F));
+                    bytePosition += 3;
                 }
                 else
                 {
-                    WriteValue((byte)(0xF0 | (c >> 18)));
-                    WriteValue((byte)(0x80 | ((c >> 12) & 0x3F)));
-                    WriteValue((byte)(0x80 | ((c >> 6) & 0x3F)));
-                    WriteValue((byte)(0x80 | (c & 0x3F)));
+                    buffer[bytePosition + 0] = (byte)(0xF0 | (c >> 18));
+                    buffer[bytePosition + 1] = (byte)(0x80 | ((c >> 12) & 0x3F));
+                    buffer[bytePosition + 2] = (byte)(0x80 | ((c >> 6) & 0x3F));
+                    buffer[bytePosition + 3] = (byte)(0x80 | (c & 0x3F));
+                    bytePosition += 4;
                 }
             }
+
+            writer->bytePosition = bytePosition;
         }
 
         /// <summary>
         /// Writes only the content of this <paramref name="text"/>, without a terminator.
         /// </summary>
-        public void WriteUTF8(ASCIIText256 text)
+        public readonly void WriteUTF8(ASCIIText256 text)
         {
             Span<char> textSpan = stackalloc char[text.Length];
             text.CopyTo(textSpan);
-            WriteUTF8(textSpan);
-        }
-
-        /// <summary>
-        /// Writes only the content of this <paramref name="text"/>, without a terminator.
-        /// </summary>
-        public void WriteUTF8(string text)
-        {
-            Span<char> textSpan = stackalloc char[text.Length];
-            text.AsSpan().CopyTo(textSpan);
             WriteUTF8(textSpan);
         }
 

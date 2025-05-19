@@ -83,14 +83,17 @@ namespace Unmanaged.Tests
             Assert.That(reader.ReadValue<int>(), Is.EqualTo(128));
         }
 
-        [Test]
-        public void WriteSpan()
+        [TestCase("Hello there")]
+        [TestCase("And goodbye")]
+        [TestCase("To anyone")]
+        [TestCase("Reading this code")]
+        public void WriteSpan(string inputString)
         {
             using ByteWriter writer = new();
-            writer.WriteSpan<char>("Hello there");
+            writer.WriteSpan<char>(inputString);
 
             using ByteReader reader = new(writer.AsSpan());
-            Assert.That(reader.ReadSpan<char>(11).ToString(), Is.EqualTo("Hello there"));
+            Assert.That(reader.ReadSpan<char>(inputString.Length).ToString(), Is.EqualTo(inputString));
         }
 
         [Test]
@@ -131,18 +134,33 @@ namespace Unmanaged.Tests
             Assert.That(result.ToString(), Is.EqualTo("<Project Sdk"));
         }
 
-        [Test]
-        public void WriteUTF8Text()
+        [TestCase("Hello, 你好, 🌍")]
+        [TestCase("aaaaaaaaaaaaaaa")]
+        public void WriteUTF8Text(string myString)
         {
-            string myString = "Hello, 你好, 🌍";
             using ByteWriter writer = new();
             writer.WriteUTF8(myString);
             using ByteReader reader = new(writer.AsSpan());
-            Span<char> sample = stackalloc char[32];
+            Span<char> sample = stackalloc char[myString.Length * 2];
             int length = reader.ReadUTF8(sample);
             Span<char> result = sample.Slice(0, length);
             string resultString = result.ToString();
             Assert.That(resultString, Is.EqualTo(myString));
+        }
+
+        [TestCase('a', 23)]
+        [TestCase('b', 13)]
+        [TestCase('2', 9)]
+        public void WriteUTF8Repeat(char character, int repeat)
+        {
+            using ByteWriter writer = new();
+            writer.WriteUTF8(character, repeat);
+            using ByteReader reader = new(writer.AsSpan());
+            Span<char> sample = stackalloc char[repeat * 2];
+            int length = reader.ReadUTF8(sample);
+            Span<char> result = sample.Slice(0, length);
+            string resultString = result.ToString();
+            Assert.That(resultString, Is.EqualTo(new string(character, repeat)));
         }
 
 #if DEBUG
