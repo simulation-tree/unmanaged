@@ -155,6 +155,16 @@ namespace Unmanaged.Tests
         }
 
         [Test]
+        public void AppendNumbers()
+        {
+            using Text text = new();
+            text.Append("something");
+            Assert.That(text.ToString(), Is.EqualTo("something"));
+            text.Append(1234);
+            Assert.That(text.ToString(), Is.EqualTo("something1234"));
+        }
+
+        [Test]
         public void AppendCharacters()
         {
             using Text text = new();

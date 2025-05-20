@@ -434,7 +434,7 @@ namespace Unmanaged
             value.TryFormat(buffer, out int charsWritten, default, default);
             int newLength = text->length + charsWritten;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            text->buffer.CopyFrom(buffer.Slice(0, charsWritten), text->length);
+            text->buffer.CopyFrom(buffer.Slice(0, charsWritten), text->length * sizeof(char));
             text->length = newLength;
         }
 #else
@@ -448,7 +448,7 @@ namespace Unmanaged
             string buffer = value.ToString(default, default);
             int newLength = text->length + buffer.Length;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-            text->buffer.CopyFrom(buffer.AsSpan(), text->length);
+            text->buffer.CopyFrom(buffer.AsSpan(), text->length * sizeof(char));
             text->length = newLength;
         }
 #endif
