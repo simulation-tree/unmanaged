@@ -326,7 +326,7 @@ namespace Unmanaged
             {
                 int copyLength = newLength - oldLength;
                 MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
-                text->buffer.AsSpan<char>(oldLength, copyLength).Fill(defaultCharacter);
+                text->buffer.AsSpan<char>(oldLength * sizeof(char), copyLength).Fill(defaultCharacter);
             }
         }
 

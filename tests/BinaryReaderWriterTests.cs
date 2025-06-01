@@ -275,7 +275,7 @@ namespace Unmanaged.Tests
             private int count;
             private int capacity;
 
-            public readonly Span<Player> List => players.AsSpan<Player>(0, count);
+            public readonly Span<Player> List => players.GetSpan<Player>(count);
 
             public Complicated()
             {
@@ -339,7 +339,7 @@ namespace Unmanaged.Tests
             private int capacity;
             private MemoryAddress inventory;
 
-            public readonly Span<Fruit> Inventory => inventory.AsSpan<Fruit>(0, count);
+            public readonly Span<Fruit> Inventory => inventory.GetSpan<Fruit>(count);
 
             public Player(uint hp, uint damage)
             {
