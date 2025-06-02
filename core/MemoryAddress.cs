@@ -76,8 +76,6 @@ namespace Unmanaged
         /// </summary>
         public readonly override string ToString()
         {
-            ThrowIfDefault(pointer);
-
             return ((nint)pointer).ToString();
         }
 
@@ -86,8 +84,6 @@ namespace Unmanaged
         /// </summary>
         public readonly int ToString(Span<char> buffer)
         {
-            ThrowIfDefault(pointer);
-
             return ((nint)pointer).ToString(buffer);
         }
 

@@ -288,11 +288,14 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override string ToString()
         {
-            MemoryAddress.ThrowIfDefault(text);
-
-            Span<char> buffer = stackalloc char[text->length];
-            ToString(buffer);
-            return buffer.ToString();
+            if (IsDisposed)
+            {
+                return "(Disposed)";
+            }
+            else
+            {
+                return AsSpan().ToString();
+            }
         }
 
         /// <summary>
