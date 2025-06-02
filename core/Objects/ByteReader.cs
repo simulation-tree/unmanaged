@@ -240,7 +240,6 @@ namespace Unmanaged
         /// </summary>
         public readonly T ReadValue<T>() where T : unmanaged
         {
-            //todo: emit an error if the generic type passed is ISerializable
             T value = PeekValue<T>();
             Advance<T>();
             return value;

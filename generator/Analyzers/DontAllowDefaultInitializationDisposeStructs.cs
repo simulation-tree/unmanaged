@@ -27,10 +27,9 @@ namespace Unmanaged.Analyzers
 
         public override void Initialize(AnalysisContext context)
         {
-            SyntaxKind syntaxKinds = SyntaxKind.VariableDeclaration;
             context.EnableConcurrentExecution();
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
-            context.RegisterSyntaxNodeAction(AnalyzeSymbol, syntaxKinds);
+            context.RegisterSyntaxNodeAction(AnalyzeSymbol, SyntaxKind.VariableDeclaration);
         }
 
         private void AnalyzeSymbol(SyntaxNodeAnalysisContext context)
@@ -55,7 +54,7 @@ namespace Unmanaged.Analyzers
                     return;
                 }
 
-                Diagnostic? diagnostic = GetDiagnostic(type, typeSymbol, variableDeclaration);
+                Diagnostic? diagnostic = GetDiagnostic(type, variableDeclaration);
                 if (diagnostic is not null)
                 {
                     context.ReportDiagnostic(diagnostic);
@@ -63,7 +62,7 @@ namespace Unmanaged.Analyzers
             }
         }
 
-        private static Diagnostic? GetDiagnostic(TypeSyntax type, ITypeSymbol typeSymbol, SyntaxNode node)
+        private static Diagnostic? GetDiagnostic(TypeSyntax type, SyntaxNode node)
         {
             bool assignedToDefault = false;
             foreach (SyntaxNode child in node.ChildNodes())
