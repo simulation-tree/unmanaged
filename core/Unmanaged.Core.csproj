@@ -1,43 +1,52 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<PublishAot>true</PublishAot>
-		<IsAotCompatible>true</IsAotCompatible>
-		<NoStandardLib>true</NoStandardLib>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<SignAssembly>False</SignAssembly>
-		<Title>Unmanaged</Title>
-		<Authors>popcron</Authors>
-		<Description>The building blocks of native C# projects</Description>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<RepositoryUrl>https://github.com/simulation-tree/unmanaged</RepositoryUrl>
-		<PackageTags>native;unmanaged</PackageTags>
-		<Company>simulation-tree</Company>
-		<IsAotCompatible>true</IsAotCompatible>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<WarningLevel>8</WarningLevel>
-		<DebugType>Embedded</DebugType>
-		<EmbedAllSources>True</EmbedAllSources>
-		<PackageId />
-	</PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <NoStandardLib>true</NoStandardLib>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <SignAssembly>False</SignAssembly>
+    <Title>Unmanaged</Title>
+    <Authors>popcron</Authors>
+    <Description>The building blocks of native C# projects</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/simulation-tree/unmanaged</RepositoryUrl>
+    <PackageTags>native;unmanaged</PackageTags>
+    <Company>simulation-tree</Company>
+    <IsAotCompatible>true</IsAotCompatible>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>8</WarningLevel>
+    <DebugType>Embedded</DebugType>
+    <EmbedAllSources>True</EmbedAllSources>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<Optimize>false</Optimize>
-	</PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>false</Optimize>
+  </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<Optimize>true</Optimize>
-	</PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="..\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-	</ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="bin/Debug/net9.0/Unmanaged.Core.dll" Pack="true" PackagePath="tools/debug/Unmanaged.Core.dll" Visible="false"/>
+    <Content Include="bin/Debug/net9.0/Unmanaged.Core.xml" Pack="true" PackagePath="tools/debug/Unmanaged.Core.xml" Visible="false"/>
+    <Content Include="bin/Release/net9.0/Unmanaged.Core.dll" Pack="true" PackagePath="tools/release/Unmanaged.Core.dll" Visible="false"/>
+    <Content Include="bin/Release/net9.0/Unmanaged.Core.xml" Pack="true" PackagePath="tools/release/Unmanaged.Core.xml" Visible="false"/>
+    <Content Include="build/Unmanaged.Core.targets" Pack="true" PackagePath="build/Unmanaged.Core.targets" Visible="false"/>
+  </ItemGroup>
 
 </Project>
