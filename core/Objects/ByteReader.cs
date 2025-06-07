@@ -45,6 +45,12 @@ namespace Unmanaged
         /// </summary>
         public readonly bool IsDisposed => reader is null;
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+        private readonly byte[] Bytes => GetBytes().ToArray();
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Collapsed)]
+        private readonly byte[] RemainingBytes => GetRemainingBytes().ToArray();
+
         /// <summary>
         /// Creates a new binary reader from the given <paramref name="bytes"/>.
         /// </summary>
@@ -176,7 +182,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            return GetBytes().Slice(reader->bytePosition);
+            return new(reader->data.Pointer + reader->bytePosition, reader->byteLength - reader->bytePosition);
         }
 
         [Conditional("DEBUG")]
