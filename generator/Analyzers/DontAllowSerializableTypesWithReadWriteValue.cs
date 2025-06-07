@@ -11,7 +11,7 @@ namespace Unmanaged.Analyzers
     {
         private const string ID = "U0002";
         private const string Title = "Bypassing serialization of the provided type";
-        private const string Format = "The given type `{0}` implements ISerializable, and cannot be used here because it would bypass its serialization implementation. Use `{1}` instead.";
+        private const string Format = "The given type `{0}` implements ISerializable, and should not be used with `{1}`. Because it would bypass the serialization it implements. Use `{2}` instead.";
         private const string Category = "Types";
         private const DiagnosticSeverity Severity = DiagnosticSeverity.Warning;
 
@@ -51,7 +51,7 @@ namespace Unmanaged.Analyzers
                             {
                                 if (typeParameter.HasInterface("Unmanaged.ISerializable"))
                                 {
-                                    context.ReportDiagnostic(Diagnostic.Create(rule, invocationExpression.GetLocation(), typeParameter.Name, suggestedMethod));
+                                    context.ReportDiagnostic(Diagnostic.Create(rule, invocationExpression.GetLocation(), typeParameter.Name, methodName, suggestedMethod));
                                     return;
                                 }
                             }
@@ -62,7 +62,7 @@ namespace Unmanaged.Analyzers
                             TypeInfo typeInfo = context.SemanticModel.GetTypeInfo(parameter.Expression, context.CancellationToken);
                             if (typeInfo.Type is ITypeSymbol parameterType && parameterType.HasInterface("Unmanaged.ISerializable"))
                             {
-                                context.ReportDiagnostic(Diagnostic.Create(rule, invocationExpression.GetLocation(), parameterType.Name, suggestedMethod));
+                                context.ReportDiagnostic(Diagnostic.Create(rule, invocationExpression.GetLocation(), parameterType.Name, methodName, suggestedMethod));
                                 return;
                             }
                             else
