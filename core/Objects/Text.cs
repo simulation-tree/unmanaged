@@ -997,7 +997,7 @@ namespace Unmanaged
             /// </summary>
             public readonly bool IsEmpty => text.IsEmpty;
 
-            int IReadOnlyCollection<char>.Count => (int)text.Length;
+            int IReadOnlyCollection<char>.Count => text.Length;
 
             internal Borrowed(Text text)
             {
@@ -1086,6 +1086,14 @@ namespace Unmanaged
             public readonly void CopyFrom(string otherText)
             {
                 text.CopyFrom(otherText);
+            }
+
+            /// <summary>
+            /// Clears the text.
+            /// </summary>
+            public readonly void Clear()
+            {
+                text.Clear();
             }
 
             readonly IEnumerator<char> IEnumerable<char>.GetEnumerator()
