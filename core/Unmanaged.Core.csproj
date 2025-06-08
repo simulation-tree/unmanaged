@@ -23,7 +23,7 @@
     <DebugType>Embedded</DebugType>
     <EmbedAllSources>True</EmbedAllSources>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -42,11 +42,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="bin/Debug/net9.0/Unmanaged.Core.dll" Pack="true" PackagePath="tools/debug/Unmanaged.Core.dll" Visible="false"/>
-    <Content Include="bin/Debug/net9.0/Unmanaged.Core.xml" Pack="true" PackagePath="tools/debug/Unmanaged.Core.xml" Visible="false" Condition="Exists('bin/Debug/net9.0/Unmanaged.Core.xml')"/>
-    <Content Include="bin/Release/net9.0/Unmanaged.Core.dll" Pack="true" PackagePath="tools/release/Unmanaged.Core.dll" Visible="false"/>
-    <Content Include="bin/Release/net9.0/Unmanaged.Core.xml" Pack="true" PackagePath="tools/release/Unmanaged.Core.xml" Visible="false" Condition="Exists('bin/Release/net9.0/Unmanaged.Core.xml')"/>
-    <Content Include="build/Unmanaged.Core.targets" Pack="true" PackagePath="build/Unmanaged.Core.targets" Visible="false"/>
+    <Content Include="bin/**/*" Pack="true" PackagePath="lib" Visible="false"/>
+    <Content Include="buildTransitive/**/*" Pack="true" PackagePath="buildTransitive"/>
   </ItemGroup>
 
 </Project>
