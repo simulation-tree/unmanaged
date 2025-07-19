@@ -708,23 +708,6 @@ namespace Unmanaged
 
         /// <summary>
         /// Moves existing memory into a new allocation that is twice as large as <paramref name="currentByteLength"/>,
-        /// and leaves the new bytes uninitialized.
-        /// </summary>
-        public static void ResizePowerOf2(ref MemoryAddress allocation, int currentByteLength)
-        {
-            ThrowIfDefault(allocation.pointer);
-
-#if TRACE
-            void* previousPointer = allocation.pointer;
-            allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)currentByteLength * 2);
-            MemoryTracker.Move(previousPointer, allocation.pointer, currentByteLength * 2);
-#else
-            allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)currentByteLength * 2);
-#endif
-        }
-
-        /// <summary>
-        /// Moves existing memory into a new allocation that is twice as large as <paramref name="currentByteLength"/>,
         /// and clears new bytes to <see langword="default"/>.
         /// </summary>
         public static void ResizePowerOf2AndClear(ref MemoryAddress allocation, int currentByteLength)
