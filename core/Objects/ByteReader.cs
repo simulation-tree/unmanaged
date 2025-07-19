@@ -273,6 +273,16 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Resets the position of the reader to the start of the stream.
+        /// </summary>
+        public readonly void Reset()
+        {
+            MemoryAddress.ThrowIfDefault(reader);
+
+            reader->bytePosition = 0;
+        }
+
+        /// <summary>
         /// Reads a span of values from the reader with the specified length
         /// in <typeparamref name="T"/> elements.
         /// </summary>
