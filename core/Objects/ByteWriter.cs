@@ -19,7 +19,7 @@ namespace Unmanaged
         public readonly bool IsDisposed => writer is null;
 
         /// <summary>
-        /// The current position of the writer in bytes.
+        /// The current position in the writer in <see cref="byte"/>s.
         /// </summary>
         public readonly int Position
         {
@@ -79,6 +79,7 @@ namespace Unmanaged
             writer->data = MemoryAddress.Allocate(initialCapacity);
             writer->data.Write(0, span);
         }
+
 #if NET
         /// <summary>
         /// Creates an empty binary writer.
@@ -87,13 +88,17 @@ namespace Unmanaged
         {
             writer = MemoryAddress.AllocatePointer<ByteWriterPointer>();
             writer->bytePosition = 0;
-            writer->byteCapacity = 0;
-            writer->data = MemoryAddress.AllocateEmpty();
+            writer->byteCapacity = 4;
+            writer->data = MemoryAddress.Allocate(4);
         }
 #endif
-        private ByteWriter(void* value)
+
+        /// <summary>
+        /// Initializes an existing writer from the given <paramref name="pointer"/>.
+        /// </summary>
+        public ByteWriter(void* pointer)
         {
-            writer = (ByteWriterPointer*)value;
+            writer = (ByteWriterPointer*)pointer;
         }
 
         /// <summary>
@@ -447,6 +452,19 @@ namespace Unmanaged
         public readonly override int GetHashCode()
         {
             return ((nint)writer).GetHashCode();
+        }
+
+        /// <summary>
+        /// Creates a new empty writer.
+        /// </summary>
+        /// <returns></returns>
+        public static ByteWriter Create()
+        {
+            ByteWriterPointer* writer = MemoryAddress.AllocatePointer<ByteWriterPointer>();
+            writer->bytePosition = 0;
+            writer->byteCapacity = 4;
+            writer->data = MemoryAddress.Allocate(4);
+            return new(writer);
         }
 
         /// <inheritdoc/>
