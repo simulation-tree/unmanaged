@@ -355,6 +355,23 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Reads UTF8 bytes as characters into the given <paramref name="destination"/>
+        /// until a terminator is found, or no bytes are left.
+        /// </summary>
+        /// <returns>Amount of <see cref="char"/> values read.</returns>
+        public readonly int ReadUTF8(Text destination)
+        {
+            MemoryAddress.ThrowIfDefault(reader);
+
+            int start = reader->bytePosition;
+            destination.SetLength(reader->byteLength * 4);
+            int read = PeekUTF8(start, destination.Length, destination.AsSpan());
+            destination.SetLength(read);
+            reader->bytePosition += read;
+            return read;
+        }
+
+        /// <summary>
         /// Creates a new <see langword="default"/> instance of type <typeparamref name="T"/>, 
         /// and reads data into it.
         /// </summary>
@@ -377,6 +394,16 @@ namespace Unmanaged
         /// Creates a new binary reader from the given text.
         /// </summary>
         public static ByteReader CreateFromUTF8(Span<char> text)
+        {
+            using ByteWriter writer = new(text.Length);
+            writer.WriteUTF8(text);
+            return new ByteReader(writer.AsSpan());
+        }
+
+        /// <summary>
+        /// Creates a new binary reader from the given text.
+        /// </summary>
+        public static ByteReader CreateFromUTF8(ReadOnlySpan<char> text)
         {
             using ByteWriter writer = new(text.Length);
             writer.WriteUTF8(text);
