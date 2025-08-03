@@ -13,6 +13,11 @@ namespace Unmanaged
     /// </summary>
     public unsafe struct MemoryAddress : IDisposable, IEquatable<MemoryAddress>
     {
+        /// <summary>
+        /// Size of a memory address.
+        /// </summary>
+        public static readonly int size = IntPtr.Size;
+
         private byte* pointer;
 
         /// <summary>
