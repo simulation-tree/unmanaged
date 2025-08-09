@@ -409,6 +409,110 @@ namespace Unmanaged
         /// <summary>
         /// Appends the given <paramref name="otherText"/>.
         /// </summary>
+        public readonly void Append(ASCIIText8 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
+        public readonly void Append(ASCIIText16 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
+        public readonly void Append(ASCIIText32 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
+        public readonly void Append(ASCIIText64 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
+        public readonly void Append(ASCIIText128 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
+        public readonly void Append(ASCIIText256 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
+        public readonly void Append(ASCIIText512 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
+        public readonly void Append(ASCIIText1024 otherText)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            int newLength = text->length + otherText.Length;
+            MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
+            otherText.CopyTo(Slice(text->length, otherText.Length));
+            text->length = newLength;
+        }
+
+        /// <summary>
+        /// Appends the given <paramref name="otherText"/>.
+        /// </summary>
         public readonly void Append(IReadOnlyCollection<char> otherText)
         {
             MemoryAddress.ThrowIfDefault(text);
@@ -433,7 +537,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            Span<char> buffer = stackalloc char[1024];
+            Span<char> buffer = stackalloc char[1024]; // todo: this can fail, need to know the length of the formattable but thats not possible through this well designed interface
             value.TryFormat(buffer, out int charsWritten, default, default);
             int newLength = text->length + charsWritten;
             MemoryAddress.Resize(ref text->buffer, newLength * sizeof(char));
@@ -997,6 +1101,11 @@ namespace Unmanaged
             /// </summary>
             public readonly bool IsEmpty => text.IsEmpty;
 
+            /// <summary>
+            /// Indexer to access the character at <paramref name="index"/> by reference.
+            /// </summary>
+            public readonly ref char this[int index] => ref text[index];
+
             int IReadOnlyCollection<char>.Count => text.Length;
 
             internal Borrowed(Text text)
@@ -1075,6 +1184,14 @@ namespace Unmanaged
             /// <summary>
             /// Makes this text match <paramref name="otherText"/> exactly.
             /// </summary>
+            public readonly void CopyFrom(Text otherText)
+            {
+                text.CopyFrom(otherText.AsSpan());
+            }
+
+            /// <summary>
+            /// Makes this text match <paramref name="otherText"/> exactly.
+            /// </summary>
             public readonly void CopyFrom(ASCIIText256 otherText)
             {
                 text.CopyFrom(otherText);
@@ -1089,11 +1206,138 @@ namespace Unmanaged
             }
 
             /// <summary>
+            /// Retrieves a slice of the remaining text starting at <paramref name="start"/>.
+            /// </summary>
+            public readonly ReadOnlySpan<char> Slice(int start)
+            {
+                return text.Slice(start);
+            }
+
+            /// <summary>
+            /// Retrieves a slice with <paramref name="length"/> starting at <paramref name="start"/>.
+            /// </summary>
+            public readonly ReadOnlySpan<char> Slice(int start, int length)
+            {
+                return text.Slice(start, length);
+            }
+
+            /// <summary>
+            /// Checks if the text contains the given <paramref name="character"/>.
+            /// </summary>
+            public readonly bool Contains(char character)
+            {
+                return text.Contains(character);
+            }
+
+            /// <summary>
+            /// Retrieves the index for the first occurance of the given <paramref name="character"/>.
+            /// </summary>
+            public readonly int IndexOf(char character)
+            {
+                return text.IndexOf(character);
+            }
+
+            /// <summary>
             /// Clears the text.
             /// </summary>
             public readonly void Clear()
             {
                 text.Clear();
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="formattable"/>.
+            /// </summary>
+#if NET
+            public readonly void Append<T>(T formattable) where T : ISpanFormattable
+            {
+                text.Append(formattable);
+            }
+#else
+            public readonly void Append<T>(T formattable) where T : IFormattable
+            {
+                text.Append(formattable);
+            }
+#endif
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ReadOnlySpan<char> text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(Text text)
+            {
+                this.text.Append(text.AsSpan());
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ASCIIText8 text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ASCIIText16 text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ASCIIText32 text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ASCIIText128 text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ASCIIText256 text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ASCIIText512 text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="text"/>.
+            /// </summary>
+            public readonly void Append(ASCIIText1024 text)
+            {
+                this.text.Append(text);
+            }
+
+            /// <summary>
+            /// Appends the given <paramref name="character"/>.
+            /// </summary>
+            public readonly void Append(char character)
+            {
+                text.Append(character);
             }
 
             readonly IEnumerator<char> IEnumerable<char>.GetEnumerator()
@@ -1104,6 +1348,18 @@ namespace Unmanaged
             readonly IEnumerator IEnumerable.GetEnumerator()
             {
                 return ((IEnumerable)text).GetEnumerator();
+            }
+
+            /// <inheritdoc/>
+            public static bool operator ==(Borrowed left, ReadOnlySpan<char> right)
+            {
+                return left.text.Equals(right);
+            }
+
+            /// <inheritdoc/>
+            public static bool operator !=(Borrowed left, ReadOnlySpan<char> right)
+            {
+                return !(left == right);
             }
         }
     }
