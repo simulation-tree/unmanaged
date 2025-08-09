@@ -1,32 +1,38 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<OutputType>WinExe</OutputType>
-		<TargetFrameworks>net9.0;net10.0</TargetFrameworks>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<PublishAot>True</PublishAot>
-		<PublishTrimmed>True</PublishTrimmed>
-		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-	</PropertyGroup>
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PublishAot>True</PublishAot>
+    <PublishTrimmed>True</PublishTrimmed>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
+  </PropertyGroup>
 
-	<ItemGroup>
-	  <None Remove="ASCIIText.txt" />
-	</ItemGroup>
+  <ItemGroup>
+    <None Remove="ASCIIText.txt"/>
+  </ItemGroup>
 
-	<ItemGroup>
-	  <EmbeddedResource Include="ASCIIText.txt" />
-	</ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ASCIIText.txt"/>
+  </ItemGroup>
 
-	<ItemGroup>
-	  <None Update="ASCIIText.tt">
-	    <Generator>TextTemplatingFileGenerator</Generator>
-	    <LastGenOutput>ASCIIText.txt</LastGenOutput>
-	  </None>
-	</ItemGroup>
+  <ItemGroup>
+    <None Update="ASCIIText.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ASCIIText.txt</LastGenOutput>
+    </None>
+  </ItemGroup>
 
-	<ItemGroup>
-	  <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-	</ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="bin/**/*" Pack="true" PackagePath="lib" Visible="false"/>
+    <Content Include="buildTransitive/**/*" Pack="true" PackagePath="buildTransitive"/>
+  </ItemGroup>
 
 </Project>
