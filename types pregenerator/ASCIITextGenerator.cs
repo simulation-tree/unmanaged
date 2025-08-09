@@ -28,6 +28,7 @@ public static class ASCIITextGenerator
             source = source.Replace("{{TypeSize}}", typeSize.ToString());
             source = source.Replace("{{Capacity}}", capacity.ToString());
             source = source.Replace("{{LengthType}}", lengthType);
+            source = source.Replace("{{LengthTypeSize}}", lengthTypeSize.ToString());
             source = source.Replace("{{ImplicitDowncastOperators}}", GetImplicitDowncastOperators(typeSize, 2));
             source = source.Replace("{{ExplicitUpcastOperators}}", GetExplicitUpcastOperators(typeSize, 2));
             return source;

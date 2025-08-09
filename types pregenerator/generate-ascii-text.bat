@@ -1,1 +1,1 @@
-dotnet run -c Release --generate-ascii-text
+dotnet run -c Release --generate-ascii-text --framework net10.0

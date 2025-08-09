@@ -11,8 +11,8 @@ namespace Unmanaged
     /// Container of up to 15 extended ASCII <see cref="char"/> values.
     /// </summary>
     [SkipLocalsInit]
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
-    public unsafe struct ASCIIText16 : IEquatable<ASCIIText16>
+    [StructLayout(LayoutKind.Sequential, Size = Capacity + 1)]
+    public struct ASCIIText16 : IEquatable<ASCIIText16>
     {
         /// <summary>
         /// Maximum number of characters that can be stored.
@@ -22,9 +22,9 @@ namespace Unmanaged
         /// <summary>
         /// Maximum value of a single <see cref="char"/>.
         /// </summary>
-        public const char MaxCharacterValue = (char)256;
-
-        private fixed byte characters[Capacity];
+        public const char MaxCharacterValue = (char)byte.MaxValue;
+        
+        private Buffer characters;
         private byte length;
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace Unmanaged
         /// Reads until reaching a null terminator, or 15 characters.
         /// </para>
         /// </summary>
-        public ASCIIText16(void* utf8Bytes)
+        public unsafe ASCIIText16(void* utf8Bytes)
         {
             ReadOnlySpan<byte> span = new(utf8Bytes, Capacity);
             int index = 0;
@@ -437,13 +437,9 @@ namespace Unmanaged
         /// <summary>
         /// Checks if this string contains the given character.
         /// </summary>
-        public readonly bool Contains(char c)
+        public readonly bool Contains(char character)
         {
-            fixed (byte* ptr = characters)
-            {
-                ReadOnlySpan<byte> span = new(ptr, length);
-                return span.Contains((byte)c);
-            }
+            return ((ReadOnlySpan<byte>)characters).Slice(0, length).Contains((byte)character);
         }
 
         /// <summary>
@@ -507,27 +503,19 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves the first index of the given character.
         /// </summary>
-        public readonly int IndexOf(char value)
+        public readonly int IndexOf(char character)
         {
-            fixed (byte* ptr = characters)
-            {
-                ReadOnlySpan<byte> span = new(ptr, length);
-                return span.IndexOf((byte)value);
-            }
+            return ((ReadOnlySpan<byte>)characters).Slice(0, length).IndexOf((byte)character);
         }
 
         /// <summary>
         /// Attempts to retrieve the first index of the given character.
         /// </summary>
         /// <returns><see langword="true"/> if found.</returns>
-        public readonly bool TryIndexOf(char value, out int index)
+        public readonly bool TryIndexOf(char character, out int index)
         {
-            fixed (byte* ptr = characters)
-            {
-                ReadOnlySpan<byte> span = new(ptr, length);
-                index = span.IndexOf((byte)value);
-                return index != -1;
-            }
+            index = ((ReadOnlySpan<byte>)characters).Slice(0, length).IndexOf((byte)character);
+            return index != -1;
         }
 
         /// <summary>
@@ -655,29 +643,21 @@ namespace Unmanaged
         }
 
         /// <summary>
-        /// Retrieves the last index of the given character.
+        /// Retrieves the last index of the given <paramref name="character"/>.
         /// </summary>
-        public readonly int LastIndexOf(char value)
+        public readonly int LastIndexOf(char character)
         {
-            fixed (byte* ptr = characters)
-            {
-                ReadOnlySpan<byte> span = new(ptr, length);
-                return span.LastIndexOf((byte)value);
-            }
+            return ((ReadOnlySpan<byte>)characters).Slice(0, length).LastIndexOf((byte)character);
         }
 
         /// <summary>
-        /// Attempts to retrieve the last index of the given character.
+        /// Attempts to retrieve the last index of the given <paramref name="character"/>.
         /// </summary>
         /// <returns><see langword="true"/> if found.</returns>
-        public readonly bool TryLastIndexOf(char value, out int index)
+        public readonly bool TryLastIndexOf(char character, out int index)
         {
-            fixed (byte* ptr = characters)
-            {
-                ReadOnlySpan<byte> span = new(ptr, length);
-                index = span.LastIndexOf((byte)value);
-                return index != -1;
-            }
+            index = ((ReadOnlySpan<byte>)characters).Slice(0, length).LastIndexOf((byte)character);
+            return index != -1;
         }
 
         /// <summary>
@@ -1458,5 +1438,26 @@ namespace Unmanaged
         {
             return !a.Equals(b);
         }
+        
+#if NET
+        [InlineArray(Capacity)]
+        private struct Buffer
+        {
+            private byte type;
+        }
+#else
+        private unsafe struct Buffer
+        {
+            private fixed byte characters[Capacity];
+
+            public ref byte this[int index] => ref characters[index];
+
+            public static implicit operator ReadOnlySpan<byte>(Buffer buffer)
+            {
+                byte* pointer = buffer.characters;
+                return new(pointer, Capacity);
+            }
+        }
+#endif
     }
 }
