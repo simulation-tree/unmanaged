@@ -15,6 +15,7 @@ jobs:
         with:
           path: ${{ github.event.repository.name }}
       
+            
       - name: Setup
         uses: actions/setup-dotnet@v4
         with:
@@ -50,7 +51,7 @@ jobs:
         run: dotnet build "${{ github.event.repository.name }}/tests" -c Release /p:Version=${VERSION}
             
       - name: Test
-        run: dotnet test "${{ github.event.repository.name }}/tests" -c Release --logger "trx"
+        run: dotnet test "${{ github.event.repository.name }}/tests" -c Release --logger "trx" --framework net10.0
             
       - name: Pack `Unmanaged.Core`
         run: dotnet pack "${{ github.event.repository.name }}/core" /p:Version=${VERSION} --no-build --output .
