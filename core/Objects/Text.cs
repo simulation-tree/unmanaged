@@ -755,6 +755,23 @@ namespace Unmanaged
 #endif
 
         /// <summary>
+        /// Replaces all instances of <paramref name="oldCharacter"/> with <paramref name="newCharacter"/>.
+        /// </summary>
+        public readonly void Replace(char oldCharacter, char newCharacter)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            Span<char> buffer = AsSpan();
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                if (buffer[i] == oldCharacter)
+                {
+                    buffer[i] = newCharacter;
+                }
+            }
+        }
+
+        /// <summary>
         /// Checks if this text ends with <paramref name="otherText"/>.
         /// </summary>
         public readonly bool EndsWith(Text otherText)
