@@ -11,6 +11,8 @@
     <Authors>popcron</Authors>
     <Company>simulation-tree</Company>
     <RepositoryUrl>https://github.com/simulation-tree/unmanaged</RepositoryUrl>
+    <OutputItemType>Analyzer</OutputItemType>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
