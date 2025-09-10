@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\generator\Unmanaged.Generator.csproj" />
+    <ProjectReference Include="..\generator\Unmanaged.Generator.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\core\Unmanaged.Core.csproj" />
   </ItemGroup>
 
