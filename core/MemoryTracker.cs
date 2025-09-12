@@ -38,7 +38,6 @@ namespace Unmanaged
                             builder.Append("        ");
                             if (DiagnosticMethodInfo.Create(frame) is DiagnosticMethodInfo method)
                             {
-                                //todo: what if the method is generic?
                                 builder.Append(method.Name);
                             }
                             else
