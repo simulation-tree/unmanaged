@@ -124,10 +124,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
-            unchecked
-            {
-                return new Span<byte>(pointer + (uint)bytePosition, byteLength);
-            }
+            return new Span<byte>(pointer + (uint)bytePosition, byteLength);
         }
 
         /// <summary>
@@ -154,10 +151,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + (length * sizeof(T)));
 
-            unchecked
-            {
-                return new Span<T>(pointer + (uint)bytePosition, length);
-            }
+            return new Span<T>(pointer + (uint)bytePosition, length);
         }
 
         /// <summary>
@@ -183,10 +177,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
-            unchecked
-            {
-                *(T*)(pointer + (uint)bytePosition) = value;
-            }
+            *(T*)(pointer + (uint)bytePosition) = value;
         }
 
         /// <summary>
@@ -218,10 +209,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
-            unchecked
-            {
-                ((T*)pointer)[(uint)index] = value;
-            }
+            ((T*)pointer)[(uint)index] = value;
         }
 
         /// <summary>
@@ -243,10 +231,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
 
-            unchecked
-            {
-                span.CopyTo(new(pointer + (uint)bytePosition, span.Length));
-            }
+            span.CopyTo(new(pointer + (uint)bytePosition, span.Length));
         }
 
         /// <summary>
@@ -257,10 +242,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T) * span.Length);
 
-            unchecked
-            {
-                span.CopyTo(new(pointer + (uint)bytePosition, span.Length));
-            }
+            span.CopyTo(new(pointer + (uint)bytePosition, span.Length));
         }
 
         /// <summary>
@@ -316,10 +298,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
-            unchecked
-            {
-                new Span<byte>(otherData, byteLength).CopyTo(new(pointer + (uint)bytePosition, byteLength));
-            }
+            new Span<byte>(otherData, byteLength).CopyTo(new(pointer + (uint)bytePosition, byteLength));
         }
 
         /// <summary>
@@ -342,10 +321,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + sizeof(T));
 
-            unchecked
-            {
-                return ref *(T*)(pointer + (uint)bytePosition);
-            }
+            return ref *(T*)(pointer + (uint)bytePosition);
         }
 
         /// <summary>
@@ -367,10 +343,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, (index + 1) * sizeof(T));
 
-            unchecked
-            {
-                return ref ((T*)pointer)[(uint)index];
-            }
+            return ref ((T*)pointer)[(uint)index];
         }
 
 
@@ -403,10 +376,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfOutOfBounds(pointer, bytePosition);
 
-            unchecked
-            {
-                return new(pointer + (uint)bytePosition);
-            }
+            return new(pointer + (uint)bytePosition);
         }
 
         /// <summary>
@@ -439,10 +409,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
-            unchecked
-            {
-                new Span<byte>(pointer + (uint)bytePosition, byteLength).Clear();
-            }
+            new Span<byte>(pointer + (uint)bytePosition, byteLength).Clear();
         }
 
         /// <summary>
@@ -475,10 +442,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, bytePosition + byteLength);
 
-            unchecked
-            {
-                new Span<byte>(pointer + (uint)bytePosition, byteLength).Fill(value);
-            }
+            new Span<byte>(pointer + (uint)bytePosition, byteLength).Fill(value);
         }
 
         /// <summary>
@@ -500,10 +464,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, sourceBytePosition + byteLength);
 
-            unchecked
-            {
-                new Span<byte>(pointer + (uint)sourceBytePosition, byteLength).CopyTo(new(destination.pointer + (uint)destinationBytePosition, byteLength));
-            }
+            new Span<byte>(pointer + (uint)sourceBytePosition, byteLength).CopyTo(new(destination.pointer + (uint)destinationBytePosition, byteLength));
         }
 
         /// <summary>
@@ -593,10 +554,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteStart + sizeof(T) * source.Length);
 
-            unchecked
-            {
-                source.CopyTo(new(pointer + (uint)byteStart, source.Length));
-            }
+            source.CopyTo(new(pointer + (uint)byteStart, source.Length));
         }
 
         /// <summary>
@@ -620,10 +578,7 @@ namespace Unmanaged
             ThrowIfDefault(pointer);
             MemoryTracker.ThrowIfGreaterThanLength(pointer, byteStart + sizeof(T) * source.Length);
 
-            unchecked
-            {
-                source.CopyTo(new(pointer + (uint)byteStart, source.Length));
-            }
+            source.CopyTo(new(pointer + (uint)byteStart, source.Length));
         }
 
         /// <summary>
@@ -686,70 +641,6 @@ namespace Unmanaged
             MemoryTracker.Move(previousPointer, allocation.pointer, newByteLength);
 #else
             allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)newByteLength);
-#endif
-        }
-
-        /// <summary>
-        /// Moves existing memory into a new allocation of the given <paramref name="newByteLength"/>,
-        /// and clears new bytes to <see langword="default"/>.
-        /// </summary>
-        public static void ResizeAndClear(ref MemoryAddress allocation, int currentByteLength, int newByteLength)
-        {
-            ThrowIfDefault(allocation.pointer);
-
-            unchecked
-            {
-#if TRACE
-                void* previousPointer = allocation.pointer;
-                allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)newByteLength);
-                NativeMemory.Clear(allocation.pointer + (uint)currentByteLength, (uint)(newByteLength - currentByteLength));
-                MemoryTracker.Move(previousPointer, allocation.pointer, newByteLength);
-#else
-                allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)newByteLength);
-                NativeMemory.Clear(allocation.pointer + (uint)currentByteLength, (uint)(newByteLength - currentByteLength));
-#endif
-            }
-        }
-
-        /// <summary>
-        /// Moves existing memory into a new allocation that is twice as large as <paramref name="currentByteLength"/>,
-        /// and clears new bytes to <see langword="default"/>.
-        /// </summary>
-        public static void ResizePowerOf2AndClear(ref MemoryAddress allocation, int currentByteLength)
-        {
-            ThrowIfDefault(allocation.pointer);
-
-            unchecked
-            {
-#if TRACE
-                void* previousPointer = allocation.pointer;
-                allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)currentByteLength * 2);
-                NativeMemory.Clear(allocation.pointer + (uint)currentByteLength, (uint)currentByteLength);
-                MemoryTracker.Move(previousPointer, allocation.pointer, currentByteLength * 2);
-#else
-                allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)currentByteLength * 2);
-                NativeMemory.Clear(allocation.pointer + (uint)currentByteLength, (uint)currentByteLength);
-#endif
-            }
-        }
-
-        /// <summary>
-        /// Moves existing memory into a new allocation that is able to
-        /// fit <typeparamref name="T"/>.
-        /// <para>
-        /// New bytes are uninitialized and not guaranteed to be <see langword="default"/>/
-        /// </para>
-        /// </summary>
-        public static void Resize<T>(ref MemoryAddress allocation) where T : unmanaged
-        {
-            ThrowIfDefault(allocation.pointer);
-
-#if TRACE
-            void* previousPointer = allocation.pointer;
-            allocation.pointer = (byte*)NativeMemory.Realloc(previousPointer, (uint)sizeof(T));
-            MemoryTracker.Move(previousPointer, allocation.pointer, sizeof(T));
-#else
-            allocation.pointer = (byte*)NativeMemory.Realloc(allocation.pointer, (uint)sizeof(T));
 #endif
         }
 
