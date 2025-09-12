@@ -108,7 +108,7 @@ namespace Unmanaged
             text = MemoryAddress.AllocatePointer<TextPointer>();
             text->length = length;
             text->buffer = MemoryAddress.Allocate(length * sizeof(char));
-            new Span<char>(text->buffer.Pointer, length).Fill(defaultCharacter);
+            new Span<char>(text->buffer.pointer, length).Fill(defaultCharacter);
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            return new Span<char>(text->buffer.Pointer, text->length);
+            return new Span<char>(text->buffer.pointer, text->length);
         }
 
         /// <summary>
@@ -212,7 +212,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            new Span<char>(text->buffer.Pointer, text->length).CopyTo(destination);
+            new Span<char>(text->buffer.pointer, text->length).CopyTo(destination);
         }
 
         /// <summary>
@@ -228,7 +228,7 @@ namespace Unmanaged
                 MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
+            source.CopyTo(new Span<char>(text->buffer.pointer, source.Length));
         }
 
         /// <summary>
@@ -244,7 +244,7 @@ namespace Unmanaged
                 MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.AsSpan().CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
+            source.AsSpan().CopyTo(new Span<char>(text->buffer.pointer, source.Length));
         }
 
         /// <summary>
@@ -260,7 +260,7 @@ namespace Unmanaged
                 MemoryAddress.Resize(ref text->buffer, source.Length * sizeof(char));
             }
 
-            source.CopyTo(new Span<char>(text->buffer.Pointer, source.Length));
+            source.CopyTo(new Span<char>(text->buffer.pointer, source.Length));
         }
 
         /// <summary>
@@ -340,7 +340,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            return new Span<char>(text->buffer.Pointer + start * sizeof(char), text->length - start);
+            return new Span<char>(text->buffer.pointer + start * sizeof(char), text->length - start);
         }
 
         /// <summary>
@@ -350,7 +350,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(text);
 
-            return new Span<char>(text->buffer.Pointer + start * sizeof(char), length);
+            return new Span<char>(text->buffer.pointer + start * sizeof(char), length);
         }
 
         /// <summary>
@@ -898,7 +898,7 @@ namespace Unmanaged
             unchecked
             {
                 long hash = 3074457345618258791;
-                Span<char> text = new(this.text->buffer.Pointer, this.text->length);
+                Span<char> text = new(this.text->buffer.pointer, this.text->length);
                 for (int i = 0; i < text.Length; i++)
                 {
                     hash += text[i];

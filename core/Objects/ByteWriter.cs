@@ -433,7 +433,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(writer);
 
-            return new(writer->data.Pointer, writer->bytePosition);
+            return new(writer->data.pointer, writer->bytePosition);
         }
 
         /// <inheritdoc/>

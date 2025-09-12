@@ -18,17 +18,15 @@ namespace Unmanaged
         /// </summary>
         public static readonly int size = IntPtr.Size;
 
-        private byte* pointer;
+        /// <summary>
+        /// Native pointer to the memory.
+        /// </summary>
+        public byte* pointer;
 
         /// <summary>
         /// Native address of this memory.
         /// </summary>
         public readonly nint Address => (nint)pointer;
-
-        /// <summary>
-        /// Native pointer of this memory.
-        /// </summary>
-        public readonly byte* Pointer => pointer;
 
         /// <summary>
         /// Gets or sets a byte at the given index.
@@ -40,7 +38,7 @@ namespace Unmanaged
                 ThrowIfDefault(pointer);
                 MemoryTracker.ThrowIfOutOfBounds(pointer, index);
 
-                return ref pointer[index];
+                return ref pointer[(uint)index];
             }
         }
 

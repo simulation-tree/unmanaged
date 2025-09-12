@@ -82,7 +82,7 @@ namespace Unmanaged
         {
             int byteLength = (int)stream.Length;
             MemoryAddress streamData = MemoryAddress.Allocate(byteLength);
-            Span<byte> span = new(streamData.Pointer, byteLength);
+            Span<byte> span = new(streamData.pointer, byteLength);
             byteLength = stream.Read(span);
             reader = MemoryAddress.AllocatePointer<ByteReaderPointer>();
             reader->isOriginal = true;
@@ -155,7 +155,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            return new(reader->data.Pointer, reader->byteLength);
+            return new(reader->data.pointer, reader->byteLength);
         }
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace Unmanaged
         {
             MemoryAddress.ThrowIfDefault(reader);
 
-            return new(reader->data.Pointer + reader->bytePosition, reader->byteLength - reader->bytePosition);
+            return new(reader->data.pointer + reader->bytePosition, reader->byteLength - reader->bytePosition);
         }
 
         [Conditional("DEBUG")]
@@ -315,7 +315,7 @@ namespace Unmanaged
             int byteLength = sizeof(T) * length;
             ThrowIfReadingPastLength(bytePosition + byteLength);
 
-            void* pointer = reader->data.Pointer + bytePosition;
+            void* pointer = reader->data.pointer + bytePosition;
             return new(pointer, length);
         }
 
