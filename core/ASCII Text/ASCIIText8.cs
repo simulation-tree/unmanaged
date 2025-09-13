@@ -1293,16 +1293,13 @@ namespace Unmanaged
         /// </summary>
         public readonly override int GetHashCode()
         {
-            unchecked
+            int hash = 17;
+            for (int i = 0; i < length; i++)
             {
-                int hash = 17;
-                for (int i = 0; i < length; i++)
-                {
-                    hash = (hash * 31) + characters[i];
-                }
-
-                return hash;
+                hash = (hash * 31) + characters[i];
             }
+
+            return hash;
         }
 
         /// <summary>

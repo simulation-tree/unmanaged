@@ -23,7 +23,7 @@ namespace Unmanaged
         /// Maximum value of a single <see cref="char"/>.
         /// </summary>
         public const char MaxCharacterValue = (char)byte.MaxValue;
-        
+
         private Buffer characters;
         private byte length;
 
@@ -1293,16 +1293,13 @@ namespace Unmanaged
         /// </summary>
         public readonly override int GetHashCode()
         {
-            unchecked
+            int hash = 17;
+            for (int i = 0; i < length; i++)
             {
-                int hash = 17;
-                for (int i = 0; i < length; i++)
-                {
-                    hash = (hash * 31) + characters[i];
-                }
-
-                return hash;
+                hash = (hash * 31) + characters[i];
             }
+
+            return hash;
         }
 
         /// <summary>
@@ -1438,7 +1435,7 @@ namespace Unmanaged
         {
             return !a.Equals(b);
         }
-        
+
 #if NET
         [InlineArray(Capacity)]
         private struct Buffer

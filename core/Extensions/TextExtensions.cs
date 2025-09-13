@@ -12,17 +12,14 @@ namespace Unmanaged
         /// </summary>
         public static long GetLongHashCode(this string text)
         {
-            unchecked
+            long hash = 3074457345618258791;
+            for (int i = 0; i < text.Length; i++)
             {
-                long hash = 3074457345618258791;
-                for (int i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
+                hash += text[i];
+                hash *= 3074457345618258799;
             }
+
+            return hash;
         }
 
         /// <summary>
@@ -30,17 +27,14 @@ namespace Unmanaged
         /// </summary>
         public static long GetLongHashCode(this Span<char> text)
         {
-            unchecked
+            long hash = 3074457345618258791;
+            for (int i = 0; i < text.Length; i++)
             {
-                long hash = 3074457345618258791;
-                for (int i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
+                hash += text[i];
+                hash *= 3074457345618258799;
             }
+
+            return hash;
         }
 
         /// <summary>
@@ -48,17 +42,14 @@ namespace Unmanaged
         /// </summary>
         public static long GetLongHashCode(this ReadOnlySpan<char> text)
         {
-            unchecked
+            long hash = 3074457345618258791;
+            for (int i = 0; i < text.Length; i++)
             {
-                long hash = 3074457345618258791;
-                for (int i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
+                hash += text[i];
+                hash *= 3074457345618258799;
             }
+
+            return hash;
         }
 
         /// <summary>
@@ -66,17 +57,14 @@ namespace Unmanaged
         /// </summary>
         public static long GetLongHashCode(this ASCIIText256 text)
         {
-            unchecked
+            long hash = 3074457345618258791;
+            for (int i = 0; i < text.Length; i++)
             {
-                long hash = 3074457345618258791;
-                for (int i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
+                hash += text[i];
+                hash *= 3074457345618258799;
             }
+
+            return hash;
         }
     }
 }

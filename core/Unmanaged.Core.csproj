@@ -9,6 +9,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <NoStandardLib>true</NoStandardLib>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <SignAssembly>False</SignAssembly>
     <Title>Unmanaged</Title>
     <Authors>popcron</Authors>

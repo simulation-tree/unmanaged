@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Unmanaged
 {
@@ -42,31 +45,25 @@ namespace Unmanaged
         /// Creates a new disposable randomness generator using the given byte
         /// sequence as the initialization seed.
         /// </summary>
-        public RandomGenerator(Span<byte> seed)
+        public RandomGenerator(ReadOnlySpan<byte> seed)
         {
-            unchecked
+            long hash = 17;
+            for (int i = 0; i < seed.Length; i++)
             {
-                long hash = 17;
-                for (int i = 0; i < seed.Length; i++)
-                {
-                    hash = hash * 31 + seed[i];
-                }
-
-                pointer = MemoryAddress.AllocateValue((ulong)hash);
+                hash = hash * 31 + seed[i];
             }
+
+            pointer = MemoryAddress.AllocateValue((ulong)hash);
         }
 
         /// <summary>
         /// Creates a new disposable randomness generator using the given
         /// text input as the initialization seed.
         /// </summary>
-        public RandomGenerator(Span<char> seed)
+        public RandomGenerator(ReadOnlySpan<char> seed)
         {
-            unchecked
-            {
-                long hash = seed.GetLongHashCode();
-                pointer = MemoryAddress.AllocateValue((ulong)hash);
-            }
+            long hash = seed.GetLongHashCode();
+            pointer = MemoryAddress.AllocateValue((ulong)hash);
         }
 
         /// <summary>
@@ -75,11 +72,8 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(ASCIIText256 seed)
         {
-            unchecked
-            {
-                long hash = seed.GetLongHashCode();
-                pointer = MemoryAddress.AllocateValue((ulong)hash);
-            }
+            long hash = seed.GetLongHashCode();
+            pointer = MemoryAddress.AllocateValue((ulong)hash);
         }
 
         /// <summary>
@@ -88,11 +82,8 @@ namespace Unmanaged
         /// </summary>
         public RandomGenerator(string seed)
         {
-            unchecked
-            {
-                long hash = seed.GetLongHashCode();
-                pointer = MemoryAddress.AllocateValue((ulong)hash);
-            }
+            long hash = seed.GetLongHashCode();
+            pointer = MemoryAddress.AllocateValue((ulong)hash);
         }
 
         /// <summary>
@@ -108,80 +99,90 @@ namespace Unmanaged
         /// <summary>
         /// Generates a new <see cref="byte"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly byte NextByte()
         {
-            unchecked
-            {
-                return (byte)NextUInt();
-            }
+            return (byte)NextUInt();
         }
 
         /// <summary>
         /// Generates a new signed <see cref="sbyte"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly sbyte NextSByte()
         {
-            unchecked
-            {
-                return (sbyte)NextUInt();
-            }
+            return (sbyte)NextUInt();
         }
 
         /// <summary>
         /// Generates a new unsigned <see cref="ulong"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ulong NextULong()
         {
-            ulong t = *(ulong*)pointer;
+            ulong* p = (ulong*)pointer;
+            ulong t = *p;
             t ^= t << 13;
             t ^= t >> 7;
             t ^= t << 17;
-            *(ulong*)pointer = t;
+            *p = t;
             return t;
         }
 
         /// <summary>
         /// Generates a new unsigned <see cref="uint"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly uint NextUInt()
         {
-            uint t = *(uint*)pointer;
+            uint* p = (uint*)pointer;
+            uint t = *p;
             t ^= t << 13;
             t ^= t >> 17;
             t ^= t << 5;
-            *(uint*)pointer = t;
+            *p = t;
             return t;
         }
 
         /// <summary>
         /// Generates a new <see cref="bool"/> value.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool NextBool()
         {
-            return NextUInt() % 2 == 0;
+            return (NextUInt() & 1) == 1;
         }
 
         /// <summary>
         /// Generates a new unsigned <see cref="ulong"/> value between 0 and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ulong NextULong(ulong maxExclusive)
         {
-            return NextULong() % maxExclusive;
+            if (BitOperations.IsPow2(maxExclusive))
+            {
+                return NextUInt() & (maxExclusive - 1);
+            }
+
+            ulong x = NextUInt();
+            UInt128 m = (UInt128)x * maxExclusive;
+            return (ulong)(m >> 64);
         }
 
         /// <summary>
         /// Generates a new unsigned <see cref="ulong"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ulong NextULong(ulong minInclusive, ulong maxExclusive)
         {
             ulong range = maxExclusive - minInclusive;
-            ulong value = NextULong() % range;
-            return value + minInclusive;
+            return NextULong(range) + minInclusive;
         }
 
         /// <summary>
         /// Generates a new <see cref="long"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly long NextLong()
         {
             return (long)NextULong();
@@ -190,24 +191,26 @@ namespace Unmanaged
         /// <summary>
         /// Generates a new <see cref="long"/> value between 0 and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly long NextLong(long maxExclusive)
         {
-            return (long)(NextULong() % (ulong)maxExclusive);
+            return (long)NextULong((ulong)maxExclusive);
         }
 
         /// <summary>
         /// Generates a new <see cref="long"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly long NextLong(long minInclusive, long maxExclusive)
         {
             long range = maxExclusive - minInclusive;
-            long value = (long)(NextULong() % (ulong)range);
-            return value + minInclusive;
+            return (long)NextULong((ulong)range) + minInclusive;
         }
 
         /// <summary>
         /// Generates a new <see cref="int"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int NextInt()
         {
             return (int)NextUInt();
@@ -216,55 +219,63 @@ namespace Unmanaged
         /// <summary>
         /// Generates a new <see cref="int"/> value between 0 and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int NextInt(int maxExclusive)
         {
-            return (int)(NextULong() % (ulong)maxExclusive);
+            return (int)NextUInt((uint)maxExclusive);
         }
 
         /// <summary>
         /// Generates a new <see cref="int"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly int NextInt(int minInclusive, int maxExclusive)
         {
             int range = maxExclusive - minInclusive;
-            int value = (int)(NextULong() % (uint)range);
-            return value + minInclusive;
+            return (int)NextUInt((uint)range) + minInclusive;
         }
 
         /// <summary>
         /// Generates a new unsigned <see cref="uint"/> value between 0 and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly uint NextUInt(uint maxExclusive)
         {
-            return NextUInt() % maxExclusive;
+            if (BitOperations.IsPow2(maxExclusive))
+            {
+                return NextUInt() & (maxExclusive - 1);
+            }
+
+            uint x = NextUInt();
+            ulong m = (ulong)x * maxExclusive;
+            return (uint)(m >> 32);
         }
 
         /// <summary>
         /// Generates a new unsigned <see cref="uint"/> value between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly uint NextUInt(uint minInclusive, uint maxExclusive)
         {
             uint range = maxExclusive - minInclusive;
-            uint value = (NextUInt() % range);
-            return value + minInclusive;
+            return NextUInt(range) + minInclusive;
         }
 
         /// <summary>
         /// Generates a 0-1 unit <see cref="float"/> value.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly float NextFloat()
         {
-            uint t = *(uint*)pointer;
-            t ^= t << 13;
-            t ^= t >> 7;
-            t ^= t << 17;
-            *(uint*)pointer = t;
-            return t / (float)uint.MaxValue;
+            uint bits = NextUInt() & 0x007FFFFF;
+            bits |= 0x3F800000;
+            return BitConverter.UInt32BitsToSingle(bits) - 1.0f;
         }
 
         /// <summary>
         /// Generates a new <see cref="float"/> between 0 and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly float NextFloat(float maxExclusive)
         {
             return NextFloat() * maxExclusive;
@@ -273,29 +284,28 @@ namespace Unmanaged
         /// <summary>
         /// Generates a new <see cref="float"/> between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly float NextFloat(float minInclusive, float maxExclusive)
         {
             float range = maxExclusive - minInclusive;
-            float value = NextFloat() * range;
-            return value + minInclusive;
+            return NextFloat() * range + minInclusive;
         }
 
         /// <summary>
         /// Generates a 0-1 unit <see cref="double"/> value.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly double NextDouble()
         {
-            ulong t = *(ulong*)pointer;
-            t ^= t << 13;
-            t ^= t >> 7;
-            t ^= t << 17;
-            *(ulong*)pointer = t;
-            return t / (double)ulong.MaxValue;
+            ulong bits = NextULong() & 0x000FFFFFFFFFFFFF;
+            bits |= 0x3FF0000000000000;
+            return BitConverter.UInt64BitsToDouble(bits) - 1.0;
         }
 
         /// <summary>
         /// Generates a new <see cref="double"/> between 0 and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly double NextDouble(double maxExclusive)
         {
             return NextDouble() * maxExclusive;
@@ -304,16 +314,17 @@ namespace Unmanaged
         /// <summary>
         /// Generates a new <see cref="double"/> between <paramref name="minInclusive"/> and <paramref name="maxExclusive"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly double NextDouble(double minInclusive, double maxExclusive)
         {
             double range = maxExclusive - minInclusive;
-            double value = NextDouble() * range;
-            return value + minInclusive;
+            return NextDouble() * range + minInclusive;
         }
 
         /// <summary>
         /// Fills the given span buffer with random bytes.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void NextBytes(Span<byte> bytes)
         {
             ulong* t = (ulong*)pointer;
@@ -333,6 +344,7 @@ namespace Unmanaged
         /// Generates a random seed based on the current time and
         /// some machine specific data (process ID, memory addresses).
         /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static ulong GetRandomSeed()
         {
             unchecked

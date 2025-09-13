@@ -875,19 +875,16 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
+            int hash = 17;
+            int length = Length;
+            hash = hash * 23 + length.GetHashCode();
+            for (int i = 0; i < length; i++)
             {
-                int hash = 17;
-                int length = Length;
-                hash = hash * 23 + length.GetHashCode();
-                for (int i = 0; i < length; i++)
-                {
-                    char c = text->buffer.ReadElement<char>(i);
-                    hash = hash * 23 + c.GetHashCode();
-                }
-
-                return hash;
+                char c = text->buffer.ReadElement<char>(i);
+                hash = hash * 23 + c.GetHashCode();
             }
+
+            return hash;
         }
 
         /// <summary>
@@ -895,18 +892,15 @@ namespace Unmanaged
         /// </summary>
         public readonly long GetLongHashCode()
         {
-            unchecked
+            long hash = 3074457345618258791;
+            Span<char> text = new(this.text->buffer.pointer, this.text->length);
+            for (int i = 0; i < text.Length; i++)
             {
-                long hash = 3074457345618258791;
-                Span<char> text = new(this.text->buffer.pointer, this.text->length);
-                for (int i = 0; i < text.Length; i++)
-                {
-                    hash += text[i];
-                    hash *= 3074457345618258799;
-                }
-
-                return hash;
+                hash += text[i];
+                hash *= 3074457345618258799;
             }
+
+            return hash;
         }
 
         /// <summary>

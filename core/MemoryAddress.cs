@@ -617,10 +617,7 @@ namespace Unmanaged
         /// <inheritdoc/>
         public readonly override int GetHashCode()
         {
-            unchecked
-            {
-                return (int)pointer;
-            }
+            return (int)pointer;
         }
 
         /// <summary>
