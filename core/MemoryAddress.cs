@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Unmanaged
@@ -26,13 +27,18 @@ namespace Unmanaged
         /// <summary>
         /// Native address of this memory.
         /// </summary>
-        public readonly nint Address => (nint)pointer;
+        public readonly nint Address
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => (nint)pointer;
+        }
 
         /// <summary>
         /// Gets or sets a byte at the given index.
         /// </summary>
         public readonly ref byte this[int index]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 ThrowIfDefault(pointer);
@@ -61,9 +67,7 @@ namespace Unmanaged
 #if NET
         /// <inheritdoc/>
         [Obsolete("Default constructor not supported", true)]
-        public MemoryAddress()
-        {
-        }
+        public MemoryAddress() { }
 #endif
 
         /// <summary>
@@ -93,6 +97,7 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a span of bytes with <paramref name="byteLength"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Span<byte> GetSpan(int byteLength)
         {
             ThrowIfDefault(pointer);
@@ -105,6 +110,7 @@ namespace Unmanaged
         /// <summary>
         /// Retrieves a span of <typeparamref name="T"/> elements with <paramref name="length"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Span<T> GetSpan<T>(int length) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -117,6 +123,7 @@ namespace Unmanaged
         /// Retrieves a slice of bytes starting at <paramref name="bytePosition"/> with
         /// <paramref name="byteLength"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Span<byte> AsSpan(int bytePosition, int byteLength)
         {
             ThrowIfDefault(pointer);
@@ -129,6 +136,7 @@ namespace Unmanaged
         /// Retrieves a slice of bytes starting at <paramref name="bytePosition"/> with
         /// <paramref name="byteLength"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Span<byte> AsSpan(uint bytePosition, int byteLength)
         {
             ThrowIfDefault(pointer);
@@ -144,6 +152,7 @@ namespace Unmanaged
         /// is in <typeparamref name="T"/> elements.
         /// </para>
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Span<T> AsSpan<T>(int bytePosition, int length) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -159,6 +168,7 @@ namespace Unmanaged
         /// is in <typeparamref name="T"/> elements.
         /// </para>
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Span<T> AsSpan<T>(uint bytePosition, int length) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -170,6 +180,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes a single given value into the memory into this byte position.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(int bytePosition, T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -181,6 +192,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes a single given value into the memory into this byte position.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(uint bytePosition, T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -192,6 +204,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes a single given value into the memory to the beginning.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -202,6 +215,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="value"/> to the element <paramref name="index"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void WriteElement<T>(int index, T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -213,6 +227,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="value"/> to the element <paramref name="index"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void WriteElement<T>(uint index, T value) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -224,6 +239,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="span"/> into memory starting at <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(int bytePosition, Span<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -235,6 +251,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="span"/> into memory starting at <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(int bytePosition, ReadOnlySpan<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -246,6 +263,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="span"/> into memory starting at <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(uint bytePosition, Span<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -257,6 +275,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="span"/> into memory starting at <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(uint bytePosition, ReadOnlySpan<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -268,6 +287,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="span"/> into memory from the beginning.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(Span<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -279,6 +299,7 @@ namespace Unmanaged
         /// <summary>
         /// Writes the given <paramref name="span"/> into memory from the beginning.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write<T>(ReadOnlySpan<T> span) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -291,6 +312,7 @@ namespace Unmanaged
         /// Writes <paramref name="otherData"/> with a custom <paramref name="byteLength"/> into memory starting 
         /// at <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write(int bytePosition, int byteLength, MemoryAddress otherData)
         {
             ThrowIfDefault(pointer);
@@ -303,6 +325,7 @@ namespace Unmanaged
         /// Writes <paramref name="otherData"/> with a custom <paramref name="byteLength"/> into memory starting 
         /// at <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Write(uint bytePosition, int byteLength, MemoryAddress otherData)
         {
             ThrowIfDefault(pointer);
@@ -314,6 +337,7 @@ namespace Unmanaged
         /// <summary>
         /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref T Read<T>(int bytePosition) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -325,6 +349,7 @@ namespace Unmanaged
         /// <summary>
         /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref T Read<T>(uint bytePosition) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -336,6 +361,7 @@ namespace Unmanaged
         /// <summary>
         /// Reads a value of type <typeparamref name="T"/> at the given element <paramref name="index"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref T ReadElement<T>(int index) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -348,6 +374,7 @@ namespace Unmanaged
         /// <summary>
         /// Reads a value of type <typeparamref name="T"/> at the given element <paramref name="index"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref T ReadElement<T>(uint index) where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -359,6 +386,7 @@ namespace Unmanaged
         /// <summary>
         /// Reads a value of type <typeparamref name="T"/> from the memory starting from the given byte position.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref T Read<T>() where T : unmanaged
         {
             ThrowIfDefault(pointer);
@@ -369,6 +397,7 @@ namespace Unmanaged
         /// <summary>
         /// Reads data from the memory starting from the given <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly MemoryAddress Read(int bytePosition)
         {
             ThrowIfDefault(pointer);
@@ -380,6 +409,7 @@ namespace Unmanaged
         /// <summary>
         /// Reads data from the memory starting from the given <paramref name="bytePosition"/>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly MemoryAddress Read(uint bytePosition)
         {
             ThrowIfDefault(pointer);
@@ -391,6 +421,7 @@ namespace Unmanaged
         /// <summary>
         /// Resets the memory to <see langword="default"/> state.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Clear(int byteLength)
         {
             ThrowIfDefault(pointer);
@@ -402,6 +433,7 @@ namespace Unmanaged
         /// <summary>
         /// Resets a range of memory to <see langword="default"/> state.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Clear(int bytePosition, int byteLength)
         {
             ThrowIfDefault(pointer);
@@ -413,6 +445,7 @@ namespace Unmanaged
         /// <summary>
         /// Resets a range of memory to <see langword="default"/> state.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Clear(uint bytePosition, int byteLength)
         {
             ThrowIfDefault(pointer);
@@ -424,6 +457,7 @@ namespace Unmanaged
         /// <summary>
         /// Fills the memory with the given byte value.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Fill(int byteLength, byte value)
         {
             ThrowIfDefault(pointer);
@@ -435,6 +469,7 @@ namespace Unmanaged
         /// <summary>
         /// Fills the memory with the given byte value.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Fill(int bytePosition, int byteLength, byte value)
         {
             ThrowIfDefault(pointer);
@@ -446,6 +481,7 @@ namespace Unmanaged
         /// <summary>
         /// Fills the memory with the given byte value.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Fill(uint bytePosition, int byteLength, byte value)
         {
             ThrowIfDefault(pointer);
