@@ -17,7 +17,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/simulation-tree/unmanaged</RepositoryUrl>
     <PackageTags>native;unmanaged</PackageTags>
-    <Company>simulation-tree</Company>
+    <Company>Simulation Tree</Company>
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>8</WarningLevel>
