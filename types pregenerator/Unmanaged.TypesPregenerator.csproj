@@ -9,6 +9,8 @@
     <PublishTrimmed>True</PublishTrimmed>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
+    <PackageId>SimulationTree.Unmanaged.TypesPregenerator</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

@@ -14,6 +14,7 @@
     <OutputItemType>Analyzer</OutputItemType>
     <IncludeBuildOutput>true</IncludeBuildOutput>
     <PackageId>SimulationTree.Unmanaged.Generator</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
