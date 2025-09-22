@@ -334,6 +334,17 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Retrieves a slice using the given <paramref name="range"/>.
+        /// </summary>
+        public readonly Span<char> Slice(Range range)
+        {
+            MemoryAddress.ThrowIfDefault(text);
+
+            (int start, int length) = range.GetOffsetAndLength(text->length);
+            return new Span<char>(text->buffer.pointer + start * sizeof(char), length);
+        }
+
+        /// <summary>
         /// Retrieves a slice of the remaining text starting at <paramref name="start"/>.
         /// </summary>
         public readonly Span<char> Slice(int start)

@@ -120,6 +120,43 @@ namespace Unmanaged
         }
 
         /// <summary>
+        /// Retrieves a slice of bytes using the given <paramref name="byteRange"/>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Span<byte> AsSpan(Range byteRange, int byteLength)
+        {
+            ThrowIfDefault(pointer);
+
+            (int start, int length) = byteRange.GetOffsetAndLength(byteLength);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, start + length);
+
+            return new Span<byte>(pointer + (uint)start, length);
+        }
+
+        /// <summary>
+        /// Retrieves a slice of bytes using the given <paramref name="byteRange"/>.
+        /// <para>
+        /// The given <paramref name="byteRange"/> cannot contain from-end indices.
+        /// </para>
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly Span<byte> AsSpan(Range byteRange)
+        {
+            if (byteRange.Start.IsFromEnd || byteRange.End.IsFromEnd)
+            {
+                throw new InvalidOperationException("Cannot use from-end indices without a known length");
+            }
+
+            int start = byteRange.Start.Value;
+            int end = byteRange.End.Value;
+            int length = end - start;
+            ThrowIfDefault(pointer);
+            MemoryTracker.ThrowIfGreaterThanLength(pointer, end);
+
+            return new Span<byte>(pointer + (uint)start, length);
+        }
+
+        /// <summary>
         /// Retrieves a slice of bytes starting at <paramref name="bytePosition"/> with
         /// <paramref name="byteLength"/>.
         /// </summary>
